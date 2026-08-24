@@ -1,0 +1,51 @@
+:root {
+  /* Color Palette - Professional Engineering Studio (Dark Slate) */
+  --bg-app: #0c0f14;
+  --bg-sidebar: #131720;
+  --bg-surface: #1a202c;
+  --bg-surface-hover: #242c3d;
+  --bg-surface-active: #2d3748;
+  
+  /* Canvas Background */
+  --bg-canvas: #0f1319;
+  --grid-line: #1c2331;
+  --grid-subline: #151a24;
+  
+  /* Borders & Dividers */
+  --border-subtle: #242c3d;
+  --border-medium: #333e54;
+  --border-focus: #6366f1;
+
+  /* Typography */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-inverse: #0f172a;
+
+  /* Brand / Action Accents */
+  --accent-primary: #4f46e5;
+  --accent-primary-hover: #4338ca;
+  --accent-secondary: #0ea5e9;
+  
+  /* Packaging Dieline Standard Colors */
+  --dieline-cut: #e53935;
+  --dieline-crease: #10b981;
+  --dieline-bleed: #0284c7;
+  --dieline-panel-hover: rgba(245, 158, 11, 0.12);
+  --dieline-panel-active: rgba(99, 102, 241, 0.22);
+  --dieline-panel-active-stroke: #818cf8;
+
+  /* Status & Badges */
+  --status-success: #10b981;
+  --status-warning: #f59e0b;
+  --status-info: #38bdf8;
+  --status-danger: #ef4444;
+
+  /* Geometry & Layout Dimensions */
+  --header-height: 54px;
+  --sidebar-width: 320px;
+  --sidebar-collapsed-width: 60px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+}
