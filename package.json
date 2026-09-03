@@ -11,11 +11,15 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "fabric": "^6.6.1",
+    "jsbarcode": "^3.12.3",
     "lucide-react": "^1.16.0",
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/jsbarcode": "^3.11.4",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
