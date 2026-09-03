@@ -1,19 +1,25 @@
 import React, { useState } from 'react';
-import { Box, Sliders, Layers } from 'lucide-react';
+import { Box, Sliders, Layers, Palette } from 'lucide-react';
 import { TemplateSelector } from '../sidebar/TemplateSelector';
 import { DimensionControls } from '../sidebar/DimensionControls';
 import { PanelList } from '../sidebar/PanelList';
+import { BrandingControls } from '../sidebar/BrandingControls';
 import { TemplateDefinition, PackagingDimensions, PanelFace } from '../../core/dieline/types';
+import { GraphicItem } from '../../core/graphics/types';
 
 interface SidebarProps {
   template: TemplateDefinition;
   dimensions: PackagingDimensions;
   panels: PanelFace[];
   activePanelId: string | null;
+  graphics: GraphicItem[];
   onSelectTemplate: (id: string) => void;
   onChangeDimensions: (dims: PackagingDimensions) => void;
   onResetDimensions: () => void;
   onSelectPanel: (panelId: string) => void;
+  onAddGraphic: (item: GraphicItem) => void;
+  onRemoveGraphic: (id: string) => void;
+  onToggleClip: (id: string) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -21,12 +27,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   dimensions,
   panels,
   activePanelId,
+  graphics,
   onSelectTemplate,
   onChangeDimensions,
   onResetDimensions,
   onSelectPanel,
+  onAddGraphic,
+  onRemoveGraphic,
+  onToggleClip,
 }) => {
-  const [activeTab, setActiveTab] = useState<'templates' | 'dimensions' | 'faces'>('dimensions');
+  const [activeTab, setActiveTab] = useState<'templates' | 'dimensions' | 'faces' | 'branding'>('dimensions');
 
   return (
     <aside className="app-sidebar">
@@ -51,6 +61,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <Layers size={14} />
           Faces
+        </button>
+        <button
+          className={`sidebar-tab-btn ${activeTab === 'branding' ? 'active' : ''}`}
+          onClick={() => setActiveTab('branding')}
+        >
+          <Palette size={14} />
+          Branding
         </button>
       </div>
 
@@ -85,6 +102,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <PanelList
             panels={panels}
             activePanelId={activePanelId}
+            onSelectPanel={onSelectPanel}
+          />
+        )}
+
+        {activeTab === 'branding' && (
+          <BrandingControls
+            panels={panels}
+            activePanelId={activePanelId}
+            graphics={graphics}
+            onAddGraphic={onAddGraphic}
+            onRemoveGraphic={onRemoveGraphic}
+            onToggleClip={onToggleClip}
             onSelectPanel={onSelectPanel}
           />
         )}

@@ -1,5 +1,6 @@
-import { Canvas, Line, Polygon, FabricText, Point as FabricPoint } from 'fabric';
+import { Canvas, Line, Polygon, FabricText, FabricImage, Point as FabricPoint } from 'fabric';
 import { DielineResult } from '../dieline/types';
+import { GraphicItem } from '../graphics/types';
 
 export interface CanvasOptions {
   showCutLines: boolean;
@@ -16,6 +17,8 @@ export class FabricDielineCanvas {
   private currentDieline: DielineResult | null = null;
   private activePanelId: string | null = null;
   private panelObjects: Map<string, Polygon> = new Map();
+  private graphicItems: GraphicItem[] = [];
+  private graphicObjects: Map<string, FabricImage> = new Map();
   private options: CanvasOptions = {
     showCutLines: true,
     showCreaseLines: true,
@@ -26,6 +29,7 @@ export class FabricDielineCanvas {
   private onSelectPanelCallback?: (panelId: string | null) => void;
   private onHoverPanelCallback?: (panelId: string | null) => void;
   private onZoomChangeCallback?: (zoom: number) => void;
+  private onGraphicChangeCallback?: (items: GraphicItem[]) => void;
 
   constructor(canvasElement: HTMLCanvasElement) {
     this.canvas = new Canvas(canvasElement, {
@@ -82,7 +86,8 @@ export class FabricDielineCanvas {
 
     this.canvas.on('mouse:down', (opt) => {
       const evt = opt.e as MouseEvent;
-      if (evt.button === 1 || evt.altKey || evt.shiftKey || !opt.target || opt.target.type !== 'polygon') {
+      const isGraphic = opt.target && opt.target.type === 'image';
+      if (!isGraphic && (evt.button === 1 || evt.altKey || evt.shiftKey || !opt.target || opt.target.type === 'polygon')) {
         this.isDragging = true;
         this.canvas.selection = false;
         this.lastPosX = evt.clientX;
@@ -110,7 +115,86 @@ export class FabricDielineCanvas {
     });
   }
 
-  public renderDieline(dieline: DielineResult) {
+  private async renderGraphics() {
+    this.graphicObjects.clear();
+    if (!this.currentDieline) return;
+
+    for (const item of this.graphicItems) {
+      const targetPanel = this.currentDieline.panels.find(p => p.id === item.panelId);
+      if (!targetPanel) continue;
+
+      try {
+        const fabricImg = await FabricImage.fromURL(item.src, {
+          crossOrigin: 'anonymous',
+        });
+
+        const initialLeft = item.x ?? targetPanel.center.x;
+        const initialTop = item.y ?? targetPanel.center.y;
+
+        let sX = item.scaleX ?? 1;
+        let sY = item.scaleY ?? 1;
+        if (item.scaleX === undefined) {
+          const maxW = targetPanel.bounds.width * 0.75;
+          const maxH = targetPanel.bounds.height * 0.75;
+          const scaleFit = Math.min(maxW / (fabricImg.width || 1), maxH / (fabricImg.height || 1), 1);
+          sX = scaleFit;
+          sY = scaleFit;
+          item.scaleX = sX;
+          item.scaleY = sY;
+        }
+
+        fabricImg.set({
+          left: initialLeft,
+          top: initialTop,
+          scaleX: sX,
+          scaleY: sY,
+          angle: item.angle ?? 0,
+          originX: 'center',
+          originY: 'center',
+          cornerColor: '#6366f1',
+          cornerStrokeColor: '#ffffff',
+          borderColor: '#818cf8',
+          cornerSize: 8,
+          transparentCorners: false,
+          cornerStyle: 'circle',
+          selectable: true,
+          evented: true,
+        });
+
+        if (item.clipToPanel) {
+          const clipPoly = new Polygon(
+            targetPanel.polygon.map(p => ({ x: p.x, y: p.y })),
+            {
+              absolutePositioned: true,
+            }
+          );
+          fabricImg.clipPath = clipPoly;
+        } else {
+          fabricImg.clipPath = undefined;
+        }
+
+        (fabricImg as unknown as { graphicId: string }).graphicId = item.id;
+        this.graphicObjects.set(item.id, fabricImg);
+
+        fabricImg.on('modified', () => {
+          item.x = fabricImg.left;
+          item.y = fabricImg.top;
+          item.scaleX = fabricImg.scaleX;
+          item.scaleY = fabricImg.scaleY;
+          item.angle = fabricImg.angle;
+          if (this.onGraphicChangeCallback) {
+            this.onGraphicChangeCallback([...this.graphicItems]);
+          }
+        });
+
+        this.canvas.add(fabricImg);
+      } catch (err) {
+        console.error('Failed to load graphic on canvas:', err);
+      }
+    }
+  }
+
+  public async renderDieline(dieline: DielineResult) {
     this.currentDieline = dieline;
     this.canvas.clear();
     this.canvas.backgroundColor = '#0f1319';
@@ -163,6 +247,8 @@ export class FabricDielineCanvas {
       this.canvas.add(poly);
     });
 
+    await this.renderGraphics();
+
     if (this.options.showCreaseLines) {
       lines
         .filter(l => l.type === 'crease')
@@ -211,6 +297,31 @@ export class FabricDielineCanvas {
     }
 
     this.canvas.requestRenderAll();
+  }
+
+  public async setGraphics(items: GraphicItem[]): Promise<void> {
+    this.graphicItems = [...items];
+    if (this.currentDieline) {
+      await this.renderDieline(this.currentDieline);
+    }
+  }
+
+  public async addGraphic(item: GraphicItem): Promise<void> {
+    this.graphicItems.push(item);
+    if (this.currentDieline) {
+      await this.renderDieline(this.currentDieline);
+    }
+  }
+
+  public async removeGraphic(id: string): Promise<void> {
+    this.graphicItems = this.graphicItems.filter(g => g.id !== id);
+    if (this.currentDieline) {
+      await this.renderDieline(this.currentDieline);
+    }
+  }
+
+  public setOnGraphicChange(cb: (items: GraphicItem[]) => void) {
+    this.onGraphicChangeCallback = cb;
   }
 
   public selectPanel(panelId: string | null) {

@@ -2,7 +2,7 @@
 
 **Project Title:** Development of a Digital Food Packaging Editing System for Cost-Effective Product Branding  
 **Target Platform:** Web (Desktop & Tablet / Mobile-responsive)  
-**Overall Completion:** 25% (Sprint 1 of 4 Completed)  
+**Overall Completion:** 31% (Sprint 1 at 100%, Sprint 2 at 25%)  
 **Current Build Status:** Passing (`npm run build` cleanly compiles TypeScript & Vite bundles)  
 **Live Demo:** [https://thesis-demo-app.vercel.app](https://thesis-demo-app.vercel.app) (Alternative: [https://food-packaging-demo.vercel.app](https://food-packaging-demo.vercel.app))  
 
@@ -16,7 +16,7 @@ This thesis project delivers an accessible, browser-based 2D packaging dieline g
 
 Development is structured into four sequential sprints:
 1. **Sprint 1: Parametric Dieline Geometry Engine & Interactive Canvas (100% Completed)**
-2. **Sprint 2: Graphic & Branding Editor (0% Completed — Next Priority)**
+2. **Sprint 2: Graphic & Branding Editor (25% Completed — In Progress)**
 3. **Sprint 3: Session Persistence & Portable Project Files (0% Completed)**
 4. **Sprint 4: Print-Ready Vector & High-Res Image Exports (0% Completed)**
 
@@ -52,40 +52,36 @@ Development is structured into four sequential sprints:
 ---
 
 ### Sprint 2: Graphic & Branding Editor
-- **Status:** Pending (0% — Target for immediate development)
+- **Status:** In Progress (25% Completed)
 - **Objective:** Allow users to place visual assets, typography, and food safety iconography onto individual packaging panels without elements spilling outside boundaries.
 
-#### Planned Architecture & Sub-Modules:
-1. **Image & Logo Upload Pipeline:**
-   - Drag-and-drop and file-picker support for PNG, JPG, WebP, and SVG files.
-   - Direct placement onto the actively selected packaging panel.
-   - Coordinate mapping from global canvas coordinates to panel-relative bounding boxes.
+#### Completed Deliverables (25% Milestone):
+1. **Image & Logo Upload Pipeline (`BrandingControls.tsx`, `types.ts`):**
+   - Implemented drag-and-drop dropzone and native file browser supporting PNG, JPG, WebP, and SVG files.
+   - Target face selection allowing designers to place artwork specifically on chosen packaging panels (e.g. Top Lid, Base Tray, Front Panel).
+2. **Panel Polygon Clipping Engine (`FabricDielineCanvas.ts`):**
+   - Automatic polygon clipping paths (`clipPath`) derived from exact parametric panel geometry, ensuring artwork stays strictly within panel boundaries without spilling into glue flaps, dust flaps, or fold creases.
+   - User toggle for polygon clipping vs full-bleed unclipped display.
+3. **Interactive Graphic Layer & Canvas Transformations:**
+   - Visual transformation handles (scaling corner points, rotation knob, translation drag).
+   - Independent event routing distinguishing canvas viewport panning from graphic object manipulation.
+4. **Placed Artwork Management:**
+   - Dedicated branding sidebar tab with thumbnail preview, target panel assignment, clipping toggle, and quick removal.
 
-2. **Panel Clipping & Bleed Boundaries:**
-   - Automatic clipping paths (`clipPath`) using the calculated panel polygon geometry so graphics do not unintentionally spill into glue flaps or adjacent faces.
-   - Optional 3 mm bleed margin toggle for full-coverage background graphics intended for commercial trimming.
-
-3. **Object Layer Stack & Manipulation:**
-   - Transformation handles for scaling, rotation, and translation.
-   - Layer order controls (Bring to Front, Send to Back, Move Forward/Backward).
-   - Alignment tools (Center Horizontally, Center Vertically, Snap to Panel Edge).
-
-4. **Typography & Text Engine:**
-   - Editable text elements for brand names, product titles, ingredient lists, net weight, and mandatory food notices.
+#### Upcoming Sub-Modules (Remaining 75% of Sprint 2):
+1. **Typography & Text Engine (+25%):**
+   - Editable text elements for brand titles, ingredient listings, net weight, and nutrition disclosures.
    - Font family picker, font size, line height, text alignment, and color controls.
-
-5. **Food Compliance & Vector Icon Library:**
+2. **Food Compliance & Vector Icon Library (+25%):**
    - Pre-loaded SVG icon presets commonly required on food packaging:
      - Recycling / Resin identification codes
      - Keep Frozen / Perishable indicators
      - Microwave safe & oven safe icons
      - Halal / Kosher certification marks
-     - FDA / Nutritional facts tables
      - Storage instructions (e.g., Keep in Cool Dry Place)
-
-6. **Barcode & QR Code Generator:**
+3. **Barcode & QR Code Generator (+25%):**
    - Embedded client-side generator for standard product barcodes (EAN-13, UPC-A) using `JsBarcode`.
-   - Dynamic 2D QR code generator for food menus, promotional URLs, or social handles using `qrcode`.
+   - Dynamic 2D QR code generator for menus, promotional URLs, or social handles using `qrcode`.
 
 ---
 

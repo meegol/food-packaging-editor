@@ -10,12 +10,15 @@ import {
 } from 'lucide-react';
 import { FabricDielineCanvas } from '../../core/canvas/FabricDielineCanvas';
 import { DielineResult } from '../../core/dieline/types';
+import { GraphicItem } from '../../core/graphics/types';
 
 interface CanvasViewportProps {
   dieline: DielineResult;
   activePanelId: string | null;
   onSelectPanel: (panelId: string | null) => void;
   focusedPanelId?: string | null;
+  graphics: GraphicItem[];
+  onGraphicChange?: (items: GraphicItem[]) => void;
 }
 
 export const CanvasViewport: React.FC<CanvasViewportProps> = ({
@@ -23,6 +26,8 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
   activePanelId,
   onSelectPanel,
   focusedPanelId,
+  graphics,
+  onGraphicChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -51,6 +56,12 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
         }
       },
       onZoomChange: (z) => setZoomPercent(z),
+    });
+
+    engine.setOnGraphicChange((items) => {
+      if (onGraphicChange) {
+        onGraphicChange(items);
+      }
     });
 
     const updateSize = () => {
@@ -82,6 +93,11 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
     engineRef.current.renderDieline(dieline);
     engineRef.current.fitToScreen();
   }, [dieline]);
+
+  useEffect(() => {
+    if (!engineRef.current) return;
+    engineRef.current.setGraphics(graphics);
+  }, [graphics]);
 
   useEffect(() => {
     if (!engineRef.current) return;
