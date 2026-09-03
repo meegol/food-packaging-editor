@@ -1,4 +1,4 @@
-import { Canvas, Line, Polygon, FabricText, FabricImage, Point as FabricPoint } from 'fabric';
+import { Canvas, Line, Polygon, FabricText, FabricImage, Textbox, FabricObject, Point as FabricPoint } from 'fabric';
 import { DielineResult } from '../dieline/types';
 import { GraphicItem } from '../graphics/types';
 
@@ -18,7 +18,7 @@ export class FabricDielineCanvas {
   private activePanelId: string | null = null;
   private panelObjects: Map<string, Polygon> = new Map();
   private graphicItems: GraphicItem[] = [];
-  private graphicObjects: Map<string, FabricImage> = new Map();
+  private graphicObjects: Map<string, FabricObject> = new Map();
   private options: CanvasOptions = {
     showCutLines: true,
     showCreaseLines: true,
@@ -86,7 +86,13 @@ export class FabricDielineCanvas {
 
     this.canvas.on('mouse:down', (opt) => {
       const evt = opt.e as MouseEvent;
-      const isGraphic = opt.target && opt.target.type === 'image';
+      const isGraphic = opt.target && (
+        opt.target.type === 'image' ||
+        opt.target.type === 'textbox' ||
+        opt.target.type === 'text' ||
+        (opt.target as unknown as { graphicId?: string }).graphicId !== undefined
+      );
+
       if (!isGraphic && (evt.button === 1 || evt.altKey || evt.shiftKey || !opt.target || opt.target.type === 'polygon')) {
         this.isDragging = true;
         this.canvas.selection = false;
@@ -124,70 +130,135 @@ export class FabricDielineCanvas {
       if (!targetPanel) continue;
 
       try {
-        const fabricImg = await FabricImage.fromURL(item.src, {
-          crossOrigin: 'anonymous',
-        });
+        if (item.type === 'text') {
+          const initialLeft = item.x ?? targetPanel.center.x;
+          const initialTop = item.y ?? targetPanel.center.y;
+          const panelWidth = targetPanel.bounds.width;
+          const maxW = Math.max(Math.min(panelWidth * 0.85, 280), 80);
 
-        const initialLeft = item.x ?? targetPanel.center.x;
-        const initialTop = item.y ?? targetPanel.center.y;
+          const textObj = new Textbox(item.text || 'Food Packaging Label', {
+            left: initialLeft,
+            top: initialTop,
+            width: maxW,
+            fontSize: item.fontSize || 15,
+            fontFamily: item.fontFamily || 'Inter, sans-serif',
+            fontWeight: (item.fontWeight || '600') as string,
+            fill: item.fill || '#f8fafc',
+            textAlign: item.textAlign || 'center',
+            lineHeight: item.lineHeight || 1.25,
+            scaleX: item.scaleX ?? 1,
+            scaleY: item.scaleY ?? 1,
+            angle: item.angle ?? 0,
+            originX: 'center',
+            originY: 'center',
+            cornerColor: '#6366f1',
+            cornerStrokeColor: '#ffffff',
+            borderColor: '#818cf8',
+            cornerSize: 8,
+            transparentCorners: false,
+            cornerStyle: 'circle',
+            selectable: true,
+            evented: true,
+          });
 
-        let sX = item.scaleX ?? 1;
-        let sY = item.scaleY ?? 1;
-        if (item.scaleX === undefined) {
-          const maxW = targetPanel.bounds.width * 0.75;
-          const maxH = targetPanel.bounds.height * 0.75;
-          const scaleFit = Math.min(maxW / (fabricImg.width || 1), maxH / (fabricImg.height || 1), 1);
-          sX = scaleFit;
-          sY = scaleFit;
-          item.scaleX = sX;
-          item.scaleY = sY;
-        }
-
-        fabricImg.set({
-          left: initialLeft,
-          top: initialTop,
-          scaleX: sX,
-          scaleY: sY,
-          angle: item.angle ?? 0,
-          originX: 'center',
-          originY: 'center',
-          cornerColor: '#6366f1',
-          cornerStrokeColor: '#ffffff',
-          borderColor: '#818cf8',
-          cornerSize: 8,
-          transparentCorners: false,
-          cornerStyle: 'circle',
-          selectable: true,
-          evented: true,
-        });
-
-        if (item.clipToPanel) {
-          const clipPoly = new Polygon(
-            targetPanel.polygon.map(p => ({ x: p.x, y: p.y })),
-            {
-              absolutePositioned: true,
-            }
-          );
-          fabricImg.clipPath = clipPoly;
-        } else {
-          fabricImg.clipPath = undefined;
-        }
-
-        (fabricImg as unknown as { graphicId: string }).graphicId = item.id;
-        this.graphicObjects.set(item.id, fabricImg);
-
-        fabricImg.on('modified', () => {
-          item.x = fabricImg.left;
-          item.y = fabricImg.top;
-          item.scaleX = fabricImg.scaleX;
-          item.scaleY = fabricImg.scaleY;
-          item.angle = fabricImg.angle;
-          if (this.onGraphicChangeCallback) {
-            this.onGraphicChangeCallback([...this.graphicItems]);
+          if (item.clipToPanel) {
+            const clipPoly = new Polygon(
+              targetPanel.polygon.map(p => ({ x: p.x, y: p.y })),
+              { absolutePositioned: true }
+            );
+            textObj.clipPath = clipPoly;
+          } else {
+            textObj.clipPath = undefined;
           }
-        });
 
-        this.canvas.add(fabricImg);
+          (textObj as unknown as { graphicId: string }).graphicId = item.id;
+          this.graphicObjects.set(item.id, textObj);
+
+          textObj.on('modified', () => {
+            item.x = textObj.left;
+            item.y = textObj.top;
+            item.scaleX = textObj.scaleX;
+            item.scaleY = textObj.scaleY;
+            item.angle = textObj.angle;
+            item.text = textObj.text;
+            if (this.onGraphicChangeCallback) {
+              this.onGraphicChangeCallback([...this.graphicItems]);
+            }
+          });
+
+          this.canvas.add(textObj);
+        } else {
+          // Images, vector SVG icons, barcodes, and QR codes
+          if (!item.src) continue;
+
+          const fabricImg = await FabricImage.fromURL(item.src, {
+            crossOrigin: 'anonymous',
+          });
+
+          const initialLeft = item.x ?? targetPanel.center.x;
+          const initialTop = item.y ?? targetPanel.center.y;
+
+          let sX = item.scaleX ?? 1;
+          let sY = item.scaleY ?? 1;
+          if (item.scaleX === undefined) {
+            let fitRatio = 0.75;
+            if (item.type === 'icon') fitRatio = 0.35;
+            if (item.type === 'barcode') fitRatio = 0.65;
+            if (item.type === 'qrcode') fitRatio = 0.40;
+
+            const maxW = targetPanel.bounds.width * fitRatio;
+            const maxH = targetPanel.bounds.height * fitRatio;
+            const scaleFit = Math.min(maxW / (fabricImg.width || 1), maxH / (fabricImg.height || 1), 1);
+            sX = scaleFit;
+            sY = scaleFit;
+            item.scaleX = sX;
+            item.scaleY = sY;
+          }
+
+          fabricImg.set({
+            left: initialLeft,
+            top: initialTop,
+            scaleX: sX,
+            scaleY: sY,
+            angle: item.angle ?? 0,
+            originX: 'center',
+            originY: 'center',
+            cornerColor: '#6366f1',
+            cornerStrokeColor: '#ffffff',
+            borderColor: '#818cf8',
+            cornerSize: 8,
+            transparentCorners: false,
+            cornerStyle: 'circle',
+            selectable: true,
+            evented: true,
+          });
+
+          if (item.clipToPanel) {
+            const clipPoly = new Polygon(
+              targetPanel.polygon.map(p => ({ x: p.x, y: p.y })),
+              { absolutePositioned: true }
+            );
+            fabricImg.clipPath = clipPoly;
+          } else {
+            fabricImg.clipPath = undefined;
+          }
+
+          (fabricImg as unknown as { graphicId: string }).graphicId = item.id;
+          this.graphicObjects.set(item.id, fabricImg);
+
+          fabricImg.on('modified', () => {
+            item.x = fabricImg.left;
+            item.y = fabricImg.top;
+            item.scaleX = fabricImg.scaleX;
+            item.scaleY = fabricImg.scaleY;
+            item.angle = fabricImg.angle;
+            if (this.onGraphicChangeCallback) {
+              this.onGraphicChangeCallback([...this.graphicItems]);
+            }
+          });
+
+          this.canvas.add(fabricImg);
+        }
       } catch (err) {
         console.error('Failed to load graphic on canvas:', err);
       }
@@ -317,6 +388,36 @@ export class FabricDielineCanvas {
     this.graphicItems = this.graphicItems.filter(g => g.id !== id);
     if (this.currentDieline) {
       await this.renderDieline(this.currentDieline);
+    }
+  }
+
+  public async updateGraphic(updated: GraphicItem): Promise<void> {
+    const idx = this.graphicItems.findIndex(g => g.id === updated.id);
+    if (idx !== -1) {
+      this.graphicItems[idx] = { ...updated };
+      if (this.currentDieline) {
+        await this.renderDieline(this.currentDieline);
+      }
+    }
+  }
+
+  public async reorderGraphic(id: string, direction: 'up' | 'down'): Promise<void> {
+    const idx = this.graphicItems.findIndex(g => g.id === id);
+    if (idx === -1) return;
+    if (direction === 'up' && idx < this.graphicItems.length - 1) {
+      const temp = this.graphicItems[idx];
+      this.graphicItems[idx] = this.graphicItems[idx + 1];
+      this.graphicItems[idx + 1] = temp;
+    } else if (direction === 'down' && idx > 0) {
+      const temp = this.graphicItems[idx];
+      this.graphicItems[idx] = this.graphicItems[idx - 1];
+      this.graphicItems[idx - 1] = temp;
+    }
+    if (this.currentDieline) {
+      await this.renderDieline(this.currentDieline);
+    }
+    if (this.onGraphicChangeCallback) {
+      this.onGraphicChangeCallback([...this.graphicItems]);
     }
   }
 

@@ -2,7 +2,7 @@
 
 **Project Title:** Development of a Digital Food Packaging Editing System for Cost-Effective Product Branding  
 **Target Platform:** Web (Desktop & Tablet / Mobile-responsive)  
-**Overall Completion:** 31% (Sprint 1 at 100%, Sprint 2 at 25%)  
+**Overall Completion:** 37.5% (Sprint 1 at 100%, Sprint 2 at 50%)  
 **Current Build Status:** Passing (`npm run build` cleanly compiles TypeScript & Vite bundles)  
 **Live Demo:** [https://thesis-demo-app.vercel.app](https://thesis-demo-app.vercel.app) (Alternative: [https://food-packaging-demo.vercel.app](https://food-packaging-demo.vercel.app))  
 
@@ -16,7 +16,7 @@ This thesis project delivers an accessible, browser-based 2D packaging dieline g
 
 Development is structured into four sequential sprints:
 1. **Sprint 1: Parametric Dieline Geometry Engine & Interactive Canvas (100% Completed)**
-2. **Sprint 2: Graphic & Branding Editor (25% Completed — In Progress)**
+2. **Sprint 2: Graphic & Branding Editor (50% Completed — In Progress)**
 3. **Sprint 3: Session Persistence & Portable Project Files (0% Completed)**
 4. **Sprint 4: Print-Ready Vector & High-Res Image Exports (0% Completed)**
 
@@ -52,10 +52,10 @@ Development is structured into four sequential sprints:
 ---
 
 ### Sprint 2: Graphic & Branding Editor
-- **Status:** In Progress (25% Completed)
+- **Status:** In Progress (50% Completed)
 - **Objective:** Allow users to place visual assets, typography, and food safety iconography onto individual packaging panels without elements spilling outside boundaries.
 
-#### Completed Deliverables (25% Milestone):
+#### Completed Deliverables (50% Milestone):
 1. **Image & Logo Upload Pipeline (`BrandingControls.tsx`, `types.ts`):**
    - Implemented drag-and-drop dropzone and native file browser supporting PNG, JPG, WebP, and SVG files.
    - Target face selection allowing designers to place artwork specifically on chosen packaging panels (e.g. Top Lid, Base Tray, Front Panel).
@@ -65,22 +65,19 @@ Development is structured into four sequential sprints:
 3. **Interactive Graphic Layer & Canvas Transformations:**
    - Visual transformation handles (scaling corner points, rotation knob, translation drag).
    - Independent event routing distinguishing canvas viewport panning from graphic object manipulation.
-4. **Placed Artwork Management:**
-   - Dedicated branding sidebar tab with thumbnail preview, target panel assignment, clipping toggle, and quick removal.
+4. **Typography & Text Engine (`TextControls.tsx`):**
+   - Direct text label placement on target packaging faces with Fabric.js `Textbox` word wrapping and multi-line rendering.
+   - Font family picker (`Inter`, `Roboto`, `Playfair Display`, `Montserrat`, `Courier Prime`, `Oswald`).
+   - Font size slider (8px - 48px), weight toggles (Regular, Medium, Bold), text alignment (Left, Center, Right), and packaging color presets.
+   - Quick food packaging text templates for Brand Title, Net Weight, Ingredients, and Storage Notes.
+5. **Placed Artwork & Layer Management:**
+   - Dedicated branding sidebar tab with thumbnail preview, target panel assignment, clipping toggle, layer reordering (bring forward/send backward), and removal.
 
-#### Upcoming Sub-Modules (Remaining 75% of Sprint 2):
-1. **Typography & Text Engine (+25%):**
-   - Editable text elements for brand titles, ingredient listings, net weight, and nutrition disclosures.
-   - Font family picker, font size, line height, text alignment, and color controls.
-2. **Food Compliance & Vector Icon Library (+25%):**
-   - Pre-loaded SVG icon presets commonly required on food packaging:
-     - Recycling / Resin identification codes
-     - Keep Frozen / Perishable indicators
-     - Microwave safe & oven safe icons
-     - Halal / Kosher certification marks
-     - Storage instructions (e.g., Keep in Cool Dry Place)
-3. **Barcode & QR Code Generator (+25%):**
-   - Embedded client-side generator for standard product barcodes (EAN-13, UPC-A) using `JsBarcode`.
+#### Upcoming Sub-Modules (Remaining 50% of Sprint 2):
+1. **Food Compliance & Vector Icon Library (+25%):**
+   - Pre-loaded SVG icon presets commonly required on food packaging (Resin recycling codes, Keep Frozen, Microwave safe, Halal, Kosher, Storage advice).
+2. **Barcode & QR Code Generator (+25%):**
+   - Embedded client-side generator for standard product barcodes (EAN-13, UPC-A, Code 128) using `JsBarcode`.
    - Dynamic 2D QR code generator for menus, promotional URLs, or social handles using `qrcode`.
 
 ---
@@ -135,9 +132,9 @@ Development is structured into four sequential sprints:
 | **Sprint 1** | Dimensional Controls | $L, W, D, t$ sliders, inputs, mm/in toggle | 100% | Completed |
 | **Sprint 1** | Interactive Canvas | Fabric.js viewport, pan/zoom, layer toggles | 100% | Completed |
 | **Sprint 1** | Face Mapping | Panel hover, focus trigger, face list | 100% | Completed |
-| **Sprint 2** | Media Uploads | Drag-and-drop logos, PNG/SVG placement | 0% | Planned |
-| **Sprint 2** | Panel Clipping | Bounding polygon clipping & bleed margins | 0% | Planned |
-| **Sprint 2** | Text Engine | Custom text labels, typography controls | 0% | Planned |
+| **Sprint 2** | Media Uploads | Drag-and-drop logos, PNG/SVG placement | 100% | Completed |
+| **Sprint 2** | Panel Clipping | Bounding polygon clipping & bleed margins | 100% | Completed |
+| **Sprint 2** | Text Engine | Custom text labels, typography controls | 100% | Completed |
 | **Sprint 2** | Asset Presets | Food compliance symbols & nutritional badges | 0% | Planned |
 | **Sprint 2** | Code Generator | Dynamic vector Barcode (EAN-13) & QR codes | 0% | Planned |
 | **Sprint 3** | Persistence | IndexedDB / LocalStorage draft auto-save | 0% | Planned |
@@ -145,7 +142,7 @@ Development is structured into four sequential sprints:
 | **Sprint 4** | Vector PDF | Layer-separated cut/crease/artwork PDF | 0% | Planned |
 | **Sprint 4** | SVG Export | Grouped vector SVG output | 0% | Planned |
 | **Sprint 4** | High-Res Raster | 300 DPI PNG/JPG flat dieline renders | 0% | Planned |
-| **Overall** | **Entire System** | **Complete No-Registration Web Editor** | **~25%** | **Phase 1 Done** |
+| **Overall** | **Entire System** | **Complete No-Registration Web Editor** | **37.5%** | **In Progress** |
 
 ---
 

@@ -44,6 +44,24 @@ export const App: React.FC = () => {
     setGraphics(prev => prev.map(g => g.id === id ? { ...g, clipToPanel: !g.clipToPanel } : g));
   };
 
+  const handleReorderGraphic = (id: string, direction: 'up' | 'down') => {
+    setGraphics(prev => {
+      const idx = prev.findIndex(g => g.id === id);
+      if (idx === -1) return prev;
+      const next = [...prev];
+      if (direction === 'up' && idx < next.length - 1) {
+        const temp = next[idx];
+        next[idx] = next[idx + 1];
+        next[idx + 1] = temp;
+      } else if (direction === 'down' && idx > 0) {
+        const temp = next[idx];
+        next[idx] = next[idx - 1];
+        next[idx - 1] = temp;
+      }
+      return next;
+    });
+  };
+
   const dieline = useMemo(() => {
     return generateDieline(selectedTemplateId, dimensions);
   }, [selectedTemplateId, dimensions]);
@@ -68,6 +86,7 @@ export const App: React.FC = () => {
           onAddGraphic={handleAddGraphic}
           onRemoveGraphic={handleRemoveGraphic}
           onToggleClip={handleToggleClip}
+          onReorderGraphic={handleReorderGraphic}
         />
         <CanvasViewport
           dieline={dieline}

@@ -20,6 +20,7 @@ interface SidebarProps {
   onAddGraphic: (item: GraphicItem) => void;
   onRemoveGraphic: (id: string) => void;
   onToggleClip: (id: string) => void;
+  onReorderGraphic: (id: string, direction: 'up' | 'down') => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -35,6 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onAddGraphic,
   onRemoveGraphic,
   onToggleClip,
+  onReorderGraphic,
 }) => {
   const [activeTab, setActiveTab] = useState<'templates' | 'dimensions' | 'faces' | 'branding'>('dimensions');
 
@@ -114,6 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onAddGraphic={onAddGraphic}
             onRemoveGraphic={onRemoveGraphic}
             onToggleClip={onToggleClip}
+            onReorderGraphic={onReorderGraphic}
             onSelectPanel={onSelectPanel}
           />
         )}
