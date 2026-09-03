@@ -151,23 +151,28 @@ Development is structured into four sequential sprints:
 
 ## 4. Technical Challenges & Mitigations
 
-1. **Polygon Clipping on Canvas:**
-   - *Challenge:* Uploaded artwork must stay visually bounded within non-rectangular panels (e.g., tapered flaps, triangular dust flaps).
-   - *Mitigation:* Fabric.js supports `clipPath` on canvas objects. In Sprint 2, the exact polygon points calculated in the dieline engine will be assigned as the `clipPath` of any object added to that panel.
+1. **Polygon Clipping on Canvas (Resolved in Sprint 2):**
+   - *Challenge:* Uploaded artwork and typography must stay visually bounded within non-rectangular panels (e.g., tapered flaps, triangular dust flaps).
+   - *Status & Resolution:* Successfully implemented in Sprint 2 using Fabric.js `clipPath` assigned with exact parametric polygon vertices mapped with `absolutePositioned: true`. A user toggle allows switching between clipped display and full-bleed inspection.
 
-2. **Physical Scale Fidelity on PDF Export:**
+2. **Barcode & QR Symbology Validation (Resolved in Sprint 2):**
+   - *Challenge:* Invalid check digits in barcodes (such as EAN-13 parity errors) could cause generator crashes or illegible retail scans.
+   - *Status & Resolution:* Implemented reactive input validation with `JsBarcode` and `qrcode` wrapped in error boundaries with quick-fill presets for guaranteed scanner compliance.
+
+3. **Offline Persistence & Zero-Auth Draft Integrity (Sprint 3 Challenge):**
+   - *Challenge:* Storing complex canvas state, typography layers, and uploaded raster/vector brand assets locally without exhausting browser storage quotas or requiring server authentication.
+   - *Mitigation:* Utilize `IndexedDB` with structured cloning for image data URLs and debounced serialization of dieline parameters to prevent performance degradation.
+
+4. **Physical Scale Fidelity on PDF Export (Sprint 4 Challenge):**
    - *Challenge:* Exported PDFs must match real-world millimeter dimensions exactly for physical carton die-cutting.
-   - *Mitigation:* The dieline engine operates with mm as the ground truth. When outputting via `jsPDF`, coordinates will be mapped directly using `pt` or `mm` units without canvas pixel distortion.
-
-3. **Performance with Large Graphic Assets:**
-   - *Challenge:* High-resolution images uploaded by users could cause canvas redraw lag during pan and zoom interactions.
-   - *Mitigation:* Separate the rendering of background dieline vectors and active artwork objects. Use Fabric.js object caching (`objectCaching: true`) to retain 60 FPS viewport interaction.
+   - *Mitigation:* The dieline engine operates with millimeters as the ground truth. When outputting via `jsPDF`, coordinates will be mapped directly using `pt` or `mm` units without canvas pixel distortion.
 
 ---
 
 ## 5. Immediate Next Steps
 
-1. Initiate **Sprint 2 development**:
-   - Create the image upload handler and tie dropped images to the active panel ID.
-   - Implement the panel polygon clip path system.
-   - Add the text tool palette with basic typography controls.
+1. Initiate **Sprint 3 development (Session Persistence & Portable Project Files)**:
+   - **Local Browser Draft Auto-Save:** Implement `IndexedDB` background autosave debounced on dimensional changes or canvas modifications.
+   - **Draft Recovery:** Add an automatic draft restoration prompt when reopening the editor or refreshing the browser.
+   - **Portable JSON Project File Schema:** Define and implement the `.json` project file schema storing template parameters, dimensions, and graphic layer states.
+   - **Project File I/O:** Add "Export Project (.json)" and "Import Project" file parsing with schema validation.

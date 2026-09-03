@@ -8,6 +8,7 @@ The project allows users (such as food entrepreneurs, small bakeries, and cloud 
 
 - **Framework:** React 18 with TypeScript and Vite
 - **2D Canvas Renderer:** Fabric.js (HTML5 Canvas)
+- **Barcodes & QR Codes:** JsBarcode, QRCode
 - **Icons:** Lucide React
 - **Styling:** CSS Custom Properties (Theme tokens)
 - **Local Persistence (Upcoming Sprint 3):** LocalStorage & IndexedDB
@@ -20,10 +21,11 @@ src/
 ├── components/
 │   ├── canvas/          # Canvas viewport, zoom controls, dieline legend
 │   ├── layout/          # Top navigation header and main sidebar
-│   └── sidebar/         # Template picker, parametric dimension inputs, face inspector
+│   └── sidebar/         # Template picker, dimensions, typography, compliance icons, barcode/QR generator
 ├── core/
-│   ├── canvas/          # Fabric.js dieline canvas wrapper and interaction engine
-│   └── dieline/         # Parametric dieline math generators (Burger Box, Pizza Box, Pouch)
+│   ├── canvas/          # Fabric.js dieline canvas wrapper and multi-type graphic clipping engine
+│   ├── dieline/         # Parametric dieline math generators (Burger Box, Pizza Box, Pouch)
+│   └── graphics/        # Graphic element data models and typing
 └── styles/              # Global reset, typography, and theme tokens
 ```
 
@@ -48,12 +50,13 @@ npm run build
   - Mathematical net generation for Burger Clamshell, Pizza Box (Roll-End Tuck Top), and Stand-up Pouch.
   - Dimension controls with real-time recalculation and mm/inch conversion.
   - Interactive canvas with viewport panning, mouse-wheel zoom, layer toggling, and panel focus.
-- **Sprint 2: Graphic & Branding Editor** *(Next)*
+- **Sprint 2: Graphic & Branding Editor** *(Completed)*
   - Image/logo uploads with panel boundary clipping.
-  - Text engine with typographic styling.
-  - Standard food compliance icon presets.
-  - Dynamic Barcode and QR code generation.
-- **Sprint 3: Session Persistence & File I/O**
+  - Typography engine with font selection, formatting controls, and quick food label presets.
+  - Standard food compliance and recycling vector icon library (12 presets).
+  - Dynamic 1D Barcode (EAN-13, UPC-A, Code 128) and 2D QR code generator.
+  - Unified layer stack with reordering and polygon clip toggling.
+- **Sprint 3: Session Persistence & File I/O** *(Next Priority)*
   - Guest session draft recovery via LocalStorage / IndexedDB.
   - Portable JSON project export and import.
 - **Sprint 4: Print & Vector Exports**
