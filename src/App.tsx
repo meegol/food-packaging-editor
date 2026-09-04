@@ -1,11 +1,25 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
 import { CanvasViewport } from './components/canvas/CanvasViewport';
+import { DraftRecoveryBanner } from './components/layout/DraftRecoveryBanner';
 import { getTemplateById, generateDieline, PackagingDimensions } from './core/dieline';
 import { GraphicItem } from './core/graphics/types';
+import {
+  getThemePreference,
+  saveThemePreference,
+  loadDraft,
+  saveDraftDebounced,
+  exportProjectFile,
+  parseProjectFile,
+  PackagingProjectData,
+} from './core/storage/projectStorage';
 
 export const App: React.FC = () => {
+  // Theme state initialized from persisted preference
+  const [themeId, setThemeId] = useState<string>(() => getThemePreference());
+
+  // Template & Geometry state
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('burger-box');
   const template = useMemo(() => getTemplateById(selectedTemplateId), [selectedTemplateId]);
 
@@ -13,6 +27,83 @@ export const App: React.FC = () => {
   const [activePanelId, setActivePanelId] = useState<string | null>(null);
   const [focusedPanelId, setFocusedPanelId] = useState<string | null>(null);
   const [graphics, setGraphics] = useState<GraphicItem[]>([]);
+
+  // Session persistence state
+  const [autosaveStatus, setAutosaveStatus] = useState<'saved' | 'saving' | 'idle'>('saved');
+  const [detectedDraft, setDetectedDraft] = useState<PackagingProjectData | null>(null);
+  const [hasInitializedDraftCheck, setHasInitializedDraftCheck] = useState(false);
+
+  // Synchronize active theme with document element immediately
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', themeId);
+    saveThemePreference(themeId);
+  }, [themeId]);
+
+  // Check for existing saved draft on initial application load
+  useEffect(() => {
+    if (!hasInitializedDraftCheck) {
+      const draft = loadDraft();
+      if (draft && (draft.graphics.length > 0 || draft.templateId !== 'burger-box')) {
+        setDetectedDraft(draft);
+      }
+      setHasInitializedDraftCheck(true);
+    }
+  }, [hasInitializedDraftCheck]);
+
+  // Debounced auto-save to browser storage on project modifications
+  useEffect(() => {
+    if (!hasInitializedDraftCheck) return;
+    saveDraftDebounced(
+      selectedTemplateId,
+      dimensions,
+      graphics,
+      themeId,
+      setAutosaveStatus
+    );
+  }, [selectedTemplateId, dimensions, graphics, themeId, hasInitializedDraftCheck]);
+
+  const handleSelectTheme = (newThemeId: string) => {
+    document.documentElement.setAttribute('data-theme', newThemeId);
+    setThemeId(newThemeId);
+    saveThemePreference(newThemeId);
+  };
+
+  const handleRestoreDraft = () => {
+    if (!detectedDraft) return;
+    setSelectedTemplateId(detectedDraft.templateId);
+    setDimensions(detectedDraft.dimensions);
+    setGraphics(detectedDraft.graphics);
+    if (detectedDraft.theme) {
+      setThemeId(detectedDraft.theme);
+    }
+    setDetectedDraft(null);
+  };
+
+  const handleDismissDraft = () => {
+    setDetectedDraft(null);
+  };
+
+  const handleExportProject = () => {
+    exportProjectFile(selectedTemplateId, dimensions, graphics, themeId);
+  };
+
+  const handleImportProject = (jsonContent: string) => {
+    try {
+      const imported = parseProjectFile(jsonContent);
+      setSelectedTemplateId(imported.templateId);
+      setDimensions(imported.dimensions);
+      setGraphics(imported.graphics);
+      if (imported.theme) {
+        setThemeId(imported.theme);
+      }
+      setActivePanelId(null);
+      setFocusedPanelId(null);
+      setDetectedDraft(null);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown file error';
+      alert(`Could not open project file: ${message}`);
+    }
+  };
 
   const handleSelectTemplate = (templateId: string) => {
     setSelectedTemplateId(templateId);
@@ -71,8 +162,20 @@ export const App: React.FC = () => {
       <Header
         templateName={template.name}
         dimensions={dimensions}
+        activeThemeId={themeId}
+        onSelectTheme={handleSelectTheme}
+        autosaveStatus={autosaveStatus}
+        onExportProject={handleExportProject}
+        onImportProject={handleImportProject}
       />
       <main className="app-workspace">
+        {detectedDraft && (
+          <DraftRecoveryBanner
+            draft={detectedDraft}
+            onRestore={handleRestoreDraft}
+            onDismiss={handleDismissDraft}
+          />
+        )}
         <Sidebar
           template={template}
           dimensions={dimensions}
@@ -95,6 +198,7 @@ export const App: React.FC = () => {
           focusedPanelId={focusedPanelId}
           graphics={graphics}
           onGraphicChange={setGraphics}
+          themeId={themeId}
         />
       </main>
     </div>
@@ -102,4 +206,3 @@ export const App: React.FC = () => {
 };
 
 export default App;
-

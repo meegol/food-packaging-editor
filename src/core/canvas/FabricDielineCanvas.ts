@@ -36,10 +36,47 @@ export class FabricDielineCanvas {
       selection: false,
       preserveObjectStacking: true,
       renderOnAddRemove: false,
-      backgroundColor: '#0f1319',
+      backgroundColor: 'transparent',
     });
 
     this.setupEventListeners();
+  }
+
+  private getThemeColors() {
+    if (typeof window === 'undefined') {
+      return {
+        labelColor: '#94a3b8',
+        activePanelFill: 'rgba(99, 102, 241, 0.25)',
+        activePanelStroke: '#818cf8',
+        panelHoverFill: 'rgba(245, 158, 11, 0.14)',
+        panelDefaultFill: 'rgba(255, 255, 255, 0.02)',
+      };
+    }
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark-slate';
+    const isLight = currentTheme.includes('light') || currentTheme.includes('kraft');
+    const style = getComputedStyle(document.documentElement);
+
+    const labelColor = isLight ? '#475569' : '#94a3b8';
+    const activePanelFill = style.getPropertyValue('--dieline-panel-active').trim() || (isLight ? 'rgba(79, 70, 229, 0.16)' : 'rgba(99, 102, 241, 0.25)');
+    const activePanelStroke = style.getPropertyValue('--dieline-panel-active-stroke').trim() || (isLight ? '#4f46e5' : '#818cf8');
+    const panelHoverFill = style.getPropertyValue('--dieline-panel-hover').trim() || (isLight ? 'rgba(79, 70, 229, 0.08)' : 'rgba(245, 158, 11, 0.14)');
+    const panelDefaultFill = isLight ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.02)';
+
+    return {
+      labelColor,
+      activePanelFill,
+      activePanelStroke,
+      panelHoverFill,
+      panelDefaultFill,
+    };
+  }
+
+  public updateTheme() {
+    if (this.currentDieline) {
+      this.renderDieline(this.currentDieline);
+    } else {
+      this.canvas.requestRenderAll();
+    }
   }
 
   public setCallbacks(callbacks: {
@@ -268,7 +305,8 @@ export class FabricDielineCanvas {
   public async renderDieline(dieline: DielineResult) {
     this.currentDieline = dieline;
     this.canvas.clear();
-    this.canvas.backgroundColor = '#0f1319';
+    this.canvas.backgroundColor = 'transparent';
+    const colors = this.getThemeColors();
     this.panelObjects.clear();
 
     const { lines, panels } = dieline;
@@ -278,9 +316,9 @@ export class FabricDielineCanvas {
         panel.polygon.map(p => ({ x: p.x, y: p.y })),
         {
           fill: panel.id === this.activePanelId 
-            ? 'rgba(99, 102, 241, 0.25)' 
-            : 'rgba(255, 255, 255, 0.02)',
-          stroke: panel.id === this.activePanelId ? '#818cf8' : 'transparent',
+            ? colors.activePanelFill 
+            : colors.panelDefaultFill,
+          stroke: panel.id === this.activePanelId ? colors.activePanelStroke : 'transparent',
           strokeWidth: panel.id === this.activePanelId ? 2 : 0,
           selectable: false,
           evented: true,
@@ -293,7 +331,7 @@ export class FabricDielineCanvas {
 
       poly.on('mouseover', () => {
         if (panel.id !== this.activePanelId) {
-          poly.set('fill', 'rgba(245, 158, 11, 0.15)');
+          poly.set('fill', colors.panelHoverFill);
           this.canvas.requestRenderAll();
         }
         if (this.onHoverPanelCallback) {
@@ -303,7 +341,7 @@ export class FabricDielineCanvas {
 
       poly.on('mouseout', () => {
         if (panel.id !== this.activePanelId) {
-          poly.set('fill', 'rgba(255, 255, 255, 0.02)');
+          poly.set('fill', colors.panelDefaultFill);
           this.canvas.requestRenderAll();
         }
         if (this.onHoverPanelCallback) {
@@ -357,7 +395,7 @@ export class FabricDielineCanvas {
           fontSize: 11,
           fontFamily: 'Inter, sans-serif',
           fontWeight: '500',
-          fill: '#94a3b8',
+          fill: colors.labelColor,
           originX: 'center',
           originY: 'center',
           selectable: false,
@@ -427,17 +465,18 @@ export class FabricDielineCanvas {
 
   public selectPanel(panelId: string | null) {
     this.activePanelId = panelId;
+    const colors = this.getThemeColors();
 
     this.panelObjects.forEach((poly, id) => {
       if (id === panelId) {
         poly.set({
-          fill: 'rgba(99, 102, 241, 0.25)',
-          stroke: '#818cf8',
+          fill: colors.activePanelFill,
+          stroke: colors.activePanelStroke,
           strokeWidth: 2,
         });
       } else {
         poly.set({
-          fill: 'rgba(255, 255, 255, 0.02)',
+          fill: colors.panelDefaultFill,
           stroke: 'transparent',
           strokeWidth: 0,
         });

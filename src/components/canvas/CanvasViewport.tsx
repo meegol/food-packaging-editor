@@ -19,6 +19,7 @@ interface CanvasViewportProps {
   focusedPanelId?: string | null;
   graphics: GraphicItem[];
   onGraphicChange?: (items: GraphicItem[]) => void;
+  themeId?: string;
 }
 
 export const CanvasViewport: React.FC<CanvasViewportProps> = ({
@@ -28,6 +29,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
   focusedPanelId,
   graphics,
   onGraphicChange,
+  themeId,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -117,6 +119,11 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
     if (!engineRef.current || !focusedPanelId) return;
     engineRef.current.focusPanel(focusedPanelId);
   }, [focusedPanelId]);
+
+  useEffect(() => {
+    if (!engineRef.current) return;
+    engineRef.current.updateTheme();
+  }, [themeId]);
 
   return (
     <div className="canvas-viewport-container" ref={containerRef}>
