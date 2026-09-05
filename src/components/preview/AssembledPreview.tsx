@@ -9,7 +9,9 @@ import {
   Camera,
   Layers,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { DielineResult, PanelFace } from '../../core/dieline/types';
 import { GraphicItem } from '../../core/graphics/types';
@@ -53,6 +55,16 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
   // All-Sides Proof Sheet drawer open/closed state
   const [showSidesStrip, setShowSidesStrip] = useState<boolean>(true);
   const [selectedPanelId, setSelectedPanelId] = useState<string | null>(null);
+  const scrollStripRef = useRef<HTMLDivElement>(null);
+
+  const scrollProofStrip = (dir: 'left' | 'right') => {
+    if (scrollStripRef.current) {
+      scrollStripRef.current.scrollBy({
+        left: dir === 'left' ? -240 : 240,
+        behavior: 'smooth',
+      });
+    }
+  };
 
   // Angle preset snapping
   const snapToAngle = (preset: ViewAngle) => {
@@ -111,12 +123,20 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
     }
   };
 
-  // Mouse wheel scrolling over preview rotates 360 degrees
+  // Mouse wheel scrolling: spins turntable when over canvas, scrolls proof sheet when over strip
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const onWheelHandler = (e: WheelEvent) => {
+      const target = e.target as HTMLElement | null;
+      const proofStrip = target?.closest('.preview-sides-strip') as HTMLElement | null;
+      if (proofStrip) {
+        e.preventDefault();
+        proofStrip.scrollLeft += (e.deltaY !== 0 ? e.deltaY : e.deltaX) * 1.5;
+        return;
+      }
+
       e.preventDefault();
       const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
       setYaw((prev) => {
@@ -187,43 +207,44 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
   }, [dieline, graphics, settings]);
 
   // Material color palettes
+  // Material color palettes with distinct fold-line creases
   const materialStyles = useMemo(() => {
     switch (material) {
       case 'kraft':
         return {
           base: '#bfa074',
-          stroke: '#8a6e46',
-          highlight: '#d5b991',
-          shadow: '#8c6c41',
-          innerFill: '#9e7949',
+          stroke: '#6d4c26', // Crisp dark scored crease
+          highlight: '#e0c7a5',
+          shadow: '#785328',
+          innerFill: '#8c6030',
           name: 'Kraft Cardboard',
         };
       case 'dark':
         return {
           base: '#1e293b',
-          stroke: '#334155',
+          stroke: '#64748b', // Clear slate edge crease
           highlight: '#384860',
           shadow: '#0f172a',
-          innerFill: '#111827',
+          innerFill: '#0b1120',
           name: 'Midnight Dark',
         };
       case 'cream':
         return {
           base: '#fef3c7',
-          stroke: '#d97706',
+          stroke: '#b47820', // Warm golden fold line
           highlight: '#fffbeb',
-          shadow: '#fcd34d',
-          innerFill: '#fef08a',
+          shadow: '#d99b35',
+          innerFill: '#eed886',
           name: 'Bakery Cream',
         };
       case 'white':
       default:
         return {
           base: '#f1f5f9',
-          stroke: '#cbd5e1',
+          stroke: '#475569', // Crisp slate crease line (NEVER matching fill!)
           highlight: '#ffffff',
           shadow: '#94a3b8',
-          innerFill: '#e2e8f0',
+          innerFill: '#cbd5e1',
           name: 'Clay-Coated White',
         };
     }
@@ -242,27 +263,37 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
     };
   }, [lighting]);
 
-  // Calculate dynamic fill for a face based on its lighting angle
+  // Calculate dynamic continuous fill for a face based on its lighting angle
   const getFaceFill = (lightingFactor: number) => {
+    // Normal lighting factor ranges between 0.40 and 1.28
+    const t = Math.max(0, Math.min(1, (lightingFactor - 0.40) / 0.88));
+
     if (material === 'kraft') {
-      if (lightingFactor > 1.08) return '#d5b991';
-      if (lightingFactor < 0.88) return '#9e7949';
-      return '#bfa074';
+      // Deep shadow kraft: rgb(130, 95, 55) -> Highlight kraft: rgb(225, 195, 155)
+      const r = Math.round(130 + t * 95);
+      const g = Math.round(95 + t * 100);
+      const b = Math.round(55 + t * 100);
+      return `rgb(${r}, ${g}, ${b})`;
     }
     if (material === 'dark') {
-      if (lightingFactor > 1.08) return '#334155';
-      if (lightingFactor < 0.88) return '#0f172a';
-      return '#1e293b';
+      // Deep midnight: rgb(15, 23, 42) -> Illuminated slate: rgb(55, 75, 105)
+      const r = Math.round(15 + t * 40);
+      const g = Math.round(23 + t * 52);
+      const b = Math.round(42 + t * 63);
+      return `rgb(${r}, ${g}, ${b})`;
     }
     if (material === 'cream') {
-      if (lightingFactor > 1.08) return '#fffbeb';
-      if (lightingFactor < 0.88) return '#fde68a';
-      return '#fef3c7';
+      // Warm bakery shadow: rgb(235, 210, 145) -> Ivory highlight: rgb(255, 253, 245)
+      const r = Math.round(235 + t * 20);
+      const g = Math.round(210 + t * 43);
+      const b = Math.round(145 + t * 100);
+      return `rgb(${r}, ${g}, ${b})`;
     }
-    // White
-    if (lightingFactor > 1.08) return '#ffffff';
-    if (lightingFactor < 0.88) return '#cbd5e1';
-    return '#f1f5f9';
+    // White: Crisp shadow: rgb(180, 195, 215) -> Crisp bright highlight: rgb(255, 255, 255)
+    const r = Math.round(180 + t * 75);
+    const g = Math.round(195 + t * 60);
+    const b = Math.round(215 + t * 40);
+    return `rgb(${r}, ${g}, ${b})`;
   };
 
   // High-res Mockup PNG Export
@@ -593,102 +624,12 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
           />
         )}
 
-        {/* Template-Specific Interior Decorations */}
-        {dieline.templateId === 'burger-box' && openness > 0.15 && (
-          <g opacity={Math.min(1, openness * 1.5)}>
-            <ellipse cx="400" cy="335" rx="55" ry="24" fill="#ca8a04" stroke="#854d0e" strokeWidth={1} />
-            <ellipse cx="400" cy="328" rx="52" ry="18" fill="#451a03" stroke="#292524" strokeWidth={1} />
-            <path d="M 350 326 Q 400 338 450 326" stroke="#22c55e" strokeWidth={5} strokeLinecap="round" />
-            <path d="M 355 330 Q 400 342 445 330" stroke="#ef4444" strokeWidth={4} strokeLinecap="round" />
-            <path d="M 360 334 Q 400 346 440 334" stroke="#eab308" strokeWidth={3} strokeLinecap="round" />
-          </g>
-        )}
-
-        {dieline.templateId === 'pizza-box' && openness > 0.15 && (
-          <g opacity={Math.min(1, openness * 1.5)}>
-            <ellipse cx="400" cy="335" rx="85" ry="42" fill="#fde047" stroke="#ca8a04" strokeWidth={1.5} />
-            <ellipse cx="400" cy="335" rx="76" ry="36" fill="#ef4444" opacity={0.6} />
-            {/* Pepperoni slices */}
-            {[
-              { cx: 370, cy: 330 },
-              { cx: 430, cy: 335 },
-              { cx: 400, cy: 320 },
-              { cx: 390, cy: 345 },
-              { cx: 420, cy: 325 },
-            ].map((pep, pidx) => (
-              <ellipse key={`pep-${pidx}`} cx={pep.cx} cy={pep.cy} rx={9} ry={5} fill="#b91c1c" />
-            ))}
-          </g>
-        )}
-
-        {dieline.templateId === 'fries-scoop-box' && (
-          <g>
-            {[
-              { x1: 360, y1: 290, x2: 350, y2: 215, w: 11, fill: '#f59e0b' },
-              { x1: 375, y1: 285, x2: 370, y2: 195, w: 12, fill: '#fbbf24' },
-              { x1: 395, y1: 280, x2: 395, y2: 185, w: 13, fill: '#f59e0b' },
-              { x1: 415, y1: 285, x2: 420, y2: 190, w: 12, fill: '#fbbf24' },
-              { x1: 435, y1: 290, x2: 445, y2: 210, w: 11, fill: '#f59e0b' },
-              { x1: 380, y1: 290, x2: 385, y2: 225, w: 10, fill: '#d97706' },
-              { x1: 410, y1: 290, x2: 405, y2: 220, w: 10, fill: '#d97706' },
-            ].map((fry, idx) => (
-              <line
-                key={`fry-${idx}`}
-                x1={fry.x1}
-                y1={fry.y1}
-                x2={fry.x2}
-                y2={fry.y2}
-                stroke={fry.fill}
-                strokeWidth={fry.w}
-                strokeLinecap="round"
-              />
-            ))}
-          </g>
-        )}
-
-        {dieline.templateId === 'bread-loaf-bag' && (
-          <g opacity={0.88}>
-            <rect x="330" y="270" width="140" height="150" rx="20" fill="#fde68a" stroke="#d97706" strokeWidth={1.5} />
-            {[0, 1, 2, 3, 4, 5, 6].map(i => (
-              <line
-                key={`slice-${i}`}
-                x1={345 + i * 16}
-                y1={270}
-                x2={345 + i * 16}
-                y2={420}
-                stroke="#d97706"
-                strokeWidth={1}
-                strokeDasharray="4 2"
-              />
-            ))}
-          </g>
-        )}
-
-        {dieline.templateId === 'dessert-sleeve-box' && openness > 0.05 && (
-          <g opacity={0.95}>
-            {[
-              { cx: 400, cy: 385, color: '#f43f5e' },
-              { cx: 435, cy: 385, color: '#10b981' },
-              { cx: 365, cy: 385, color: '#f59e0b' },
-            ].map((mac, idx) => (
-              <ellipse
-                key={`mac-${idx}`}
-                cx={mac.cx}
-                cy={mac.cy}
-                rx={14}
-                ry={9}
-                fill={mac.color}
-                stroke="rgba(0,0,0,0.15)"
-                strokeWidth={1}
-              />
-            ))}
-          </g>
-        )}
-
         {/* 3D Depth-Sorted Packaging Faces */}
         {model.faces.map((face) => {
           const fill = getFaceFill(face.lighting);
-          const stroke = materialStyles.stroke;
+          const isHovered = hoveredFaceName === face.name;
+          const stroke = isHovered ? 'var(--accent-primary, #06b6d4)' : materialStyles.stroke;
+          const strokeW = isHovered ? 2.4 : 1.4;
 
           return (
             <g
@@ -696,23 +637,26 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
               className="assembled-face-group"
               onMouseEnter={() => setHoveredFaceName(face.name)}
               onMouseLeave={() => setHoveredFaceName(null)}
+              style={{ cursor: 'pointer' }}
             >
-              {/* Base Geometry */}
+              {/* Base Geometry with Crisp Creases */}
               {face.pathD ? (
                 <path
                   d={face.pathD}
                   fill={fill}
                   stroke={stroke}
-                  strokeWidth={1.2}
+                  strokeWidth={strokeW}
                   strokeLinejoin="round"
+                  strokeLinecap="round"
                 />
               ) : (
                 <polygon
                   points={face.points.map(p => `${p.x},${p.y}`).join(' ')}
                   fill={fill}
                   stroke={stroke}
-                  strokeWidth={1.2}
+                  strokeWidth={strokeW}
                   strokeLinejoin="round"
+                  strokeLinecap="round"
                 />
               )}
 
@@ -753,10 +697,10 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                         {g.type === 'image' && g.src && (
                           <image
                             href={g.src}
-                            x={-targetW * 0.4}
-                            y={-targetH * 0.4}
-                            width={targetW * 0.8}
-                            height={targetH * 0.8}
+                            x={-30}
+                            y={-30}
+                            width={60}
+                            height={60}
                             preserveAspectRatio="xMidYMid meet"
                           />
                         )}
@@ -773,19 +717,9 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                         )}
 
                         {g.type === 'barcode' && (
-                          <g transform="translate(-40, -15)">
-                            <rect x={0} y={0} width={80} height={30} fill="#ffffff" rx={2} />
-                            {[2, 7, 11, 17, 23, 27, 34, 40, 47, 52, 58, 65, 71].map((bx, bidx) => (
-                              <line
-                                key={bidx}
-                                x1={bx}
-                                y1={3}
-                                x2={bx}
-                                y2={27}
-                                stroke="#000000"
-                                strokeWidth={bidx % 2 === 0 ? 3 : 1.5}
-                              />
-                            ))}
+                          <g>
+                            <rect x={-30} y={-14} width={60} height={28} fill="#ffffff" />
+                            <rect x={-28} y={-12} width={56} height={24} fill="#000000" opacity={0.88} />
                           </g>
                         )}
                       </g>
@@ -794,15 +728,13 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                 })}
               </g>
 
-              {/* Subtle Crease Accent Lines */}
-              {!face.pathD && face.points.length >= 4 && (
-                <line
-                  x1={face.points[0].x}
-                  y1={face.points[0].y}
-                  x2={face.points[1].x}
-                  y2={face.points[1].y}
-                  stroke="rgba(255, 255, 255, 0.25)"
-                  strokeWidth={1}
+              {/* Subtle face border highlight */}
+              {face.points.length >= 3 && !face.pathD && (
+                <polygon
+                  points={face.points.map(p => `${p.x},${p.y}`).join(' ')}
+                  fill="none"
+                  stroke={isHovered ? 'var(--accent-primary, #06b6d4)' : 'rgba(255, 255, 255, 0.15)'}
+                  strokeWidth={0.8}
                 />
               )}
             </g>
@@ -824,20 +756,45 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
           <div className="sides-header-title">
             <Layers size={13} style={{ color: 'var(--accent-primary)' }} />
             <span>All-Sides Proof Sheet ({dieline.panels.length} Sides)</span>
-            <span className="sides-header-hint">• Scroll to inspect all panels • Click to spin 3D view</span>
+            <span className="sides-header-hint">• Scroll or click arrows to inspect all panels • Click to spin 3D view</span>
           </div>
-          <button
-            type="button"
-            className="sides-toggle-btn"
-            onClick={() => setShowSidesStrip(!showSidesStrip)}
-            title={showSidesStrip ? 'Collapse Sides Strip' : 'Expand All Sides Strip'}
-          >
-            {showSidesStrip ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <button
+              type="button"
+              className="sides-toggle-btn"
+              onClick={() => scrollProofStrip('left')}
+              title="Scroll Panels Left"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <button
+              type="button"
+              className="sides-toggle-btn"
+              onClick={() => scrollProofStrip('right')}
+              title="Scroll Panels Right"
+            >
+              <ChevronRight size={14} />
+            </button>
+            <div style={{ width: '1px', height: '12px', background: 'var(--border-subtle)', margin: '0 4px' }} />
+            <button
+              type="button"
+              className="sides-toggle-btn"
+              onClick={() => setShowSidesStrip(!showSidesStrip)}
+              title={showSidesStrip ? 'Collapse Sides Strip' : 'Expand All Sides Strip'}
+            >
+              {showSidesStrip ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+            </button>
+          </div>
         </div>
 
         {showSidesStrip && (
-          <div className="preview-sides-strip" tabIndex={0} role="region" aria-label="All Packaging Sides Scroll Strip">
+          <div
+            ref={scrollStripRef}
+            className="preview-sides-strip"
+            tabIndex={0}
+            role="region"
+            aria-label="All Packaging Sides Scroll Strip"
+          >
             {dieline.panels.map((panel) => {
               const panelGraphics = graphics.filter(g => g.panelId === panel.id);
               const isSelected = selectedPanelId === panel.id;

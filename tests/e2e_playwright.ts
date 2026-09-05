@@ -166,12 +166,8 @@ async function runTests() {
     await selectTemplate('Pizza Box');
     const opennessSlider = page.locator('.openness-slider');
     if (await opennessSlider.isVisible()) {
-      await opennessSlider.evaluate((el: HTMLInputElement) => {
-        el.value = '0.65';
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-      });
-      await page.waitForTimeout(400);
+      await opennessSlider.fill('0.65');
+      await page.waitForTimeout(500);
     }
     const pizzaPath = path.join(SCREENSHOT_DIR, '08_pizza_box_open_lid.png');
     await page.screenshot({ path: pizzaPath });

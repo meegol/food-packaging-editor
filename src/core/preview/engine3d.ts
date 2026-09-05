@@ -19,11 +19,11 @@ export interface Face3DDefinition {
   id: string;
   name: string;
   panelId: string;
-  // Vertices ordered CCW when viewed from outside: [Top-Left, Top-Right, Bottom-Right, Bottom-Left]
+  // Vertices ordered CCW when viewed from outside
   vertices: Vector3[];
   // Optional custom path generator given projected 2D points
   pathDGenerator?: (pts: Vector2[]) => string;
-  // If true, backface culling is disabled (e.g. transparent film, open wrapper)
+  // If true, backface culling is disabled (e.g. open carton interior, transparent film)
   doubleSided?: boolean;
 }
 
@@ -97,11 +97,14 @@ export function rotatePoint3D(p: Vector3, yawRad: number, pitchRad: number): Vec
 }
 
 /**
- * Projects a rotated 3D point onto the 2D viewport using perspective projection.
+ * Projects a rotated 3D point onto the 2D viewport using true perspective projection.
+ * Camera is located at (0, 0, cam.distance) looking towards origin (0,0,0).
  */
 export function projectPoint3D(p: Vector3, cam: Camera3D): Vector2 {
   const effDist = cam.distance;
-  const fovFactor = effDist / Math.max(10, effDist + p.z);
+  // Distance from camera to point: effDist - p.z
+  const dist = Math.max(100, effDist - p.z);
+  const fovFactor = effDist / dist;
   const scale = fovFactor * (cam.zoom || 1);
 
   // SVG Y goes downward, 3D Y goes upward
@@ -112,21 +115,43 @@ export function projectPoint3D(p: Vector3, cam: Camera3D): Vector2 {
 }
 
 /**
- * Calculates the studio lighting factor for a rotated surface normal.
+ * Calculates the exact surface normal of a 3D polygon using Newell's method.
+ * Negated because vertices are ordered [Top-Left, Top-Right, Bottom-Right, Bottom-Left] (CW).
+ */
+export function calculatePolygonNormal(verts: Vector3[]): Vector3 {
+  let nx = 0;
+  let ny = 0;
+  let nz = 0;
+  const n = verts.length;
+  for (let i = 0; i < n; i++) {
+    const curr = verts[i];
+    const next = verts[(i + 1) % n];
+    nx += (curr.y - next.y) * (curr.z + next.z);
+    ny += (curr.z - next.z) * (curr.x + next.x);
+    nz += (curr.x - next.x) * (curr.y + next.y);
+  }
+  return normalize3({ x: -nx, y: -ny, z: -nz });
+}
+
+/**
+ * Calculates studio lighting factor (0.40 to 1.28) for a rotated surface normal.
+ * Uses a balanced 3-point studio lighting setup (Key, Fill, and Rim/Top bounce).
  */
 export function calculateLighting(norm: Vector3): number {
   // Key light: upper-left-front softbox
   const keyLight = normalize3({ x: -0.45, y: 0.75, z: 0.55 });
   // Fill light: right-front softer lamp
-  const fillLight = normalize3({ x: 0.55, y: 0.25, z: 0.4 });
+  const fillLight = normalize3({ x: 0.65, y: 0.35, z: 0.45 });
+  // Top rim / overhead ambient light
+  const topLight = normalize3({ x: 0, y: 1.0, z: 0.1 });
 
   const dotKey = Math.max(0, dot3(norm, keyLight));
   const dotFill = Math.max(0, dot3(norm, fillLight));
+  const dotTop = Math.max(0, dot3(norm, topLight));
 
-  // Base ambient + diffuse contributions
   const ambient = 0.42;
-  const factor = ambient + 0.48 * dotKey + 0.18 * dotFill;
-  return Math.max(0.35, Math.min(1.28, factor));
+  const factor = ambient + 0.46 * dotKey + 0.22 * dotFill + 0.15 * dotTop;
+  return Math.max(0.4, Math.min(1.28, factor));
 }
 
 /**
@@ -149,39 +174,46 @@ export function projectFaces3D(
     // Rotate all vertices into camera eye space
     const rotVerts = face.vertices.map((v) => rotatePoint3D(v, yawRad, pitchRad));
 
-    // Calculate eye-space surface normal using quad Top-Left/Right/Bottom convention:
-    // right = v1 - v0, up = v0 - v3
-    // norm = right x up
-    const v0 = rotVerts[0];
-    const v1 = rotVerts[1];
-    const v3 = rotVerts.length >= 4 ? rotVerts[3] : rotVerts[2];
+    // Calculate eye-space surface normal using Newell's method
+    let norm = calculatePolygonNormal(rotVerts);
 
-    const right: Vector3 = { x: v1.x - v0.x, y: v1.y - v0.y, z: v1.z - v0.z };
-    const up: Vector3 = { x: v0.x - v3.x, y: v0.y - v3.y, z: v0.z - v3.z };
-    const norm = normalize3(cross3(right, up));
-
-    // View vector from face vertex v0 to camera
-    const viewVec: Vector3 = {
-      x: cameraPosRot.x - v0.x,
-      y: cameraPosRot.y - v0.y,
-      z: cameraPosRot.z - v0.z,
+    // Calculate face centroid in eye space
+    let cx = 0;
+    let cy = 0;
+    let cz = 0;
+    for (const rv of rotVerts) {
+      cx += rv.x;
+      cy += rv.y;
+      cz += rv.z;
+    }
+    const centroid: Vector3 = {
+      x: cx / rotVerts.length,
+      y: cy / rotVerts.length,
+      z: cz / rotVerts.length,
     };
 
-    // Backface culling: face points towards camera if dot(norm, viewVec) > 0
+    // View vector from centroid to camera (0, 0, cam.distance)
+    const viewVec: Vector3 = {
+      x: cameraPosRot.x - centroid.x,
+      y: cameraPosRot.y - centroid.y,
+      z: cameraPosRot.z - centroid.z,
+    };
+
     const dotView = dot3(norm, viewVec);
-    const isFrontFacing = dotView > 0 || face.doubleSided === true;
+    let isFrontFacing = dotView > 0;
+
+    // If double-sided and facing away, invert normal so inner surface receives proper shading
+    if (!isFrontFacing && face.doubleSided === true) {
+      norm = { x: -norm.x, y: -norm.y, z: -norm.z };
+      isFrontFacing = true;
+    }
 
     if (!isFrontFacing) {
-      continue; // Cull invisible rear faces for clean rendering
+      continue; // Cull rear-facing closed faces
     }
 
     // 2D Perspective Projection
     const points2D = rotVerts.map((rv) => projectPoint3D(rv, cam));
-
-    // Calculate average Z for Painter's algorithm depth sorting
-    let sumZ = 0;
-    for (const rv of rotVerts) sumZ += rv.z;
-    const avgZ = sumZ / rotVerts.length;
 
     // Studio directional lighting
     const lighting = calculateLighting(norm);
@@ -194,7 +226,7 @@ export function projectFaces3D(
       name: face.name,
       panelId: face.panelId,
       points: points2D,
-      avgZ,
+      avgZ: centroid.z,
       lighting,
       isFrontFacing,
       pathD,
@@ -202,13 +234,10 @@ export function projectFaces3D(
     });
   }
 
-  // Painter's Algorithm: Furthest faces (lowest Z or greatest distance) drawn FIRST,
-  // nearest faces (closest to camera, largest Z) drawn LAST on top.
-  // In camera eye space, positive Z points toward camera, so sort by avgZ ASCENDING.
+  // Painter's Algorithm: lowest Z (furthest) drawn FIRST, highest Z (closest) drawn LAST
   projected.sort((a, b) => a.avgZ - b.avgZ);
 
-  // Robust fallback: if all faces were culled at an extreme angle (e.g. open carton top),
-  // render all faces as double-sided so model is never blank
+  // Fallback: if all faces were culled at an extreme angle, render all as double-sided
   if (projected.length === 0 && faces.length > 0) {
     for (const face of faces) {
       const rotVerts = face.vertices.map((v) => rotatePoint3D(v, yawRad, pitchRad));
