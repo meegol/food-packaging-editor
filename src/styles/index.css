@@ -713,6 +713,48 @@ select option {
   pointer-events: none;
 }
 
+/* 3D Assembled Preview Drag-and-Drop Overlay & Indicators */
+.preview-drag-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.60);
+  backdrop-filter: blur(3px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 25;
+  pointer-events: none;
+}
+
+.preview-drag-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 24px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1.5px solid var(--accent-secondary, #38bdf8);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.3);
+  animation: preview-pulse-glow 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes preview-pulse-glow {
+  from {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 10px rgba(56, 189, 248, 0.2);
+    transform: scale(0.99);
+  }
+  to {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 24px rgba(56, 189, 248, 0.5);
+    transform: scale(1.01);
+  }
+}
+
 /* Panel Studio Card */
 .panel-studio-card {
   display: flex;
@@ -1245,6 +1287,13 @@ select option {
 .preview-side-card.active {
   border-color: var(--accent-secondary);
   box-shadow: 0 0 0 1.5px var(--accent-secondary);
+}
+
+.preview-side-card.drop-target {
+  border: 2px dashed var(--accent-secondary, #38bdf8) !important;
+  background-color: rgba(56, 189, 248, 0.16) !important;
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(56, 189, 248, 0.35);
 }
 
 .side-card-preview-box {

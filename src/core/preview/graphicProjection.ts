@@ -67,6 +67,23 @@ export function mapPanelGraphicsToFace(
     const sX = (item.scaleX ?? 1) * scaleFactor;
     const sY = (item.scaleY ?? 1) * scaleFactor;
 
+    // Dimension computation for image, icon, and code items
+    let itemW: number | undefined;
+    let itemH: number | undefined;
+
+    if (item.type === 'image' || item.type === 'icon') {
+      const nw = item.naturalWidth || item.width || (item.type === 'image' ? 120 : 40);
+      const nh = item.naturalHeight || item.height || (item.type === 'image' ? 120 : 40);
+      
+      // Effective dimension on 2D panel
+      const renderedW = item.scaleX !== undefined ? nw * item.scaleX : pw * (item.type === 'image' ? 0.70 : 0.35);
+      const renderedH = item.scaleY !== undefined ? nh * item.scaleY : ph * (item.type === 'image' ? 0.70 : 0.35);
+      
+      // Proportional dimension on 3D face
+      itemW = (renderedW / pw) * targetLocalW;
+      itemH = (renderedH / ph) * targetLocalH;
+    }
+
     return {
       id: item.id,
       type: item.type,
@@ -79,6 +96,8 @@ export function mapPanelGraphicsToFace(
       textAlign: item.textAlign ?? 'center',
       x: localX,
       y: localY,
+      width: itemW,
+      height: itemH,
       scaleX: sX,
       scaleY: sY,
       rotation: item.angle ?? 0,

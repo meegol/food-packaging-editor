@@ -18,6 +18,8 @@ export interface ProjectedGraphic {
   // Transform in face coordinate system (normalized 0..1 or localized mm)
   x: number;
   y: number;
+  width?: number;
+  height?: number;
   scaleX: number;
   scaleY: number;
   rotation: number; // in degrees

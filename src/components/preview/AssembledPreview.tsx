@@ -11,7 +11,8 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  UploadCloud
 } from 'lucide-react';
 import { DielineResult, PanelFace } from '../../core/dieline/types';
 import { GraphicItem } from '../../core/graphics/types';
@@ -19,7 +20,8 @@ import {
   ViewAngle, 
   MaterialFinish, 
   StudioLighting, 
-  PreviewSettings 
+  PreviewSettings,
+  AssembledFaceData
 } from '../../core/preview/previewTypes';
 import { generateAssembledModel } from '../../core/preview/assembledBoxModels';
 import { getQuadAffineMatrix } from '../../core/preview/graphicProjection';
@@ -28,11 +30,17 @@ interface AssembledPreviewProps {
   dieline: DielineResult;
   graphics: GraphicItem[];
   themeId?: string;
+  onAddGraphic?: (item: GraphicItem) => void;
+  onSelectPanel?: (panelId: string) => void;
+  activePanelId?: string | null;
 }
 
 export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
   dieline,
   graphics,
+  onAddGraphic,
+  onSelectPanel,
+  activePanelId,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,6 +53,95 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
   // Drag interaction state
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const lastMousePos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Drag-and-drop image states onto 3D faces or proof sheet cards
+  const [isDragOverPreview, setIsDragOverPreview] = useState<boolean>(false);
+  const [dragTargetFace, setDragTargetFace] = useState<AssembledFaceData | null>(null);
+  const [dragTargetPanelId, setDragTargetPanelId] = useState<string | null>(null);
+
+  const processImageDrop = (file: File, targetPanelId: string) => {
+    if (!file.type.startsWith('image/') || !onAddGraphic) return;
+    const targetPanel = dieline.panels.find(p => p.id === targetPanelId);
+    if (!targetPanel) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const src = ev.target?.result as string;
+      if (!src) return;
+
+      const img = new Image();
+      img.onload = () => {
+        const nw = img.naturalWidth || 200;
+        const nh = img.naturalHeight || 200;
+        const pw = targetPanel.bounds.width;
+        const ph = targetPanel.bounds.height;
+        const fitRatio = 0.70;
+        const scaleFit = Math.min((pw * fitRatio) / nw, (ph * fitRatio) / nh, 1);
+
+        const newItem: GraphicItem = {
+          id: `img-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          panelId: targetPanel.id,
+          type: 'image',
+          src,
+          fileName: file.name,
+          x: targetPanel.center.x,
+          y: targetPanel.center.y,
+          scaleX: scaleFit,
+          scaleY: scaleFit,
+          naturalWidth: nw,
+          naturalHeight: nh,
+          width: nw * scaleFit,
+          height: nh * scaleFit,
+          clipToPanel: true,
+        };
+
+        onAddGraphic(newItem);
+        if (onSelectPanel) {
+          onSelectPanel(targetPanel.id);
+        }
+      };
+      img.src = src;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePreviewDrop = (e: React.DragEvent, faceOverride?: AssembledFaceData) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOverPreview(false);
+    const chosenFace = faceOverride || dragTargetFace;
+    setDragTargetFace(null);
+    setDragTargetPanelId(null);
+
+    if (!e.dataTransfer.files || !e.dataTransfer.files[0]) return;
+    const file = e.dataTransfer.files[0];
+
+    // Determine target panel
+    let targetPanelId = chosenFace?.panelId;
+    if (!targetPanelId && activePanelId) {
+      targetPanelId = activePanelId;
+    }
+    if (!targetPanelId) {
+      const preferred = dieline.panels.find(p => p.id.includes('front') || p.id.includes('lid') || p.id.includes('top'));
+      targetPanelId = preferred ? preferred.id : dieline.panels[0]?.id;
+    }
+    if (!targetPanelId) return;
+
+    processImageDrop(file, targetPanelId);
+  };
+
+  const handleProofCardDrop = (e: React.DragEvent, panel: PanelFace) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOverPreview(false);
+    setDragTargetPanelId(null);
+    setDragTargetFace(null);
+
+    if (!e.dataTransfer.files || !e.dataTransfer.files[0]) return;
+    const file = e.dataTransfer.files[0];
+    processImageDrop(file, panel.id);
+    snapToPanel(panel);
+  };
 
   // Material & studio lighting
   const [material, setMaterial] = useState<MaterialFinish>('white');
@@ -365,7 +462,46 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setIsDragOverPreview(true);
+      }}
+      onDragLeave={(e) => {
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (rect) {
+          if (
+            e.clientX <= rect.left ||
+            e.clientX >= rect.right ||
+            e.clientY <= rect.top ||
+            e.clientY >= rect.bottom
+          ) {
+            setIsDragOverPreview(false);
+            setDragTargetFace(null);
+            setDragTargetPanelId(null);
+          }
+        }
+      }}
+      onDrop={(e) => handlePreviewDrop(e)}
     >
+      {/* Drag-and-Drop Image Overlay */}
+      {isDragOverPreview && (
+        <div className="preview-drag-overlay">
+          <div className="preview-drag-indicator">
+            <UploadCloud size={32} color="var(--accent-secondary, #38bdf8)" />
+            <div style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff' }}>
+              {dragTargetFace
+                ? `Drop image onto face: ${dragTargetFace.name}`
+                : dragTargetPanelId
+                ? `Drop image onto panel: ${dieline.panels.find(p => p.id === dragTargetPanelId)?.name}`
+                : 'Drop image onto 3D packaging model'}
+            </div>
+            <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.7)' }}>
+              Projects seamlessly onto 3D packaging geometry & updates Proof Sheet
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. Top Control Bar (Angle Presets, Material, Studio, Export) */}
       <div className="preview-toolbar">
         {/* Cardinal Face Snap Presets */}
@@ -587,6 +723,11 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
         viewBox="0 0 800 700"
         className="assembled-svg-viewport"
         style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragOverPreview(true);
+        }}
+        onDrop={(e) => handlePreviewDrop(e)}
       >
         <defs>
           {/* Ground Contact Shadow Filter */}
@@ -628,15 +769,27 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
         {model.faces.map((face) => {
           const fill = getFaceFill(face.lighting);
           const isHovered = hoveredFaceName === face.name;
-          const stroke = isHovered ? 'var(--accent-primary, #06b6d4)' : materialStyles.stroke;
-          const strokeW = isHovered ? 2.4 : 1.4;
+          const isDropTarget = dragTargetFace?.id === face.id;
+          const stroke = isDropTarget
+            ? 'var(--accent-secondary, #38bdf8)'
+            : isHovered
+            ? 'var(--accent-primary, #06b6d4)'
+            : materialStyles.stroke;
+          const strokeW = isDropTarget ? 3.5 : isHovered ? 2.4 : 1.4;
 
           return (
             <g
               key={face.id}
-              className="assembled-face-group"
+              className={`assembled-face-group ${isDropTarget ? 'drop-target-face' : ''}`}
               onMouseEnter={() => setHoveredFaceName(face.name)}
               onMouseLeave={() => setHoveredFaceName(null)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragOverPreview(true);
+                setDragTargetFace(face);
+              }}
+              onDrop={(e) => handlePreviewDrop(e, face)}
               style={{ cursor: 'pointer' }}
             >
               {/* Base Geometry with Crisp Creases */}
@@ -672,11 +825,13 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                   const targetH = Math.hypot(p3.x - p0.x, p3.y - p0.y) || 100;
 
                   const transformMatrix = getQuadAffineMatrix(p0, p1, p2, p3, targetW, targetH);
+                  const imgW = g.width || 60;
+                  const imgH = g.height || 60;
 
                   return (
                     <g key={g.id} transform={transformMatrix}>
                       <g
-                        transform={`translate(${g.x}, ${g.y}) rotate(${g.rotation}) scale(${g.scaleX}, ${g.scaleY})`}
+                        transform={`translate(${g.x}, ${g.y}) rotate(${g.rotation})`}
                       >
                         {g.type === 'text' && (
                           <text
@@ -697,10 +852,10 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                         {g.type === 'image' && g.src && (
                           <image
                             href={g.src}
-                            x={-30}
-                            y={-30}
-                            width={60}
-                            height={60}
+                            x={-imgW / 2}
+                            y={-imgH / 2}
+                            width={imgW}
+                            height={imgH}
                             preserveAspectRatio="xMidYMid meet"
                           />
                         )}
@@ -708,10 +863,10 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                         {g.type === 'icon' && g.src && (
                           <image
                             href={g.src}
-                            x={-20}
-                            y={-20}
-                            width={40}
-                            height={40}
+                            x={-imgW / 2}
+                            y={-imgH / 2}
+                            width={imgW}
+                            height={imgH}
                             preserveAspectRatio="xMidYMid meet"
                           />
                         )}
@@ -798,13 +953,26 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
             {dieline.panels.map((panel) => {
               const panelGraphics = graphics.filter(g => g.panelId === panel.id);
               const isSelected = selectedPanelId === panel.id;
+              const isDropTarget = dragTargetPanelId === panel.id;
 
               return (
                 <div
                   key={panel.id}
-                  className={`preview-side-card ${isSelected ? 'active' : ''}`}
+                  className={`preview-side-card ${isSelected ? 'active' : ''} ${isDropTarget ? 'drop-target' : ''}`}
                   onClick={() => snapToPanel(panel)}
-                  title={`Click to rotate 3D view to "${panel.name}"`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragOverPreview(true);
+                    setDragTargetPanelId(panel.id);
+                  }}
+                  onDragLeave={() => {
+                    if (dragTargetPanelId === panel.id) {
+                      setDragTargetPanelId(null);
+                    }
+                  }}
+                  onDrop={(e) => handleProofCardDrop(e, panel)}
+                  title={`Click to rotate 3D view to "${panel.name}", or drop an image directly onto this card`}
                 >
                   {/* Miniature 2D SVG Proof of the Face */}
                   <div className="side-card-preview-box">
@@ -822,10 +990,17 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
 
                       {/* Render Graphics On Panel */}
                       {panelGraphics.map((g) => {
+                        const baseW = panel.bounds.width || 100;
+                        const baseH = panel.bounds.height || 100;
+                        const nw = g.naturalWidth || 100;
+                        const nh = g.naturalHeight || 100;
+                        const imgW = g.scaleX !== undefined ? nw * g.scaleX : baseW * 0.7;
+                        const imgH = g.scaleY !== undefined ? nh * g.scaleY : baseH * 0.7;
+
                         return (
                           <g
                             key={g.id}
-                            transform={`translate(${g.x}, ${g.y}) rotate(${g.angle || 0}) scale(${g.scaleX || 1}, ${g.scaleY || 1})`}
+                            transform={`translate(${g.x}, ${g.y}) rotate(${g.angle || 0})`}
                           >
                             {g.type === 'text' && (
                               <text
@@ -845,10 +1020,10 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                             {g.type === 'image' && g.src && (
                               <image
                                 href={g.src}
-                                x={-15}
-                                y={-15}
-                                width={30}
-                                height={30}
+                                x={-imgW / 2}
+                                y={-imgH / 2}
+                                width={imgW}
+                                height={imgH}
                                 preserveAspectRatio="xMidYMid meet"
                               />
                             )}
@@ -856,10 +1031,10 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                             {g.type === 'icon' && g.src && (
                               <image
                                 href={g.src}
-                                x={-10}
-                                y={-10}
-                                width={20}
-                                height={20}
+                                x={-15}
+                                y={-15}
+                                width={30}
+                                height={30}
                                 preserveAspectRatio="xMidYMid meet"
                               />
                             )}

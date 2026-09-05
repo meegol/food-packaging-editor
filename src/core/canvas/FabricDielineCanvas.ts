@@ -252,6 +252,11 @@ export class FabricDielineCanvas {
             item.scaleY = sY;
           }
 
+          item.naturalWidth = fabricImg.width;
+          item.naturalHeight = fabricImg.height;
+          item.width = (fabricImg.width || 100) * (item.scaleX ?? 1);
+          item.height = (fabricImg.height || 100) * (item.scaleY ?? 1);
+
           fabricImg.set({
             left: initialLeft,
             top: initialTop,
@@ -289,6 +294,10 @@ export class FabricDielineCanvas {
             item.scaleX = fabricImg.scaleX;
             item.scaleY = fabricImg.scaleY;
             item.angle = fabricImg.angle;
+            item.naturalWidth = fabricImg.width;
+            item.naturalHeight = fabricImg.height;
+            item.width = (fabricImg.width || 100) * (fabricImg.scaleX || 1);
+            item.height = (fabricImg.height || 100) * (fabricImg.scaleY || 1);
             if (this.onGraphicChangeCallback) {
               this.onGraphicChangeCallback([...this.graphicItems]);
             }

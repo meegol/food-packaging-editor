@@ -185,19 +185,36 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
 
       const pt = engineRef.current?.getCanvasPoint(e.clientX, e.clientY);
 
-      const newItem: GraphicItem = {
-        id: `img-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        panelId: targetPanel.id,
-        type: 'image',
-        src,
-        fileName: file.name,
-        x: pt?.x ?? targetPanel.center.x,
-        y: pt?.y ?? targetPanel.center.y,
-        clipToPanel: true,
-      };
+      const img = new Image();
+      img.onload = () => {
+        const nw = img.naturalWidth || 200;
+        const nh = img.naturalHeight || 200;
+        const pw = targetPanel.bounds.width;
+        const ph = targetPanel.bounds.height;
+        const fitRatio = 0.70;
+        const scaleFit = Math.min((pw * fitRatio) / nw, (ph * fitRatio) / nh, 1);
 
-      onAddGraphic(newItem);
-      onSelectPanel(targetPanel.id);
+        const newItem: GraphicItem = {
+          id: `img-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          panelId: targetPanel.id,
+          type: 'image',
+          src,
+          fileName: file.name,
+          x: pt?.x ?? targetPanel.center.x,
+          y: pt?.y ?? targetPanel.center.y,
+          scaleX: scaleFit,
+          scaleY: scaleFit,
+          naturalWidth: nw,
+          naturalHeight: nh,
+          width: nw * scaleFit,
+          height: nh * scaleFit,
+          clipToPanel: true,
+        };
+
+        onAddGraphic(newItem);
+        onSelectPanel(targetPanel.id);
+      };
+      img.src = src;
     };
     reader.readAsDataURL(file);
   };
@@ -231,17 +248,34 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
       const src = ev.target?.result as string;
       if (!src) return;
 
-      const newItem: GraphicItem = {
-        id: `img-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        panelId: activePanel.id,
-        type: 'image',
-        src,
-        fileName: file.name,
-        x: activePanel.center.x,
-        y: activePanel.center.y,
-        clipToPanel: true,
+      const img = new Image();
+      img.onload = () => {
+        const nw = img.naturalWidth || 200;
+        const nh = img.naturalHeight || 200;
+        const pw = activePanel.bounds.width;
+        const ph = activePanel.bounds.height;
+        const fitRatio = 0.70;
+        const scaleFit = Math.min((pw * fitRatio) / nw, (ph * fitRatio) / nh, 1);
+
+        const newItem: GraphicItem = {
+          id: `img-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          panelId: activePanel.id,
+          type: 'image',
+          src,
+          fileName: file.name,
+          x: activePanel.center.x,
+          y: activePanel.center.y,
+          scaleX: scaleFit,
+          scaleY: scaleFit,
+          naturalWidth: nw,
+          naturalHeight: nh,
+          width: nw * scaleFit,
+          height: nh * scaleFit,
+          clipToPanel: true,
+        };
+        onAddGraphic(newItem);
       };
-      onAddGraphic(newItem);
+      img.src = src;
     };
     reader.readAsDataURL(file);
     e.target.value = '';
@@ -511,6 +545,9 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
             dieline={dieline}
             graphics={graphics}
             themeId={themeId}
+            onAddGraphic={onAddGraphic}
+            onSelectPanel={(pid) => onSelectPanel(pid)}
+            activePanelId={activePanelId}
           />
         </div>
       </div>

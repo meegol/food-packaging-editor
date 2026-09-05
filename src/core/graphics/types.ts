@@ -26,6 +26,10 @@ export interface GraphicItem {
   // Spatial & transformation metrics
   x?: number;
   y?: number;
+  width?: number;
+  height?: number;
+  naturalWidth?: number;
+  naturalHeight?: number;
   scaleX?: number;
   scaleY?: number;
   angle?: number;
