@@ -24,6 +24,7 @@ interface BrandingControlsProps {
   onAddGraphic: (item: GraphicItem) => void;
   onRemoveGraphic: (id: string) => void;
   onToggleClip: (id: string) => void;
+  onUpdateGraphic?: (item: GraphicItem) => void;
   onReorderGraphic?: (id: string, direction: 'up' | 'down') => void;
   onSelectPanel: (panelId: string) => void;
 }
@@ -37,6 +38,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
   onAddGraphic,
   onRemoveGraphic,
   onToggleClip,
+  onUpdateGraphic,
   onReorderGraphic,
   onSelectPanel,
 }) => {
@@ -44,6 +46,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [clipOption, setClipOption] = useState<boolean>(true);
+  const [sideFilter, setSideFilter] = useState<'all' | 'active'>('all');
 
   const effectivePanelId = activePanelId || (panels[0]?.id ?? '');
 
@@ -76,6 +79,30 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
       handleFile(e.dataTransfer.files[0]);
     }
   };
+
+  const handleReassignPanel = (item: GraphicItem, newPanelId: string) => {
+    const targetPanel = panels.find(p => p.id === newPanelId);
+    if (!targetPanel || !onUpdateGraphic) return;
+    onUpdateGraphic({
+      ...item,
+      panelId: newPanelId,
+      x: targetPanel.center.x,
+      y: targetPanel.center.y,
+    });
+  };
+
+  const handleRotateItem = (item: GraphicItem, deg: number) => {
+    if (!onUpdateGraphic) return;
+    onUpdateGraphic({
+      ...item,
+      angle: deg,
+    });
+  };
+
+  const activeFaceCount = graphics.filter(g => g.panelId === effectivePanelId).length;
+  const displayedGraphics = sideFilter === 'active'
+    ? graphics.filter(g => g.panelId === effectivePanelId)
+    : graphics;
 
   const renderItemTypeIcon = (type: GraphicItem['type']) => {
     switch (type) {
@@ -350,9 +377,41 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
           <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
             Placed Elements Layer Stack ({graphics.length})
           </div>
+          <div style={{ display: 'flex', gap: '3px' }}>
+            <button
+              type="button"
+              onClick={() => setSideFilter('all')}
+              style={{
+                fontSize: '10px',
+                padding: '2px 5px',
+                borderRadius: '3px',
+                border: 'none',
+                backgroundColor: sideFilter === 'all' ? 'var(--accent-primary)' : 'var(--bg-surface)',
+                color: sideFilter === 'all' ? '#ffffff' : 'var(--text-muted)',
+                cursor: 'pointer',
+              }}
+            >
+              All ({graphics.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setSideFilter('active')}
+              style={{
+                fontSize: '10px',
+                padding: '2px 5px',
+                borderRadius: '3px',
+                border: 'none',
+                backgroundColor: sideFilter === 'active' ? 'var(--accent-primary)' : 'var(--bg-surface)',
+                color: sideFilter === 'active' ? '#ffffff' : 'var(--text-muted)',
+                cursor: 'pointer',
+              }}
+            >
+              This Side ({activeFaceCount})
+            </button>
+          </div>
         </div>
 
-        {graphics.length === 0 ? (
+        {displayedGraphics.length === 0 ? (
           <div style={{
             padding: '12px',
             textAlign: 'center',
@@ -361,18 +420,19 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
             backgroundColor: 'var(--bg-app)',
             borderRadius: 'var(--radius-sm)',
           }}>
-            No graphic or text elements placed on net.
+            {sideFilter === 'active'
+              ? 'No elements on active face yet.'
+              : 'No graphic or text elements placed on net.'}
           </div>
         ) : (
-          graphics.map((item, index) => {
+          displayedGraphics.map((item, index) => {
             const panel = panels.find(p => p.id === item.panelId);
             return (
               <div
                 key={item.id}
                 style={{
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
+                  flexDirection: 'column',
                   padding: '6px 8px',
                   backgroundColor: 'var(--bg-surface)',
                   borderRadius: 'var(--radius-sm)',
@@ -380,114 +440,172 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                   gap: '6px',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
-                  <div style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '3px',
-                    backgroundColor: 'var(--bg-app)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}>
-                    {item.src && item.type !== 'text' ? (
-                      <img
-                        src={item.src}
-                        alt="thumb"
-                        style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '2px' }}
-                      />
-                    ) : (
-                      renderItemTypeIcon(item.type)
-                    )}
+                {/* Item Primary Row */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+                    <div style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '3px',
+                      backgroundColor: 'var(--bg-app)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      {item.src && item.type !== 'text' ? (
+                        <img
+                          src={item.src}
+                          alt="thumb"
+                          style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '2px' }}
+                        />
+                      ) : (
+                        renderItemTypeIcon(item.type)
+                      )}
+                    </div>
+
+                    <div style={{ overflow: 'hidden' }}>
+                      <div style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                        whiteSpace: 'nowrap',
+                        textOverflow: 'ellipsis',
+                        overflow: 'hidden',
+                        maxWidth: '110px',
+                      }}>
+                        {item.type === 'text' ? item.text : (item.fileName || item.type)}
+                      </div>
+                      <div style={{ fontSize: '9px', color: 'var(--accent-secondary)' }}>
+                        {panel ? panel.name : item.panelId}
+                      </div>
+                    </div>
                   </div>
 
-                  <div style={{ overflow: 'hidden' }}>
-                    <div style={{
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      color: 'var(--text-primary)',
-                      whiteSpace: 'nowrap',
-                      textOverflow: 'ellipsis',
-                      overflow: 'hidden',
-                      maxWidth: '110px',
-                    }}>
-                      {item.type === 'text' ? item.text : (item.fileName || item.type)}
-                    </div>
-                    <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
-                      {panel ? panel.name : item.panelId}
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+                    {/* Layer Reorder */}
+                    {onReorderGraphic && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => onReorderGraphic(item.id, 'up')}
+                          disabled={index === displayedGraphics.length - 1}
+                          title="Bring Forward"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: index === displayedGraphics.length - 1 ? 'var(--border-medium)' : 'var(--text-muted)',
+                            cursor: index === displayedGraphics.length - 1 ? 'default' : 'pointer',
+                            padding: '2px',
+                          }}
+                        >
+                          <ChevronUp size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onReorderGraphic(item.id, 'down')}
+                          disabled={index === 0}
+                          title="Send Backward"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: index === 0 ? 'var(--border-medium)' : 'var(--text-muted)',
+                            cursor: index === 0 ? 'default' : 'pointer',
+                            padding: '2px',
+                          }}
+                        >
+                          <ChevronDown size={13} />
+                        </button>
+                      </>
+                    )}
+
+                    {/* Toggle Clip */}
+                    <button
+                      type="button"
+                      onClick={() => onToggleClip(item.id)}
+                      title={item.clipToPanel ? "Polygon clipping active" : "Clipping disabled"}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: item.clipToPanel ? 'var(--status-success)' : 'var(--text-muted)',
+                        cursor: 'pointer',
+                        padding: '2px',
+                      }}
+                    >
+                      <CheckCircle2 size={13} />
+                    </button>
+
+                    {/* Delete Item */}
+                    <button
+                      type="button"
+                      onClick={() => onRemoveGraphic(item.id)}
+                      title="Delete item"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        padding: '2px',
+                      }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
-                  {/* Layer Reorder */}
-                  {onReorderGraphic && (
-                    <>
+                {/* Per-Side Reassignment & Rotation Row */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingTop: '4px',
+                  borderTop: '1px dashed var(--border-subtle)',
+                  fontSize: '10px',
+                  gap: '4px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, overflow: 'hidden' }}>
+                    <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>Side:</span>
+                    <select
+                      value={item.panelId}
+                      onChange={(e) => handleReassignPanel(item, e.target.value)}
+                      style={{
+                        backgroundColor: 'var(--bg-app)',
+                        color: 'var(--text-primary)',
+                        border: '1px solid var(--border-medium)',
+                        borderRadius: '2px',
+                        fontSize: '10px',
+                        padding: '1px 3px',
+                        maxWidth: '95px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {panels.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+                    <span style={{ color: 'var(--text-muted)', marginRight: '2px' }}>Rot:</span>
+                    {[0, 90, 180, 270].map((deg) => (
                       <button
+                        key={deg}
                         type="button"
-                        onClick={() => onReorderGraphic(item.id, 'up')}
-                        disabled={index === graphics.length - 1}
-                        title="Bring Forward"
+                        onClick={() => handleRotateItem(item, deg)}
                         style={{
-                          background: 'none',
+                          fontSize: '9px',
+                          padding: '1px 3px',
+                          borderRadius: '2px',
                           border: 'none',
-                          color: index === graphics.length - 1 ? 'var(--border-medium)' : 'var(--text-muted)',
-                          cursor: index === graphics.length - 1 ? 'default' : 'pointer',
-                          padding: '2px',
+                          backgroundColor: (item.angle ?? 0) === deg ? 'var(--accent-primary)' : 'var(--bg-app)',
+                          color: (item.angle ?? 0) === deg ? '#ffffff' : 'var(--text-muted)',
+                          cursor: 'pointer',
                         }}
                       >
-                        <ChevronUp size={13} />
+                        {deg}°
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => onReorderGraphic(item.id, 'down')}
-                        disabled={index === 0}
-                        title="Send Backward"
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: index === 0 ? 'var(--border-medium)' : 'var(--text-muted)',
-                          cursor: index === 0 ? 'default' : 'pointer',
-                          padding: '2px',
-                        }}
-                      >
-                        <ChevronDown size={13} />
-                      </button>
-                    </>
-                  )}
-
-                  {/* Toggle Clip */}
-                  <button
-                    type="button"
-                    onClick={() => onToggleClip(item.id)}
-                    title={item.clipToPanel ? "Polygon clipping active" : "Clipping disabled"}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: item.clipToPanel ? 'var(--status-success)' : 'var(--text-muted)',
-                      cursor: 'pointer',
-                      padding: '2px',
-                    }}
-                  >
-                    <CheckCircle2 size={13} />
-                  </button>
-
-                  {/* Delete Item */}
-                  <button
-                    type="button"
-                    onClick={() => onRemoveGraphic(item.id)}
-                    title="Delete item"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--text-muted)',
-                      cursor: 'pointer',
-                      padding: '2px',
-                    }}
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             );

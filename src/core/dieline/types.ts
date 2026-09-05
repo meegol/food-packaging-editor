@@ -41,10 +41,12 @@ export interface PackagingDimensions {
   unit: MeasurementUnit;
 }
 
+export type TemplateCategory = 'takeout' | 'pouches' | 'containers' | 'bakery' | 'wrappers';
+
 export interface TemplateDefinition {
   id: string;
   name: string;
-  category: 'takeout' | 'pouches' | 'containers';
+  category: TemplateCategory;
   description: string;
   defaultDimensions: PackagingDimensions;
   minDimensions: {

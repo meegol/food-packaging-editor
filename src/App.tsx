@@ -131,6 +131,10 @@ export const App: React.FC = () => {
     setGraphics(prev => prev.filter(g => g.id !== id));
   };
 
+  const handleUpdateGraphic = (updated: GraphicItem) => {
+    setGraphics(prev => prev.map(g => g.id === updated.id ? updated : g));
+  };
+
   const handleToggleClip = (id: string) => {
     setGraphics(prev => prev.map(g => g.id === id ? { ...g, clipToPanel: !g.clipToPanel } : g));
   };
@@ -189,6 +193,7 @@ export const App: React.FC = () => {
           onAddGraphic={handleAddGraphic}
           onRemoveGraphic={handleRemoveGraphic}
           onToggleClip={handleToggleClip}
+          onUpdateGraphic={handleUpdateGraphic}
           onReorderGraphic={handleReorderGraphic}
         />
         <CanvasViewport
@@ -198,6 +203,7 @@ export const App: React.FC = () => {
           focusedPanelId={focusedPanelId}
           graphics={graphics}
           onGraphicChange={setGraphics}
+          onAddGraphic={handleAddGraphic}
           themeId={themeId}
         />
       </main>

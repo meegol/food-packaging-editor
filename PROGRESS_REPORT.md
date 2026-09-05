@@ -30,9 +30,18 @@ Development is structured into four sequential sprints:
 
 #### Key Deliverables Implemented:
 1. **Parametric Packaging Templates (`src/core/dieline/`):**
-   - **Burger Clamshell Box (`burgerBox.ts`):** Calculates the base tray, tapered side walls with nesting draft angles, corner dust flaps, rear hinge wall, and a top lid with front tuck flap. Includes material thickness ($t$) compensation so the lid closes smoothly over the base.
-   - **Pizza Box (`pizzaBox.ts`):** Implements a standard Roll-End Tuck Top (REFT) corrugated net. Computes double-layer roll-over sidewalls, bottom tray locking tab cutouts, rear hinge, and front locking tuck flaps.
-   - **Stand-up Ziplock Pouch (`standUpPouch.ts`):** Calculates front and back panel faces, side heat-seal borders (8 mm default), top header zone with tear notch indicators, zipper position line, and bottom expansion gusset geometry.
+   - **Burger Clamshell Box (`burgerBox.ts`):** Calculates the base tray, tapered side walls with nesting draft angles, corner dust flaps, rear hinge wall, and a top lid with front tuck flap.
+   - **Sandwich Wedge Box (`sandwichWedgeBox.ts`):** Triangular prism carton with vertical back spine, triangular sidewalls, and front slanted face with display window cutout.
+   - **Pillow Packaging Box (`pillowBox.ts`):** Curved-crease packaging with parabolic inward score lines, outward cut flaps with thumb notches, and side glue tab.
+   - **French Fries Scoop Box (`friesScoopBox.ts`):** Fast-food scoop carton with concave front curve, high arched back support wall, and interlocking fold-in base.
+   - **Dessert Window Sleeve Box (`dessertSleeveBox.ts`):** Two-piece design with sliding outer window sleeve and inner collapsible serving tray.
+   - **Round Food Tub with Lid (`roundFoodTub.ts`):** Conical frustum unwrapped body sector net, bottom base disc, circular lid top, and outer rim skirt.
+   - **Pizza Box (`pizzaBox.ts`):** Standard Roll-End Tuck Top (REFT) corrugated net with double-layer roll-over sidewalls and locking tabs.
+   - **Stand-up Ziplock Pouch (`standUpPouch.ts`):** Flexible pouch net with bottom expansion gusset, tear notches, and heat seal borders.
+   - **Side Gusset Coffee/Cookie Bag (`sideGussetBag.ts`):** Accordion side gussets with V-creases, front window cutout, tin-tie header, and block-bottom envelope fold.
+   - **Single-Serve Sachet Stick Pack (`sachetStickPack.ts`):** Slender stick pouch with fin seal seam, top & bottom heat seals, and tear notches.
+   - **Burger & Food Wrapper Sheet (`burgerWrapper.ts`):** Greaseproof deli paper wrapping sheet with central burger target zone, diagonal corner fold guides, and margin bleeds.
+   - **Sliced Bread Loaf Bag (`breadLoafBag.ts`):** Wicketed side-gusseted poly bag with top gathered twist-tie / bread clip fold indicator, clear bread crust window, and bottom heat-seal band.
 
 2. **Parametric Dimension Controls (`DimensionControls.tsx`):**
    - Live two-way inputs (sliders + numeric inputs) for Length ($L$), Width ($W$), Depth ($D$), and Board Caliper / Thickness ($t$).
@@ -82,6 +91,17 @@ Development is structured into four sequential sprints:
    - Real-time preview canvas with format validation, sample presets, and direct one-click placement onto target panel faces.
 7. **Placed Artwork & Layer Management:**
    - Dedicated branding sidebar tab with thumbnail preview, target panel assignment, clipping toggle, layer reordering (bring forward/send backward), and removal.
+8. **Per-Side Packaging Studio & Direct Canvas Drop Pipeline:**
+   - **Direct Canvas Drag-and-Drop:** Native file drop handling directly over the 2D packaging dieline, automatically calculating ray-cast point-in-polygon coordinates to anchor artwork to the specific panel under the mouse cursor.
+   - **Active Face Action Bar:** Floating contextual action pill on the canvas providing 1-click `+ Text`, `+ Image`, and `Focus` tools for the selected face.
+   - **Face Studio Drawer (`PanelList.tsx`):** Face-by-face management featuring per-face asset count badges, direct upload inputs, and element chips with visibility and deletion controls.
+   - **Side Reassignment & Flap Rotation:** Live panel reassignment dropdown and 0°/90°/180°/270° flap orientation rotation presets for typography and placed brand assets.
+9. **2D Assembled Packaging Preview & Multi-View Studio (`AssembledPreview.tsx`, `assembledBoxModels.ts`, `graphicProjection.ts`):**
+   - **Comprehensive 12-Template 2D Assembled Models:** Photorealistic 2D perspective / isometric projections of the assembled packaging products for all 12 parametric templates.
+   - **Real-Time Artwork Projection:** Maps placed brand logos, typography, barcodes, and icons from flat net panels onto visible assembled 3D perspective faces with affine transforms and clipping.
+   - **Tri-Mode Viewport Switcher:** Instant toggling between `Flat Net`, `2D Assembled`, and side-by-side `Split View` with automatic canvas re-fitting.
+   - **Interactive Studio Controls:** Angle presets (`3/4 Hero`, `Front`, `Top`, `Side`), realistic material finishes (`Clay-Coated White`, `Kraft Cardboard`, `Midnight Dark`), studio lighting backdrops, and openness/extension sliders (hinged clamshell open/close, sliding pastry trays).
+   - **High-Resolution Mockup Export:** Direct one-click export of 2400×1800 PNG mockups with soft ground shadows and SVG vector downloads.
 
 ---
 

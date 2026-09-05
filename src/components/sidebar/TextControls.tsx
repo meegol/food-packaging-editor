@@ -48,6 +48,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center');
   const [fill, setFill] = useState('#f8fafc');
   const [clipToPanel, setClipToPanel] = useState(true);
+  const [angle, setAngle] = useState<number>(0);
 
   const effectivePanelId = activePanelId || (panels[0]?.id ?? '');
 
@@ -72,6 +73,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
       textAlign,
       fill,
       clipToPanel,
+      angle,
     };
 
     onAddGraphic(newItem);
@@ -311,6 +313,41 @@ export const TextControls: React.FC<TextControlsProps> = ({
                 padding: 0,
               }}
             />
+          ))}
+        </div>
+      </div>
+
+      {/* Text Orientation / Rotation */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '6px 10px',
+        backgroundColor: 'var(--bg-app)',
+        borderRadius: 'var(--radius-sm)',
+        border: '1px solid var(--border-subtle)',
+        fontSize: '11px',
+      }}>
+        <span style={{ color: 'var(--text-secondary)' }}>Orientation (Flap Fold Angle):</span>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          {[0, 90, 180, 270].map((deg) => (
+            <button
+              key={deg}
+              type="button"
+              onClick={() => setAngle(deg)}
+              style={{
+                padding: '2px 6px',
+                fontSize: '10px',
+                fontWeight: 600,
+                borderRadius: '3px',
+                border: '1px solid var(--border-medium)',
+                backgroundColor: angle === deg ? 'var(--accent-primary)' : 'var(--bg-surface)',
+                color: angle === deg ? '#ffffff' : 'var(--text-secondary)',
+                cursor: 'pointer',
+              }}
+            >
+              {deg}°
+            </button>
           ))}
         </div>
       </div>

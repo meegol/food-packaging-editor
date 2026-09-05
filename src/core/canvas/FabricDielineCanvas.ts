@@ -1,5 +1,5 @@
 import { Canvas, Line, Polygon, FabricText, FabricImage, Textbox, FabricObject, Point as FabricPoint } from 'fabric';
-import { DielineResult } from '../dieline/types';
+import { DielineResult, PanelFace, Point } from '../dieline/types';
 import { GraphicItem } from '../graphics/types';
 
 export interface CanvasOptions {
@@ -573,6 +573,49 @@ export class FabricDielineCanvas {
     if (this.onZoomChangeCallback) {
       this.onZoomChangeCallback(Math.round(zoom * 100));
     }
+  }
+
+  public getCanvasPoint(clientX: number, clientY: number): { x: number; y: number } {
+    const rect = this.canvas.getElement().getBoundingClientRect();
+    const screenX = clientX - rect.left;
+    const screenY = clientY - rect.top;
+    const vpt = this.canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
+    return {
+      x: (screenX - vpt[4]) / vpt[0],
+      y: (screenY - vpt[5]) / vpt[3],
+    };
+  }
+
+  public isPointInPolygon(p: Point, polygon: Point[]): boolean {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const xi = polygon[i].x, yi = polygon[i].y;
+      const xj = polygon[j].x, yj = polygon[j].y;
+      const intersect = ((yi > p.y) !== (yj > p.y)) &&
+        (p.x < ((xj - xi) * (p.y - yi)) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  public findPanelAt(clientX: number, clientY: number): PanelFace | null {
+    if (!this.currentDieline) return null;
+    const pt = this.getCanvasPoint(clientX, clientY);
+
+    for (const panel of this.currentDieline.panels) {
+      // Bounding box pre-check for speed
+      if (
+        pt.x >= panel.bounds.x - 5 &&
+        pt.x <= panel.bounds.x + panel.bounds.width + 5 &&
+        pt.y >= panel.bounds.y - 5 &&
+        pt.y <= panel.bounds.y + panel.bounds.height + 5
+      ) {
+        if (this.isPointInPolygon(pt, panel.polygon)) {
+          return panel;
+        }
+      }
+    }
+    return null;
   }
 
   public destroy() {
