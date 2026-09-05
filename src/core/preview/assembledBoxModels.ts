@@ -49,6 +49,20 @@ export function generateAssembledModel(
   }
 }
 
+function findPanel(panels: Map<string, PanelFace>, ...possibleIds: string[]): PanelFace | undefined {
+  for (const id of possibleIds) {
+    const p = panels.get(id);
+    if (p) return p;
+  }
+  const firstId = possibleIds[0].toLowerCase();
+  for (const p of panels.values()) {
+    if (p.id.toLowerCase().includes(firstId) || p.name.toLowerCase().includes(firstId)) {
+      return p;
+    }
+  }
+  return undefined;
+}
+
 // -------------------------------------------------------------
 // 1. Burger Clamshell Box
 // -------------------------------------------------------------
@@ -124,46 +138,52 @@ function buildBurgerBoxModel(
   const lr2 = { x: lt1.x, y: lt1.y + lidH };
   const lr3 = { x: lt2.x, y: lt2.y + lidH };
 
+  const pBaseFront = findPanel(panels, 'base-front', 'front-wall-base');
+  const pBaseRight = findPanel(panels, 'base-right', 'right-wall-base');
+  const pLidFront = findPanel(panels, 'lid-front', 'front-wall-top');
+  const pLidRight = findPanel(panels, 'lid-right', 'right-wall-top');
+  const pLidTop = findPanel(panels, 'lid-top', 'top-lid');
+
   const faces: AssembledFaceData[] = [
     {
       id: 'base-front',
       name: 'Base Front Wall',
-      panelId: 'front-wall-base',
+      panelId: pBaseFront?.id ?? 'base-front',
       points: [bf0, bf1, bf2, bf3],
       lighting: 0.95,
-      graphics: mapPanelGraphicsToFace(panels.get('front-wall-base'), graphics, w, baseH),
+      graphics: mapPanelGraphicsToFace(pBaseFront, graphics, w, baseH),
     },
     {
       id: 'base-right',
       name: 'Base Right Wall',
-      panelId: 'right-wall-base',
+      panelId: pBaseRight?.id ?? 'base-right',
       points: [br0, br1, br2, br3],
       lighting: 0.82,
-      graphics: mapPanelGraphicsToFace(panels.get('right-wall-base'), graphics, l, baseH),
+      graphics: mapPanelGraphicsToFace(pBaseRight, graphics, l, baseH),
     },
     {
       id: 'lid-front',
       name: 'Lid Front Flap',
-      panelId: 'front-wall-top',
+      panelId: pLidFront?.id ?? 'lid-front',
       points: [lf0, lf1, lf2, lf3],
       lighting: 1.05,
-      graphics: mapPanelGraphicsToFace(panels.get('front-wall-top'), graphics, w, lidH),
+      graphics: mapPanelGraphicsToFace(pLidFront, graphics, w, lidH),
     },
     {
       id: 'lid-right',
       name: 'Lid Right Flap',
-      panelId: 'right-wall-top',
+      panelId: pLidRight?.id ?? 'lid-right',
       points: [lr0, lr1, lr2, lr3],
       lighting: 0.88,
-      graphics: mapPanelGraphicsToFace(panels.get('right-wall-top'), graphics, l, lidH),
+      graphics: mapPanelGraphicsToFace(pLidRight, graphics, l, lidH),
     },
     {
       id: 'top-lid',
       name: 'Top Lid Face',
-      panelId: 'top-lid',
+      panelId: pLidTop?.id ?? 'lid-top',
       points: [lt0, lt1, lt2, lt3],
       lighting: 1.15,
-      graphics: mapPanelGraphicsToFace(panels.get('top-lid'), graphics, w, l),
+      graphics: mapPanelGraphicsToFace(pLidTop, graphics, w, l),
     },
   ];
 
@@ -228,30 +248,34 @@ function buildPizzaBoxModel(
   const t2 = { x: cx + lx + wx, y: cy + ly + wy - lidTilt };
   const t3 = { x: cx + lx - wx, y: cy + ly - wy - lidTilt };
 
+  const pPizzaFront = findPanel(panels, 'pizza-front', 'front-wall');
+  const pPizzaRight = findPanel(panels, 'pizza-right-outer', 'right-wall-outer');
+  const pPizzaLid = findPanel(panels, 'pizza-lid', 'top-lid');
+
   const faces: AssembledFaceData[] = [
     {
       id: 'pizza-front',
       name: 'Front Wall',
-      panelId: 'front-wall',
+      panelId: pPizzaFront?.id ?? 'pizza-front',
       points: [f0, f1, f2, f3],
       lighting: 0.95,
-      graphics: mapPanelGraphicsToFace(panels.get('front-wall'), graphics, w, d),
+      graphics: mapPanelGraphicsToFace(pPizzaFront, graphics, w, d),
     },
     {
       id: 'pizza-right',
       name: 'Right Sidewall',
-      panelId: 'right-wall-outer',
+      panelId: pPizzaRight?.id ?? 'pizza-right-outer',
       points: [r0, r1, r2, r3],
       lighting: 0.85,
-      graphics: mapPanelGraphicsToFace(panels.get('right-wall-outer'), graphics, l, d),
+      graphics: mapPanelGraphicsToFace(pPizzaRight, graphics, l, d),
     },
     {
       id: 'pizza-top',
       name: 'Top Lid',
-      panelId: 'top-lid',
+      panelId: pPizzaLid?.id ?? 'pizza-lid',
       points: [t0, t1, t2, t3],
       lighting: 1.15,
-      graphics: mapPanelGraphicsToFace(panels.get('top-lid'), graphics, w, l),
+      graphics: mapPanelGraphicsToFace(pPizzaLid, graphics, w, l),
     },
   ];
 
