@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="680.00mm" height="1117.75mm" viewBox="156.25 331.25 680.00 1117.75">
+  <metadata>
+    <cad:info xmlns:cad="http://fe-packaging.org/cad">
+      <template id="burger-box" name="Burger Clamshell Box" />
+      <dimensions length="120" width="120" depth="70" caliper="1.2" unit="mm" />
+    </cad:info>
+  </metadata>
+  <defs>
+    <clipPath id="svg-clip-base-bottom">
+      <polygon points="346.25,521.25 646.25,521.25 646.25,821.25 346.25,821.25" />
+    </clipPath>
+    <clipPath id="svg-clip-base-front">
+      <polygon points="372.50,346.25 620.00,346.25 646.25,521.25 346.25,521.25" />
+    </clipPath>
+    <clipPath id="svg-clip-base-left">
+      <polygon points="171.25,547.50 346.25,521.25 346.25,821.25 171.25,795.00" />
+    </clipPath>
+    <clipPath id="svg-clip-base-right">
+      <polygon points="646.25,521.25 821.25,547.50 821.25,795.00 646.25,821.25" />
+    </clipPath>
+    <clipPath id="svg-clip-rear-hinge">
+      <polygon points="346.25,821.25 646.25,821.25 646.25,996.25 346.25,996.25" />
+    </clipPath>
+    <clipPath id="svg-clip-lid-top">
+      <polygon points="343.25,996.25 649.25,996.25 649.25,1299.25 343.25,1299.25" />
+    </clipPath>
+    <clipPath id="svg-clip-lid-left">
+      <polygon points="212.00,1022.50 343.25,996.25 343.25,1299.25 212.00,1273.00" />
+    </clipPath>
+    <clipPath id="svg-clip-lid-right">
+      <polygon points="649.25,996.25 780.50,1022.50 780.50,1273.00 649.25,1299.25" />
+    </clipPath>
+    <clipPath id="svg-clip-lid-front">
+      <polygon points="343.25,1299.25 649.25,1299.25 609.88,1395.50 382.63,1395.50" />
+    </clipPath>
+  </defs>
+  <!-- 1. Panel Geometry Boundaries -->
+  <g id="panel-geometry" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.15">
+    <polygon id="panel-base-bottom" points="346.25,521.25 646.25,521.25 646.25,821.25 346.25,821.25" data-panel-name="Bottom Base" />
+    <polygon id="panel-base-front" points="372.50,346.25 620.00,346.25 646.25,521.25 346.25,521.25" data-panel-name="Base Front Wall" />
+    <polygon id="panel-base-left" points="171.25,547.50 346.25,521.25 346.25,821.25 171.25,795.00" data-panel-name="Base Left Wall" />
+    <polygon id="panel-base-right" points="646.25,521.25 821.25,547.50 821.25,795.00 646.25,821.25" data-panel-name="Base Right Wall" />
+    <polygon id="panel-rear-hinge" points="346.25,821.25 646.25,821.25 646.25,996.25 346.25,996.25" data-panel-name="Rear Hinge Wall" />
+    <polygon id="panel-lid-top" points="343.25,996.25 649.25,996.25 649.25,1299.25 343.25,1299.25" data-panel-name="Top Lid" />
+    <polygon id="panel-lid-left" points="212.00,1022.50 343.25,996.25 343.25,1299.25 212.00,1273.00" data-panel-name="Lid Left Flap" />
+    <polygon id="panel-lid-right" points="649.25,996.25 780.50,1022.50 780.50,1273.00 649.25,1299.25" data-panel-name="Lid Right Flap" />
+    <polygon id="panel-lid-front" points="343.25,1299.25 649.25,1299.25 609.88,1395.50 382.63,1395.50" data-panel-name="Lid Front Closure Flap" />
+  </g>
+  <!-- 3. Crease & Scoring Lines (Matrix Score Wheel) -->
+  <g id="crease-lines" stroke="#22c55e" stroke-width="0.35" stroke-dasharray="2,1.5" stroke-linecap="round" fill="none">
+    <line x1="346.25" y1="521.25" x2="646.25" y2="521.25" id="line-1" />
+    <line x1="346.25" y1="521.25" x2="346.25" y2="821.25" id="line-2" />
+    <line x1="646.25" y1="521.25" x2="646.25" y2="821.25" id="line-3" />
+    <line x1="346.25" y1="821.25" x2="646.25" y2="821.25" id="line-4" />
+    <line x1="346.25" y1="996.25" x2="646.25" y2="996.25" id="line-5" />
+    <line x1="343.25" y1="996.25" x2="343.25" y2="1299.25" id="line-6" />
+    <line x1="649.25" y1="996.25" x2="649.25" y2="1299.25" id="line-7" />
+    <line x1="343.25" y1="1299.25" x2="649.25" y2="1299.25" id="line-8" />
+    <line x1="346.25" y1="521.25" x2="254.38" y2="429.38" id="line-9" />
+    <line x1="646.25" y1="521.25" x2="738.13" y2="429.38" id="line-10" />
+    <line x1="346.25" y1="821.25" x2="254.38" y2="913.13" id="line-11" />
+    <line x1="646.25" y1="821.25" x2="738.13" y2="913.13" id="line-12" />
+  </g>
+  <!-- 4. Cut Lines (Steel Rule Die Knife) -->
+  <g id="cut-lines" stroke="#ef4444" stroke-width="0.5" stroke-linecap="square" fill="none">
+    <line x1="346.25" y1="521.25" x2="372.50" y2="346.25" id="line-13" />
+    <line x1="372.50" y1="346.25" x2="620.00" y2="346.25" id="line-14" />
+    <line x1="620.00" y1="346.25" x2="646.25" y2="521.25" id="line-15" />
+    <line x1="346.25" y1="521.25" x2="171.25" y2="547.50" id="line-16" />
+    <line x1="171.25" y1="547.50" x2="171.25" y2="795.00" id="line-17" />
+    <line x1="171.25" y1="795.00" x2="346.25" y2="821.25" id="line-18" />
+    <line x1="646.25" y1="521.25" x2="821.25" y2="547.50" id="line-19" />
+    <line x1="821.25" y1="547.50" x2="821.25" y2="795.00" id="line-20" />
+    <line x1="821.25" y1="795.00" x2="646.25" y2="821.25" id="line-21" />
+    <line x1="343.25" y1="996.25" x2="212.00" y2="1022.50" id="line-22" />
+    <line x1="212.00" y1="1022.50" x2="212.00" y2="1273.00" id="line-23" />
+    <line x1="212.00" y1="1273.00" x2="343.25" y2="1299.25" id="line-24" />
+    <line x1="649.25" y1="996.25" x2="780.50" y2="1022.50" id="line-25" />
+    <line x1="780.50" y1="1022.50" x2="780.50" y2="1273.00" id="line-26" />
+    <line x1="780.50" y1="1273.00" x2="649.25" y2="1299.25" id="line-27" />
+    <line x1="343.25" y1="1299.25" x2="382.63" y2="1395.50" id="line-28" />
+    <line x1="382.63" y1="1395.50" x2="451.25" y2="1395.50" id="line-29" />
+    <line x1="451.25" y1="1395.50" x2="451.25" y2="1434.00" id="line-30" />
+    <line x1="451.25" y1="1434.00" x2="541.25" y2="1434.00" id="line-31" />
+    <line x1="541.25" y1="1434.00" x2="541.25" y2="1395.50" id="line-32" />
+    <line x1="541.25" y1="1395.50" x2="609.88" y2="1395.50" id="line-33" />
+    <line x1="609.88" y1="1395.50" x2="649.25" y2="1299.25" id="line-34" />
+  </g>
+  <!-- 5. Face Panel Identifiers -->
+  <g id="face-labels" font-family="system-ui, -apple-system, sans-serif" font-size="2.5" fill="#94a3b8" text-anchor="middle" dominant-baseline="middle">
+    <text x="496.25" y="671.25">Bottom Base</text>
+    <text x="496.25" y="433.75">Base Front Wall</text>
+    <text x="258.75" y="671.25">Base Left Wall</text>
+    <text x="733.75" y="671.25">Base Right Wall</text>
+    <text x="496.25" y="908.75">Rear Hinge Wall</text>
+    <text x="496.25" y="1147.75">Top Lid</text>
+    <text x="277.63" y="1147.75">Lid Left Flap</text>
+    <text x="714.88" y="1147.75">Lid Right Flap</text>
+    <text x="496.25" y="1347.38">Lid Front Closure Flap</text>
+  </g>
+  <!-- 6. Engineering Dimension Callouts -->
+  <g id="dimensions" stroke="#94a3b8" stroke-width="0.2" fill="none" font-family="system-ui, sans-serif" font-size="2.6">
+    <line x1="171.25" y1="341.25" x2="821.25" y2="341.25" />
+    <line x1="171.25" y1="339.75" x2="171.25" y2="342.75" />
+    <line x1="821.25" y1="339.75" x2="821.25" y2="342.75" />
+    <text x="496.25" y="339.75" stroke="none" fill="#64748b" text-anchor="middle">650 mm</text>
+    <line x1="166.25" y1="346.25" x2="166.25" y2="1434.00" />
+    <line x1="164.75" y1="346.25" x2="167.75" y2="346.25" />
+    <line x1="164.75" y1="1434.00" x2="167.75" y2="1434.00" />
+    <text x="164.75" y="890.13" stroke="none" fill="#64748b" text-anchor="middle" transform="rotate(-90 164.75 890.13)">1088 mm</text>
+  </g>
+  <!-- 7. Optical Registration Marks -->
+  <g id="registration-marks" stroke="#1e293b" stroke-width="0.2" fill="none">
+    <circle cx="163.25" cy="338.25" r="3" />
+    <line x1="158.75" y1="338.25" x2="167.75" y2="338.25" />
+    <line x1="163.25" y1="333.75" x2="163.25" y2="342.75" />
+    <circle cx="829.25" cy="338.25" r="3" />
+    <line x1="824.75" y1="338.25" x2="833.75" y2="338.25" />
+    <line x1="829.25" y1="333.75" x2="829.25" y2="342.75" />
+    <circle cx="163.25" cy="1442.00" r="3" />
+    <line x1="158.75" y1="1442.00" x2="167.75" y2="1442.00" />
+    <line x1="163.25" y1="1437.50" x2="163.25" y2="1446.50" />
+    <circle cx="829.25" cy="1442.00" r="3" />
+    <line x1="824.75" y1="1442.00" x2="833.75" y2="1442.00" />
+    <line x1="829.25" y1="1437.50" x2="829.25" y2="1446.50" />
+  </g>
+</svg>

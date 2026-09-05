@@ -83,10 +83,28 @@ async function testExportSuite() {
   await page.locator('.export-primary-btn:has-text("Download Vector CAD PDF")').click();
   const download = await downloadPromise;
   const suggestedFilename = download.suggestedFilename();
-  console.log(`PDF Download successfully triggered: ${suggestedFilename}`);
 
-  // 8. Close Modal
-  console.log('8. Testing Modal Close...');
+  const repoExportPdfPath = path.join('/home/migoldev/Documents/thesis/exports', suggestedFilename);
+  const artifactPdfPath = path.join(ARTIFACT_DIR, suggestedFilename);
+  await download.saveAs(repoExportPdfPath);
+  await download.saveAs(artifactPdfPath);
+  console.log(`PDF successfully saved to: ${repoExportPdfPath}`);
+
+  // 8. Test SVG Generation execution
+  console.log('8. Testing SVG Generation execution...');
+  await page.locator('.export-tab-btn:has-text("Layered CAD SVG")').click();
+  await page.waitForTimeout(200);
+
+  const svgDownloadPromise = page.waitForEvent('download', { timeout: 10000 });
+  await page.locator('.export-primary-btn:has-text("Download Layered SVG")').click();
+  const svgDownload = await svgDownloadPromise;
+  const svgFilename = svgDownload.suggestedFilename();
+  const repoExportSvgPath = path.join('/home/migoldev/Documents/thesis/exports', svgFilename);
+  await svgDownload.saveAs(repoExportSvgPath);
+  console.log(`SVG successfully saved to: ${repoExportSvgPath}`);
+
+  // 9. Close Modal
+  console.log('9. Testing Modal Close...');
   await page.locator('.export-modal-close').click();
   await page.waitForSelector('.export-modal-dialog', { state: 'hidden' });
   console.log('Export Modal closed cleanly.');
