@@ -5,12 +5,12 @@ import { CanvasViewport } from './components/canvas/CanvasViewport';
 import { DraftRecoveryBanner } from './components/layout/DraftRecoveryBanner';
 import { getTemplateById, generateDieline, PackagingDimensions } from './core/dieline';
 import { GraphicItem } from './core/graphics/types';
+import { ExportModal } from './components/export/ExportModal';
 import {
   getThemePreference,
   saveThemePreference,
   loadDraftAsync,
   saveDraftDebounced,
-  exportProjectFile,
   parseProjectFile,
   PackagingProjectData,
 } from './core/storage/projectStorage';
@@ -27,6 +27,9 @@ export const App: React.FC = () => {
   const [activePanelId, setActivePanelId] = useState<string | null>(null);
   const [focusedPanelId, setFocusedPanelId] = useState<string | null>(null);
   const [graphics, setGraphics] = useState<GraphicItem[]>([]);
+
+  // Export modal state
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Session persistence state
   const [autosaveStatus, setAutosaveStatus] = useState<'saved' | 'saving' | 'idle'>('saved');
@@ -87,7 +90,7 @@ export const App: React.FC = () => {
   };
 
   const handleExportProject = () => {
-    exportProjectFile(selectedTemplateId, dimensions, graphics, themeId);
+    setIsExportModalOpen(true);
   };
 
   const handleImportProject = (jsonContent: string) => {
@@ -210,6 +213,14 @@ export const App: React.FC = () => {
           themeId={themeId}
         />
       </main>
+
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        dieline={dieline}
+        graphics={graphics}
+        themeId={themeId}
+      />
     </div>
   );
 };
