@@ -751,59 +751,141 @@ export function buildFriesScoop3D(w: number, l: number, d: number, _openness: nu
 export function buildPillowBox3D(w: number, l: number, d: number, _openness: number): Face3DDefinition[] {
   const hw = w / 2;
   const hl = l / 2; // length along Y
-  const hd = d / 2; // thickness / bulge
+  const hd = Math.max(16, d / 2); // thickness / bulge
 
-  const bulgeZ = Math.max(16, hd * 0.95);
+  const sagitta = Math.min(hl * 0.16, hd * 0.85);
 
   return [
-    // Front Face (Bulging in +Z)
+    // 1. Front Center Face (Bulging forward in +Z)
     {
       id: 'pillow-front',
       name: 'Front Face (Logo)',
       panelId: 'pillow-front',
       vertices: [
-        { x: -hw, y: hl * 0.85, z: bulgeZ * 0.3 },
-        { x: hw, y: hl * 0.85, z: bulgeZ * 0.3 },
-        { x: hw * 0.95, y: -hl * 0.85, z: bulgeZ * 0.3 },
-        { x: -hw * 0.95, y: -hl * 0.85, z: bulgeZ * 0.3 },
+        { x: -hw * 0.65, y: hl - sagitta * 0.5, z: hd },
+        { x: hw * 0.65, y: hl - sagitta * 0.5, z: hd },
+        { x: hw * 0.65, y: -(hl - sagitta * 0.5), z: hd },
+        { x: -hw * 0.65, y: -(hl - sagitta * 0.5), z: hd },
       ],
     },
-    // Back Face (Bulging in -Z)
+    // 2. Front Left Bowed Flank
+    {
+      id: 'pillow-front-left',
+      name: 'Front Left Flank',
+      panelId: 'pillow-front',
+      vertices: [
+        { x: -hw, y: hl - sagitta * 0.8, z: 0 },
+        { x: -hw * 0.65, y: hl - sagitta * 0.5, z: hd },
+        { x: -hw * 0.65, y: -(hl - sagitta * 0.5), z: hd },
+        { x: -hw, y: -(hl - sagitta * 0.8), z: 0 },
+      ],
+    },
+    // 3. Front Right Bowed Flank
+    {
+      id: 'pillow-front-right',
+      name: 'Front Right Flank',
+      panelId: 'pillow-front',
+      vertices: [
+        { x: hw * 0.65, y: hl - sagitta * 0.5, z: hd },
+        { x: hw, y: hl - sagitta * 0.8, z: 0 },
+        { x: hw, y: -(hl - sagitta * 0.8), z: 0 },
+        { x: hw * 0.65, y: -(hl - sagitta * 0.5), z: hd },
+      ],
+    },
+    // 4. Back Center Face (Bulging backward in -Z)
     {
       id: 'pillow-back',
       name: 'Back Face',
       panelId: 'pillow-back',
       vertices: [
-        { x: hw, y: hl * 0.85, z: -bulgeZ * 0.3 },
-        { x: -hw, y: hl * 0.85, z: -bulgeZ * 0.3 },
-        { x: -hw * 0.95, y: -hl * 0.85, z: -bulgeZ * 0.3 },
-        { x: hw * 0.95, y: -hl * 0.85, z: -bulgeZ * 0.3 },
+        { x: hw * 0.65, y: hl - sagitta * 0.5, z: -hd },
+        { x: -hw * 0.65, y: hl - sagitta * 0.5, z: -hd },
+        { x: -hw * 0.65, y: -(hl - sagitta * 0.5), z: -hd },
+        { x: hw * 0.65, y: -(hl - sagitta * 0.5), z: -hd },
       ],
     },
-    // Top Curved Tuck End Cap
+    // 5. Back Left Bowed Flank
     {
-      id: 'pillow-top',
-      name: 'Top Tuck Cap',
+      id: 'pillow-back-left',
+      name: 'Back Left Flank',
+      panelId: 'pillow-back',
+      vertices: [
+        { x: -hw * 0.65, y: hl - sagitta * 0.5, z: -hd },
+        { x: -hw, y: hl - sagitta * 0.8, z: 0 },
+        { x: -hw, y: -(hl - sagitta * 0.8), z: 0 },
+        { x: -hw * 0.65, y: -(hl - sagitta * 0.5), z: -hd },
+      ],
+    },
+    // 6. Back Right Bowed Flank
+    {
+      id: 'pillow-back-right',
+      name: 'Back Right Flank',
+      panelId: 'pillow-back',
+      vertices: [
+        { x: hw, y: hl - sagitta * 0.8, z: 0 },
+        { x: hw * 0.65, y: hl - sagitta * 0.5, z: -hd },
+        { x: hw * 0.65, y: -(hl - sagitta * 0.5), z: -hd },
+        { x: hw, y: -(hl - sagitta * 0.8), z: 0 },
+      ],
+    },
+    // 7. Top Front Curved Tuck Cap
+    {
+      id: 'pillow-top-front',
+      name: 'Top Front Tuck Cap',
       panelId: 'pillow-top-outer',
       doubleSided: true,
       vertices: [
-        { x: -hw, y: hl, z: 0 },
-        { x: hw, y: hl, z: 0 },
-        { x: hw, y: hl * 0.85, z: bulgeZ * 0.3 },
-        { x: -hw, y: hl * 0.85, z: bulgeZ * 0.3 },
+        { x: -hw * 0.8, y: hl, z: 0 },
+        { x: hw * 0.8, y: hl, z: 0 },
+        { x: hw, y: hl - sagitta * 0.8, z: 0 },
+        { x: hw * 0.65, y: hl - sagitta * 0.5, z: hd },
+        { x: -hw * 0.65, y: hl - sagitta * 0.5, z: hd },
+        { x: -hw, y: hl - sagitta * 0.8, z: 0 },
       ],
     },
-    // Bottom Curved Tuck End Cap
+    // 8. Top Back Curved Tuck Cap
     {
-      id: 'pillow-bottom',
-      name: 'Bottom Tuck Cap',
+      id: 'pillow-top-back',
+      name: 'Top Back Tuck Cap',
+      panelId: 'pillow-top-inner',
+      doubleSided: true,
+      vertices: [
+        { x: hw * 0.8, y: hl, z: 0 },
+        { x: -hw * 0.8, y: hl, z: 0 },
+        { x: -hw, y: hl - sagitta * 0.8, z: 0 },
+        { x: -hw * 0.65, y: hl - sagitta * 0.5, z: -hd },
+        { x: hw * 0.65, y: hl - sagitta * 0.5, z: -hd },
+        { x: hw, y: hl - sagitta * 0.8, z: 0 },
+      ],
+    },
+    // 9. Bottom Front Curved Tuck Cap
+    {
+      id: 'pillow-bottom-front',
+      name: 'Bottom Front Tuck Cap',
       panelId: 'pillow-bottom-outer',
       doubleSided: true,
       vertices: [
-        { x: -hw * 0.95, y: -hl * 0.85, z: bulgeZ * 0.3 },
-        { x: hw * 0.95, y: -hl * 0.85, z: bulgeZ * 0.3 },
-        { x: hw, y: -hl, z: 0 },
-        { x: -hw, y: -hl, z: 0 },
+        { x: -hw * 0.65, y: -(hl - sagitta * 0.5), z: hd },
+        { x: hw * 0.65, y: -(hl - sagitta * 0.5), z: hd },
+        { x: hw, y: -(hl - sagitta * 0.8), z: 0 },
+        { x: hw * 0.8, y: -hl, z: 0 },
+        { x: -hw * 0.8, y: -hl, z: 0 },
+        { x: -hw, y: -(hl - sagitta * 0.8), z: 0 },
+      ],
+    },
+    // 10. Bottom Back Curved Tuck Cap
+    {
+      id: 'pillow-bottom-back',
+      name: 'Bottom Back Tuck Cap',
+      panelId: 'pillow-bottom-inner',
+      doubleSided: true,
+      vertices: [
+        { x: hw * 0.65, y: -(hl - sagitta * 0.5), z: -hd },
+        { x: -hw * 0.65, y: -(hl - sagitta * 0.5), z: -hd },
+        { x: -hw, y: -(hl - sagitta * 0.8), z: 0 },
+        { x: -hw * 0.8, y: -hl, z: 0 },
+        { x: hw * 0.8, y: -hl, z: 0 },
+        { x: hw, y: -(hl - sagitta * 0.8), z: 0 },
       ],
     },
   ];
@@ -1029,55 +1111,133 @@ export function buildStandUpPouch3D(w: number, l: number, d: number, _openness: 
   const hw = w / 2;
   const hl = l / 2; // pouch height
   const hd = Math.max(22, d / 2); // gusset depth
+  const sealW = Math.max(8, w * 0.055); // side heat-seal fin width
+  const headerH = Math.max(24, l * 0.16); // top zipper & tear notch header height
+  const yHeaderBase = hl - headerH;
+  const innerW = hw - sealW;
 
   return [
-    // Front Face (puffed forward in +Z)
-    {
-      id: 'pouch-front',
-      name: 'Front Face (Artwork)',
-      panelId: 'pouch-front',
-      vertices: [
-        { x: -hw, y: hl, z: 0 },
-        { x: hw, y: hl, z: 0 },
-        { x: hw * 0.94, y: -hl, z: hd * 0.6 },
-        { x: -hw * 0.94, y: -hl, z: hd * 0.6 },
-      ],
-    },
-    // Back Face (puffed backward in -Z)
-    {
-      id: 'pouch-back',
-      name: 'Back Face',
-      panelId: 'pouch-back',
-      vertices: [
-        { x: hw, y: hl, z: 0 },
-        { x: -hw, y: hl, z: 0 },
-        { x: -hw * 0.94, y: -hl, z: -hd * 0.6 },
-        { x: hw * 0.94, y: -hl, z: -hd * 0.6 },
-      ],
-    },
-    // Bottom Oval/Hex Expansion Gusset
-    {
-      id: 'pouch-gusset',
-      name: 'Bottom Gusset',
-      panelId: 'pouch-gusset',
-      vertices: [
-        { x: -hw * 0.94, y: -hl, z: hd * 0.6 },
-        { x: hw * 0.94, y: -hl, z: hd * 0.6 },
-        { x: hw * 0.94, y: -hl, z: -hd * 0.6 },
-        { x: -hw * 0.94, y: -hl, z: -hd * 0.6 },
-      ],
-    },
-    // Top Heat-Seal Header
+    // 1. Top Heat-Seal Zipper Header
     {
       id: 'pouch-top-seal',
       name: 'Top Zipper Seal Header',
       panelId: 'pouch-front',
       doubleSided: true,
       vertices: [
-        { x: -hw, y: hl + 16, z: 0 },
-        { x: hw, y: hl + 16, z: 0 },
-        { x: hw, y: hl, z: 0 },
         { x: -hw, y: hl, z: 0 },
+        { x: hw, y: hl, z: 0 },
+        { x: hw, y: yHeaderBase, z: 0 },
+        { x: -hw, y: yHeaderBase, z: 0 },
+      ],
+    },
+    // 2. Left Welded Side Seal Fin
+    {
+      id: 'pouch-seal-left',
+      name: 'Left Welded Side Seal',
+      panelId: 'pouch-front',
+      doubleSided: true,
+      vertices: [
+        { x: -hw, y: yHeaderBase, z: 0 },
+        { x: -innerW, y: yHeaderBase, z: 0 },
+        { x: -innerW, y: -hl, z: 0 },
+        { x: -hw, y: -hl, z: 0 },
+      ],
+    },
+    // 3. Right Welded Side Seal Fin
+    {
+      id: 'pouch-seal-right',
+      name: 'Right Welded Side Seal',
+      panelId: 'pouch-front',
+      doubleSided: true,
+      vertices: [
+        { x: innerW, y: yHeaderBase, z: 0 },
+        { x: hw, y: yHeaderBase, z: 0 },
+        { x: hw, y: -hl, z: 0 },
+        { x: innerW, y: -hl, z: 0 },
+      ],
+    },
+    // 4. Front Center Puffed Face
+    {
+      id: 'pouch-front',
+      name: 'Front Face (Artwork)',
+      panelId: 'pouch-front',
+      vertices: [
+        { x: -innerW * 0.75, y: yHeaderBase, z: 0 },
+        { x: innerW * 0.75, y: yHeaderBase, z: 0 },
+        { x: innerW * 0.82, y: -hl, z: hd * 0.6 },
+        { x: -innerW * 0.82, y: -hl, z: hd * 0.6 },
+      ],
+    },
+    // 5. Front Left Taper Flank
+    {
+      id: 'pouch-front-left',
+      name: 'Front Left Taper',
+      panelId: 'pouch-front',
+      vertices: [
+        { x: -innerW, y: yHeaderBase, z: 0 },
+        { x: -innerW * 0.75, y: yHeaderBase, z: 0 },
+        { x: -innerW * 0.82, y: -hl, z: hd * 0.6 },
+        { x: -innerW, y: -hl, z: 0 },
+      ],
+    },
+    // 6. Front Right Taper Flank
+    {
+      id: 'pouch-front-right',
+      name: 'Front Right Taper',
+      panelId: 'pouch-front',
+      vertices: [
+        { x: innerW * 0.75, y: yHeaderBase, z: 0 },
+        { x: innerW, y: yHeaderBase, z: 0 },
+        { x: innerW, y: -hl, z: 0 },
+        { x: innerW * 0.82, y: -hl, z: hd * 0.6 },
+      ],
+    },
+    // 7. Back Center Puffed Face
+    {
+      id: 'pouch-back',
+      name: 'Back Face',
+      panelId: 'pouch-back',
+      vertices: [
+        { x: innerW * 0.75, y: yHeaderBase, z: 0 },
+        { x: -innerW * 0.75, y: yHeaderBase, z: 0 },
+        { x: -innerW * 0.82, y: -hl, z: -hd * 0.6 },
+        { x: innerW * 0.82, y: -hl, z: -hd * 0.6 },
+      ],
+    },
+    // 8. Back Left Taper Flank
+    {
+      id: 'pouch-back-left',
+      name: 'Back Left Taper',
+      panelId: 'pouch-back',
+      vertices: [
+        { x: -innerW * 0.75, y: yHeaderBase, z: 0 },
+        { x: -innerW, y: yHeaderBase, z: 0 },
+        { x: -innerW, y: -hl, z: 0 },
+        { x: -innerW * 0.82, y: -hl, z: -hd * 0.6 },
+      ],
+    },
+    // 9. Back Right Taper Flank
+    {
+      id: 'pouch-back-right',
+      name: 'Back Right Taper',
+      panelId: 'pouch-back',
+      vertices: [
+        { x: innerW, y: yHeaderBase, z: 0 },
+        { x: innerW * 0.75, y: yHeaderBase, z: 0 },
+        { x: innerW * 0.82, y: -hl, z: -hd * 0.6 },
+        { x: innerW, y: -hl, z: 0 },
+      ],
+    },
+    // 10. Bottom Oval/Hex Expansion Gusset
+    {
+      id: 'pouch-gusset',
+      name: 'Bottom Gusset',
+      panelId: 'pouch-gusset',
+      vertices: [
+        { x: -innerW * 0.82, y: -hl, z: hd * 0.6 },
+        { x: innerW * 0.82, y: -hl, z: hd * 0.6 },
+        { x: innerW * 0.82, y: -hl, z: -hd * 0.6 },
+        { x: -innerW * 0.82, y: -hl, z: -hd * 0.6 },
       ],
     },
   ];
@@ -1090,69 +1250,129 @@ export function buildSideGussetBag3D(w: number, l: number, d: number, _openness:
   const hw = w / 2;
   const hl = l / 2; // height
   const hd = d / 2; // depth
+  const yShoulder = hl * 0.62;
+  const yFold = hl * 0.86;
 
   return [
-    // Front Face (facing +Z)
+    // 1. Front Body Face (facing +Z)
     {
       id: 'bag-front',
       name: 'Front Face (Window)',
       panelId: 'bag-front',
       vertices: [
-        { x: -hw, y: hl, z: hd },
-        { x: hw, y: hl, z: hd },
+        { x: -hw, y: yShoulder, z: hd },
+        { x: hw, y: yShoulder, z: hd },
         { x: hw, y: -hl, z: hd },
         { x: -hw, y: -hl, z: hd },
       ],
     },
-    // Back Left Panel (facing -Z)
+    // 2. Front Tapered Shoulder (sloping to tin-tie fold)
+    {
+      id: 'bag-front-shoulder',
+      name: 'Front Tapered Shoulder',
+      panelId: 'bag-front',
+      vertices: [
+        { x: -hw, y: yFold, z: 0 },
+        { x: hw, y: yFold, z: 0 },
+        { x: hw, y: yShoulder, z: hd },
+        { x: -hw, y: yShoulder, z: hd },
+      ],
+    },
+    // 3. Back Left Body Panel (facing -Z)
     {
       id: 'bag-back-left',
       name: 'Back Left Panel',
       panelId: 'bag-back-left',
       vertices: [
-        { x: 0, y: hl, z: -hd },
-        { x: -hw, y: hl, z: -hd },
+        { x: 0, y: yShoulder, z: -hd },
+        { x: -hw, y: yShoulder, z: -hd },
         { x: -hw, y: -hl, z: -hd },
         { x: 0, y: -hl, z: -hd },
       ],
     },
-    // Back Right Panel (facing -Z)
+    // 4. Back Right Body Panel (facing -Z)
     {
       id: 'bag-back-right',
       name: 'Back Right Panel',
       panelId: 'bag-back-right',
       vertices: [
-        { x: hw, y: hl, z: -hd },
-        { x: 0, y: hl, z: -hd },
+        { x: hw, y: yShoulder, z: -hd },
+        { x: 0, y: yShoulder, z: -hd },
         { x: 0, y: -hl, z: -hd },
         { x: hw, y: -hl, z: -hd },
       ],
     },
-    // Left Pleated Gusset (facing -X)
+    // 5. Back Left Tapered Shoulder
+    {
+      id: 'bag-back-left-shoulder',
+      name: 'Back Left Shoulder',
+      panelId: 'bag-back-left',
+      vertices: [
+        { x: 0, y: yFold, z: 0 },
+        { x: -hw, y: yFold, z: 0 },
+        { x: -hw, y: yShoulder, z: -hd },
+        { x: 0, y: yShoulder, z: -hd },
+      ],
+    },
+    // 6. Back Right Tapered Shoulder
+    {
+      id: 'bag-back-right-shoulder',
+      name: 'Back Right Shoulder',
+      panelId: 'bag-back-right',
+      vertices: [
+        { x: hw, y: yFold, z: 0 },
+        { x: 0, y: yFold, z: 0 },
+        { x: 0, y: yShoulder, z: -hd },
+        { x: hw, y: yShoulder, z: -hd },
+      ],
+    },
+    // 7. Left Pleated Gusset (Body)
     {
       id: 'bag-gusset-left',
       name: 'Left Gusset Side',
       panelId: 'bag-gusset-left',
       vertices: [
-        { x: -hw, y: hl, z: -hd },
-        { x: -hw, y: hl, z: hd },
+        { x: -hw, y: yShoulder, z: -hd },
+        { x: -hw, y: yShoulder, z: hd },
         { x: -hw, y: -hl, z: hd },
         { x: -hw, y: -hl, z: -hd },
       ],
     },
-    // Right Pleated Gusset (facing +X)
+    // 8. Left Pleated Gusset Shoulder (Tuck triangle)
+    {
+      id: 'bag-gusset-left-tuck',
+      name: 'Left Gusset Tuck',
+      panelId: 'bag-gusset-left',
+      vertices: [
+        { x: -hw, y: yFold, z: 0 },
+        { x: -hw, y: yShoulder, z: hd },
+        { x: -hw, y: yShoulder, z: -hd },
+      ],
+    },
+    // 9. Right Pleated Gusset (Body)
     {
       id: 'bag-gusset-right',
       name: 'Right Gusset Side',
       panelId: 'bag-gusset-right',
       vertices: [
-        { x: hw, y: hl, z: hd },
-        { x: hw, y: hl, z: -hd },
+        { x: hw, y: yShoulder, z: hd },
+        { x: hw, y: yShoulder, z: -hd },
         { x: hw, y: -hl, z: -hd },
         { x: hw, y: -hl, z: hd },
       ],
     },
-    // Block Bottom Base (facing -Y)
+    // 10. Right Pleated Gusset Shoulder (Tuck triangle)
+    {
+      id: 'bag-gusset-right-tuck',
+      name: 'Right Gusset Tuck',
+      panelId: 'bag-gusset-right',
+      vertices: [
+        { x: hw, y: yFold, z: 0 },
+        { x: hw, y: yShoulder, z: -hd },
+        { x: hw, y: yShoulder, z: hd },
+      ],
+    },
+    // 11. Block Bottom Base (facing -Y)
     {
       id: 'bag-bottom',
       name: 'Block Bottom Base',
@@ -1164,17 +1384,17 @@ export function buildSideGussetBag3D(w: number, l: number, d: number, _openness:
         { x: -hw, y: -hl, z: -hd },
       ],
     },
-    // Folded Tin-Tie Header (facing +Z)
+    // 12. Folded Tin-Tie Header (Folded at yFold, standing upward)
     {
       id: 'bag-top-header',
       name: 'Tin-Tie Folded Header',
       panelId: 'bag-top-header',
       doubleSided: true,
       vertices: [
-        { x: -hw, y: hl + 18, z: 0 },
-        { x: hw, y: hl + 18, z: 0 },
-        { x: hw, y: hl, z: 0 },
-        { x: -hw, y: hl, z: 0 },
+        { x: -hw, y: hl, z: 1 },
+        { x: hw, y: hl, z: 1 },
+        { x: hw, y: yFold, z: 1 },
+        { x: -hw, y: yFold, z: 1 },
       ],
     },
   ];
@@ -1186,34 +1406,16 @@ export function buildSideGussetBag3D(w: number, l: number, d: number, _openness:
 export function buildSachetStickPack3D(w: number, l: number, d: number, _openness: number): Face3DDefinition[] {
   const hw = w / 2;
   const hl = l / 2; // length
-  const hd = Math.max(12, d / 2);
+  const hd = Math.max(10, d / 2);
+  const crimpH = Math.min(15, l * 0.12);
+  const transH = Math.min(14, l * 0.10);
+  const yTopCrimp = hl - crimpH;
+  const yTopBody = yTopCrimp - transH;
+  const yBotCrimp = -(hl - crimpH);
+  const yBotBody = yBotCrimp + transH;
 
   return [
-    // Front Face (puffed slightly forward)
-    {
-      id: 'sachet-front',
-      name: 'Front Face (Branding)',
-      panelId: 'sachet-front',
-      vertices: [
-        { x: -hw, y: hl - 12, z: hd * 0.6 },
-        { x: hw, y: hl - 12, z: hd * 0.6 },
-        { x: hw, y: -hl + 12, z: hd * 0.6 },
-        { x: -hw, y: -hl + 12, z: hd * 0.6 },
-      ],
-    },
-    // Back Face (puffed backward with fin seal)
-    {
-      id: 'sachet-back',
-      name: 'Back Face (Ingredients)',
-      panelId: 'sachet-back-left',
-      vertices: [
-        { x: hw, y: hl - 12, z: -hd * 0.6 },
-        { x: -hw, y: hl - 12, z: -hd * 0.6 },
-        { x: -hw, y: -hl + 12, z: -hd * 0.6 },
-        { x: hw, y: -hl + 12, z: -hd * 0.6 },
-      ],
-    },
-    // Top Heat-Seal Crimp
+    // 1. Top Heat-Seal Crimp
     {
       id: 'sachet-top-seal',
       name: 'Top Heat-Seal Crimp',
@@ -1222,19 +1424,175 @@ export function buildSachetStickPack3D(w: number, l: number, d: number, _opennes
       vertices: [
         { x: -hw, y: hl, z: 0 },
         { x: hw, y: hl, z: 0 },
-        { x: hw, y: hl - 12, z: 0 },
-        { x: -hw, y: hl - 12, z: 0 },
+        { x: hw, y: yTopCrimp, z: 0 },
+        { x: -hw, y: yTopCrimp, z: 0 },
       ],
     },
-    // Bottom Heat-Seal Crimp
+    // 2. Top Front Transition Shoulder
+    {
+      id: 'sachet-top-front-trans',
+      name: 'Top Front Transition',
+      panelId: 'sachet-front',
+      vertices: [
+        { x: -hw * 0.75, y: yTopCrimp, z: 0 },
+        { x: hw * 0.75, y: yTopCrimp, z: 0 },
+        { x: hw * 0.75, y: yTopBody, z: hd },
+        { x: -hw * 0.75, y: yTopBody, z: hd },
+      ],
+    },
+    // 3. Top Back Transition Shoulder
+    {
+      id: 'sachet-top-back-trans',
+      name: 'Top Back Transition',
+      panelId: 'sachet-back-left',
+      vertices: [
+        { x: hw * 0.75, y: yTopCrimp, z: 0 },
+        { x: -hw * 0.75, y: yTopCrimp, z: 0 },
+        { x: -hw * 0.75, y: yTopBody, z: -hd },
+        { x: hw * 0.75, y: yTopBody, z: -hd },
+      ],
+    },
+    // 4. Top Left Transition Corner
+    {
+      id: 'sachet-top-left-trans',
+      name: 'Top Left Transition',
+      panelId: 'sachet-front',
+      vertices: [
+        { x: -hw, y: yTopCrimp, z: 0 },
+        { x: -hw * 0.75, y: yTopCrimp, z: 0 },
+        { x: -hw * 0.75, y: yTopBody, z: hd },
+        { x: -hw, y: yTopBody, z: 0 },
+      ],
+    },
+    // 5. Top Right Transition Corner
+    {
+      id: 'sachet-top-right-trans',
+      name: 'Top Right Transition',
+      panelId: 'sachet-front',
+      vertices: [
+        { x: hw * 0.75, y: yTopCrimp, z: 0 },
+        { x: hw, y: yTopCrimp, z: 0 },
+        { x: hw, y: yTopBody, z: 0 },
+        { x: hw * 0.75, y: yTopBody, z: hd },
+      ],
+    },
+    // 6. Front Main Body (Bulging forward)
+    {
+      id: 'sachet-front',
+      name: 'Front Face (Branding)',
+      panelId: 'sachet-front',
+      vertices: [
+        { x: -hw * 0.75, y: yTopBody, z: hd },
+        { x: hw * 0.75, y: yTopBody, z: hd },
+        { x: hw * 0.75, y: yBotBody, z: hd },
+        { x: -hw * 0.75, y: yBotBody, z: hd },
+      ],
+    },
+    // 7. Front Left Rounded Flank
+    {
+      id: 'sachet-flank-front-left',
+      name: 'Front Left Flank',
+      panelId: 'sachet-front',
+      vertices: [
+        { x: -hw, y: yTopBody, z: 0 },
+        { x: -hw * 0.75, y: yTopBody, z: hd },
+        { x: -hw * 0.75, y: yBotBody, z: hd },
+        { x: -hw, y: yBotBody, z: 0 },
+      ],
+    },
+    // 8. Front Right Rounded Flank
+    {
+      id: 'sachet-flank-front-right',
+      name: 'Front Right Flank',
+      panelId: 'sachet-front',
+      vertices: [
+        { x: hw * 0.75, y: yTopBody, z: hd },
+        { x: hw, y: yTopBody, z: 0 },
+        { x: hw, y: yBotBody, z: 0 },
+        { x: hw * 0.75, y: yBotBody, z: hd },
+      ],
+    },
+    // 9. Back Left Fin Panel
+    {
+      id: 'sachet-back-left',
+      name: 'Back Left Fin',
+      panelId: 'sachet-back-left',
+      vertices: [
+        { x: 0, y: yTopBody, z: -hd },
+        { x: -hw * 0.75, y: yTopBody, z: -hd },
+        { x: -hw * 0.75, y: yBotBody, z: -hd },
+        { x: 0, y: yBotBody, z: -hd },
+      ],
+    },
+    // 10. Back Right Fin Panel
+    {
+      id: 'sachet-back-right',
+      name: 'Back Right Fin',
+      panelId: 'sachet-back-right',
+      vertices: [
+        { x: hw * 0.75, y: yTopBody, z: -hd },
+        { x: 0, y: yTopBody, z: -hd },
+        { x: 0, y: yBotBody, z: -hd },
+        { x: hw * 0.75, y: yBotBody, z: -hd },
+      ],
+    },
+    // 11. Back Left Rounded Flank
+    {
+      id: 'sachet-flank-back-left',
+      name: 'Back Left Flank',
+      panelId: 'sachet-back-left',
+      vertices: [
+        { x: -hw * 0.75, y: yTopBody, z: -hd },
+        { x: -hw, y: yTopBody, z: 0 },
+        { x: -hw, y: yBotBody, z: 0 },
+        { x: -hw * 0.75, y: yBotBody, z: -hd },
+      ],
+    },
+    // 12. Back Right Rounded Flank
+    {
+      id: 'sachet-flank-back-right',
+      name: 'Back Right Flank',
+      panelId: 'sachet-back-right',
+      vertices: [
+        { x: hw, y: yTopBody, z: 0 },
+        { x: hw * 0.75, y: yTopBody, z: -hd },
+        { x: hw * 0.75, y: yBotBody, z: -hd },
+        { x: hw, y: yBotBody, z: 0 },
+      ],
+    },
+    // 13. Bottom Front Transition Shoulder
+    {
+      id: 'sachet-bot-front-trans',
+      name: 'Bottom Front Transition',
+      panelId: 'sachet-front',
+      vertices: [
+        { x: -hw * 0.75, y: yBotBody, z: hd },
+        { x: hw * 0.75, y: yBotBody, z: hd },
+        { x: hw * 0.75, y: yBotCrimp, z: 0 },
+        { x: -hw * 0.75, y: yBotCrimp, z: 0 },
+      ],
+    },
+    // 14. Bottom Back Transition Shoulder
+    {
+      id: 'sachet-bot-back-trans',
+      name: 'Bottom Back Transition',
+      panelId: 'sachet-back-left',
+      vertices: [
+        { x: hw * 0.75, y: yBotBody, z: -hd },
+        { x: -hw * 0.75, y: yBotBody, z: -hd },
+        { x: -hw * 0.75, y: yBotCrimp, z: 0 },
+        { x: hw * 0.75, y: yBotCrimp, z: 0 },
+      ],
+    },
+    // 15. Bottom Heat-Seal Crimp
     {
       id: 'sachet-bottom-seal',
       name: 'Bottom Heat-Seal Crimp',
       panelId: 'sachet-bottom-seal',
       doubleSided: true,
       vertices: [
-        { x: -hw, y: -hl + 12, z: 0 },
-        { x: hw, y: -hl + 12, z: 0 },
+        { x: -hw, y: yBotCrimp, z: 0 },
+        { x: hw, y: yBotCrimp, z: 0 },
         { x: hw, y: -hl, z: 0 },
         { x: -hw, y: -hl, z: 0 },
       ],
@@ -1249,57 +1607,109 @@ export function buildBreadLoafBag3D(w: number, l: number, d: number, _openness: 
   const hw = w / 2;
   const hl = l / 2; // bag height
   const hd = d / 2; // depth
+  const yLoafTop = hl * 0.45;
+  const yNeck = hl * 0.72;
+  const neckW = hw * 0.28;
+  const neckD = 4;
 
   return [
-    // Front Clear Face (Window)
+    // 1. Front Clear Face (Window & Brand)
     {
       id: 'bread-front',
       name: 'Front Loaf Face (Window)',
       panelId: 'bread-front',
       vertices: [
-        { x: -hw, y: hl * 0.75, z: hd },
-        { x: hw, y: hl * 0.75, z: hd },
+        { x: -hw, y: yLoafTop, z: hd },
+        { x: hw, y: yLoafTop, z: hd },
         { x: hw, y: -hl, z: hd },
         { x: -hw, y: -hl, z: hd },
       ],
     },
-    // Back Face
+    // 2. Front Gathered Shoulder (sloping to twist-tie neck)
+    {
+      id: 'bread-front-shoulder',
+      name: 'Front Gathered Shoulder',
+      panelId: 'bread-front',
+      vertices: [
+        { x: -neckW, y: yNeck, z: neckD },
+        { x: neckW, y: yNeck, z: neckD },
+        { x: hw, y: yLoafTop, z: hd },
+        { x: -hw, y: yLoafTop, z: hd },
+      ],
+    },
+    // 3. Back Body Face
     {
       id: 'bread-back',
       name: 'Back Face',
       panelId: 'bread-back-left',
       vertices: [
-        { x: hw, y: hl * 0.75, z: -hd },
-        { x: -hw, y: hl * 0.75, z: -hd },
+        { x: hw, y: yLoafTop, z: -hd },
+        { x: -hw, y: yLoafTop, z: -hd },
         { x: -hw, y: -hl, z: -hd },
         { x: hw, y: -hl, z: -hd },
       ],
     },
-    // Left Gusset Side
+    // 4. Back Gathered Shoulder (sloping to twist-tie neck)
+    {
+      id: 'bread-back-shoulder',
+      name: 'Back Gathered Shoulder',
+      panelId: 'bread-back-left',
+      vertices: [
+        { x: neckW, y: yNeck, z: -neckD },
+        { x: -neckW, y: yNeck, z: -neckD },
+        { x: -hw, y: yLoafTop, z: -hd },
+        { x: hw, y: yLoafTop, z: -hd },
+      ],
+    },
+    // 5. Left Gusset Side (Body)
     {
       id: 'bread-gusset-left',
       name: 'Left Gusset Side',
       panelId: 'bread-gusset-left',
       vertices: [
-        { x: -hw, y: hl * 0.75, z: -hd },
-        { x: -hw, y: hl * 0.75, z: hd },
+        { x: -hw, y: yLoafTop, z: -hd },
+        { x: -hw, y: yLoafTop, z: hd },
         { x: -hw, y: -hl, z: hd },
         { x: -hw, y: -hl, z: -hd },
       ],
     },
-    // Right Gusset Side
+    // 6. Left Gathered Gusset Shoulder
+    {
+      id: 'bread-gusset-left-shoulder',
+      name: 'Left Gusset Shoulder',
+      panelId: 'bread-gusset-left',
+      vertices: [
+        { x: -neckW, y: yNeck, z: -neckD },
+        { x: -neckW, y: yNeck, z: neckD },
+        { x: -hw, y: yLoafTop, z: hd },
+        { x: -hw, y: yLoafTop, z: -hd },
+      ],
+    },
+    // 7. Right Gusset Side (Body)
     {
       id: 'bread-gusset-right',
       name: 'Right Gusset Side',
       panelId: 'bread-gusset-right',
       vertices: [
-        { x: hw, y: hl * 0.75, z: hd },
-        { x: hw, y: hl * 0.75, z: -hd },
+        { x: hw, y: yLoafTop, z: hd },
+        { x: hw, y: yLoafTop, z: -hd },
         { x: hw, y: -hl, z: -hd },
         { x: hw, y: -hl, z: hd },
       ],
     },
-    // Bottom Sealed Base
+    // 8. Right Gathered Gusset Shoulder
+    {
+      id: 'bread-gusset-right-shoulder',
+      name: 'Right Gusset Shoulder',
+      panelId: 'bread-gusset-right',
+      vertices: [
+        { x: neckW, y: yNeck, z: neckD },
+        { x: neckW, y: yNeck, z: -neckD },
+        { x: hw, y: yLoafTop, z: -hd },
+        { x: hw, y: yLoafTop, z: hd },
+      ],
+    },
+    // 9. Bottom Sealed Base
     {
       id: 'bread-bottom',
       name: 'Bottom Base',
@@ -1311,17 +1721,30 @@ export function buildBreadLoafBag3D(w: number, l: number, d: number, _openness: 
         { x: -hw, y: -hl, z: -hd },
       ],
     },
-    // Top Gathered Neck with Twist Tie Clip
+    // 10. Twist-Tie Gathered Neck Clip
+    {
+      id: 'bread-twist-clip',
+      name: 'Twist-Tie Clip',
+      panelId: 'bread-top-header',
+      doubleSided: true,
+      vertices: [
+        { x: -neckW * 1.2, y: yNeck + 3, z: neckD * 1.4 },
+        { x: neckW * 1.2, y: yNeck + 3, z: neckD * 1.4 },
+        { x: neckW * 1.2, y: yNeck - 3, z: neckD * 1.4 },
+        { x: -neckW * 1.2, y: yNeck - 3, z: neckD * 1.4 },
+      ],
+    },
+    // 11. Top Gathered Fan / Rosette Header
     {
       id: 'bread-top-header',
       name: 'Twist-Tie Gathered Neck',
       panelId: 'bread-top-header',
       doubleSided: true,
       vertices: [
-        { x: -hw * 0.45, y: hl, z: 0 },
-        { x: hw * 0.45, y: hl, z: 0 },
-        { x: hw, y: hl * 0.75, z: 0 },
-        { x: -hw, y: hl * 0.75, z: 0 },
+        { x: -hw * 0.65, y: hl, z: 0 },
+        { x: hw * 0.65, y: hl, z: 0 },
+        { x: neckW, y: yNeck, z: 0 },
+        { x: -neckW, y: yNeck, z: 0 },
       ],
     },
   ];
@@ -1334,66 +1757,136 @@ export function buildBurgerWrapper3D(w: number, l: number, d: number, _openness:
   const hw = w / 2;
   const hl = l / 2;
   const hd = Math.max(16, d / 2);
+  const cw = hw * 0.52;
+  const cl = hl * 0.52;
 
   return [
-    // Central Wrap Target & Seal (top facing)
+    // 1. Central Wrap Target & Seal (top octagonal crown)
     {
       id: 'wrapper-center',
       name: 'Central Wrap Target & Seal',
       panelId: 'wrapper-center',
       vertices: [
-        { x: -hw * 0.55, y: hd, z: -hl * 0.55 },
-        { x: hw * 0.55, y: hd, z: -hl * 0.55 },
-        { x: hw * 0.55, y: hd, z: hl * 0.55 },
-        { x: -hw * 0.55, y: hd, z: hl * 0.55 },
+        { x: -cw * 0.7, y: hd, z: -cl },
+        { x: cw * 0.7, y: hd, z: -cl },
+        { x: cw, y: hd, z: -cl * 0.7 },
+        { x: cw, y: hd, z: cl * 0.7 },
+        { x: cw * 0.7, y: hd, z: cl },
+        { x: -cw * 0.7, y: hd, z: cl },
+        { x: -cw, y: hd, z: cl * 0.7 },
+        { x: -cw, y: hd, z: -cl * 0.7 },
       ],
     },
-    // Top Fold Flap
+    // 2. Top Fold Flap
     {
       id: 'wrapper-top',
       name: 'Top Fold Flap',
       panelId: 'wrapper-top',
       vertices: [
-        { x: -hw, y: 0, z: -hl },
-        { x: hw, y: 0, z: -hl },
-        { x: hw * 0.55, y: hd, z: -hl * 0.55 },
-        { x: -hw * 0.55, y: hd, z: -hl * 0.55 },
+        { x: -hw * 0.85, y: -hd * 0.35, z: -hl },
+        { x: hw * 0.85, y: -hd * 0.35, z: -hl },
+        { x: cw * 0.7, y: hd, z: -cl },
+        { x: -cw * 0.7, y: hd, z: -cl },
       ],
     },
-    // Bottom Fold Flap
+    // 3. Top-Left Corner Fold Tuck
+    {
+      id: 'wrapper-top-left',
+      name: 'Top-Left Corner Fold',
+      panelId: 'wrapper-top',
+      vertices: [
+        { x: -hw * 0.85, y: -hd * 0.35, z: -hl },
+        { x: -cw * 0.7, y: hd, z: -cl },
+        { x: -cw, y: hd, z: -cl * 0.7 },
+        { x: -hw, y: -hd * 0.35, z: -hl * 0.85 },
+      ],
+    },
+    // 4. Top-Right Corner Fold Tuck
+    {
+      id: 'wrapper-top-right',
+      name: 'Top-Right Corner Fold',
+      panelId: 'wrapper-top',
+      vertices: [
+        { x: cw * 0.7, y: hd, z: -cl },
+        { x: hw * 0.85, y: -hd * 0.35, z: -hl },
+        { x: hw, y: -hd * 0.35, z: -hl * 0.85 },
+        { x: cw, y: hd, z: -cl * 0.7 },
+      ],
+    },
+    // 5. Bottom Fold Flap
     {
       id: 'wrapper-bottom',
       name: 'Bottom Fold Flap',
       panelId: 'wrapper-bottom',
       vertices: [
-        { x: -hw * 0.55, y: hd, z: hl * 0.55 },
-        { x: hw * 0.55, y: hd, z: hl * 0.55 },
-        { x: hw, y: 0, z: hl },
-        { x: -hw, y: 0, z: hl },
+        { x: -cw * 0.7, y: hd, z: cl },
+        { x: cw * 0.7, y: hd, z: cl },
+        { x: hw * 0.85, y: -hd * 0.35, z: hl },
+        { x: -hw * 0.85, y: -hd * 0.35, z: hl },
       ],
     },
-    // Left Fold Flap
+    // 6. Bottom-Left Corner Fold Tuck
+    {
+      id: 'wrapper-bot-left',
+      name: 'Bottom-Left Corner Fold',
+      panelId: 'wrapper-bottom',
+      vertices: [
+        { x: -hw, y: -hd * 0.35, z: hl * 0.85 },
+        { x: -cw, y: hd, z: cl * 0.7 },
+        { x: -cw * 0.7, y: hd, z: cl },
+        { x: -hw * 0.85, y: -hd * 0.35, z: hl },
+      ],
+    },
+    // 7. Bottom-Right Corner Fold Tuck
+    {
+      id: 'wrapper-bot-right',
+      name: 'Bottom-Right Corner Fold',
+      panelId: 'wrapper-bottom',
+      vertices: [
+        { x: cw, y: hd, z: cl * 0.7 },
+        { x: hw, y: -hd * 0.35, z: hl * 0.85 },
+        { x: hw * 0.85, y: -hd * 0.35, z: hl },
+        { x: cw * 0.7, y: hd, z: cl },
+      ],
+    },
+    // 8. Left Fold Flap
     {
       id: 'wrapper-left',
       name: 'Left Fold Flap',
       panelId: 'wrapper-left',
       vertices: [
-        { x: -hw, y: 0, z: -hl },
-        { x: -hw * 0.55, y: hd, z: -hl * 0.55 },
-        { x: -hw * 0.55, y: hd, z: hl * 0.55 },
-        { x: -hw, y: 0, z: hl },
+        { x: -hw, y: -hd * 0.35, z: -hl * 0.85 },
+        { x: -cw, y: hd, z: -cl * 0.7 },
+        { x: -cw, y: hd, z: cl * 0.7 },
+        { x: -hw, y: -hd * 0.35, z: hl * 0.85 },
       ],
     },
-    // Right Fold Flap
+    // 9. Right Fold Flap
     {
       id: 'wrapper-right',
       name: 'Right Fold Flap',
       panelId: 'wrapper-right',
       vertices: [
-        { x: hw * 0.55, y: hd, z: -hl * 0.55 },
-        { x: hw, y: 0, z: -hl },
-        { x: hw, y: 0, z: hl },
-        { x: hw * 0.55, y: hd, z: hl * 0.55 },
+        { x: cw, y: hd, z: -cl * 0.7 },
+        { x: hw, y: -hd * 0.35, z: -hl * 0.85 },
+        { x: hw, y: -hd * 0.35, z: hl * 0.85 },
+        { x: cw, y: hd, z: cl * 0.7 },
+      ],
+    },
+    // 10. Bottom Base (Resting surface)
+    {
+      id: 'wrapper-base',
+      name: 'Bottom Base',
+      panelId: 'wrapper-center',
+      vertices: [
+        { x: -hw * 0.85, y: -hd * 0.35, z: -hl },
+        { x: -hw, y: -hd * 0.35, z: -hl * 0.85 },
+        { x: -hw, y: -hd * 0.35, z: hl * 0.85 },
+        { x: -hw * 0.85, y: -hd * 0.35, z: hl },
+        { x: hw * 0.85, y: -hd * 0.35, z: hl },
+        { x: hw, y: -hd * 0.35, z: hl * 0.85 },
+        { x: hw, y: -hd * 0.35, z: -hl * 0.85 },
+        { x: hw * 0.85, y: -hd * 0.35, z: -hl },
       ],
     },
   ];
