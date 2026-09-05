@@ -180,6 +180,7 @@ export const ComplianceIconControls: React.FC<ComplianceIconControlsProps> = ({
     // Convert inline SVG to Base64 data URL
     const encoded = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(preset.svgString)}`;
 
+    const targetPanel = panels.find(p => p.id === effectivePanelId);
     const newItem: GraphicItem = {
       id: `icon-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       panelId: effectivePanelId,
@@ -187,6 +188,8 @@ export const ComplianceIconControls: React.FC<ComplianceIconControlsProps> = ({
       src: encoded,
       fileName: preset.name,
       clipToPanel,
+      x: targetPanel?.center.x,
+      y: targetPanel?.center.y,
     };
 
     onAddGraphic(newItem);

@@ -980,6 +980,12 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                       viewBox={`${panel.bounds.x - 4} ${panel.bounds.y - 4} ${panel.bounds.width + 8} ${panel.bounds.height + 8}`}
                       className="side-card-svg"
                     >
+                      <defs>
+                        <clipPath id={`proof-clip-${panel.id}`}>
+                          <polygon points={panel.polygon.map(p => `${p.x},${p.y}`).join(' ')} />
+                        </clipPath>
+                      </defs>
+
                       {/* Panel Background Polygon */}
                       <polygon
                         points={panel.polygon.map(p => `${p.x},${p.y}`).join(' ')}
@@ -988,20 +994,24 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                         strokeWidth={1}
                       />
 
-                      {/* Render Graphics On Panel */}
-                      {panelGraphics.map((g) => {
-                        const baseW = panel.bounds.width || 100;
-                        const baseH = panel.bounds.height || 100;
-                        const nw = g.naturalWidth || 100;
-                        const nh = g.naturalHeight || 100;
-                        const imgW = g.scaleX !== undefined ? nw * g.scaleX : baseW * 0.7;
-                        const imgH = g.scaleY !== undefined ? nh * g.scaleY : baseH * 0.7;
+                      {/* Render Graphics On Panel (Clipped to face polygon) */}
+                      <g clipPath={`url(#proof-clip-${panel.id})`}>
+                        {panelGraphics.map((g) => {
+                          const baseW = panel.bounds.width || 100;
+                          const baseH = panel.bounds.height || 100;
+                          const nw = g.naturalWidth || 100;
+                          const nh = g.naturalHeight || 100;
+                          const imgW = g.scaleX !== undefined ? nw * g.scaleX : baseW * 0.7;
+                          const imgH = g.scaleY !== undefined ? nh * g.scaleY : baseH * 0.7;
 
-                        return (
-                          <g
-                            key={g.id}
-                            transform={`translate(${g.x}, ${g.y}) rotate(${g.angle || 0})`}
-                          >
+                          const gx = g.x ?? panel.center.x;
+                          const gy = g.y ?? panel.center.y;
+
+                          return (
+                            <g
+                              key={g.id}
+                              transform={`translate(${gx}, ${gy}) rotate(${g.angle || 0})`}
+                            >
                             {g.type === 'text' && (
                               <text
                                 x={0}
@@ -1045,6 +1055,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                           </g>
                         );
                       })}
+                      </g>
                     </svg>
                   </div>
 

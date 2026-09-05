@@ -58,6 +58,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
       const src = e.target?.result as string;
       if (!src) return;
 
+      const targetPanel = panels.find(p => p.id === effectivePanelId);
       const newItem: GraphicItem = {
         id: `img-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         panelId: effectivePanelId,
@@ -65,6 +66,8 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
         src,
         fileName: file.name,
         clipToPanel: clipOption,
+        x: targetPanel?.center.x,
+        y: targetPanel?.center.y,
       };
 
       onAddGraphic(newItem);

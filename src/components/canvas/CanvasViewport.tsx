@@ -62,6 +62,9 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
 
     const engine = new FabricDielineCanvas(canvasRef.current);
     engineRef.current = engine;
+    if ((import.meta as any).env?.DEV) {
+      (window as any).__DIELINE_ENGINE__ = engine;
+    }
 
     engine.setCallbacks({
       onSelectPanel: (id) => onSelectPanel(id),

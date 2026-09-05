@@ -62,6 +62,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
   const handleAddText = () => {
     if (!text.trim()) return;
 
+    const targetPanel = panels.find(p => p.id === effectivePanelId);
     const newItem: GraphicItem = {
       id: `txt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       panelId: effectivePanelId,
@@ -74,6 +75,8 @@ export const TextControls: React.FC<TextControlsProps> = ({
       fill,
       clipToPanel,
       angle,
+      x: targetPanel?.center.x,
+      y: targetPanel?.center.y,
     };
 
     onAddGraphic(newItem);

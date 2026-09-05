@@ -88,6 +88,7 @@ export const BarcodeControls: React.FC<BarcodeControlsProps> = ({
   const handleAddCode = () => {
     if (!previewDataUrl) return;
 
+    const targetPanel = panels.find(p => p.id === effectivePanelId);
     if (mode === 'barcode') {
       const newItem: GraphicItem = {
         id: `bar-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -98,6 +99,8 @@ export const BarcodeControls: React.FC<BarcodeControlsProps> = ({
         barcodeFormat,
         barcodeValue,
         clipToPanel,
+        x: targetPanel?.center.x,
+        y: targetPanel?.center.y,
       };
       onAddGraphic(newItem);
     } else {
@@ -109,6 +112,8 @@ export const BarcodeControls: React.FC<BarcodeControlsProps> = ({
         fileName: `QR: ${qrContent.slice(0, 20)}`,
         qrContent,
         clipToPanel,
+        x: targetPanel?.center.x,
+        y: targetPanel?.center.y,
       };
       onAddGraphic(newItem);
     }
