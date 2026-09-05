@@ -8,7 +8,7 @@ import { GraphicItem } from './core/graphics/types';
 import {
   getThemePreference,
   saveThemePreference,
-  loadDraft,
+  loadDraftAsync,
   saveDraftDebounced,
   exportProjectFile,
   parseProjectFile,
@@ -39,14 +39,17 @@ export const App: React.FC = () => {
     saveThemePreference(themeId);
   }, [themeId]);
 
-  // Check for existing saved draft on initial application load
+  // Check for existing saved draft on initial application load (IndexedDB + localStorage)
   useEffect(() => {
     if (!hasInitializedDraftCheck) {
-      const draft = loadDraft();
-      if (draft && (draft.graphics.length > 0 || draft.templateId !== 'burger-box')) {
-        setDetectedDraft(draft);
-      }
-      setHasInitializedDraftCheck(true);
+      loadDraftAsync().then((draft) => {
+        if (draft && (draft.graphics.length > 0 || draft.templateId !== 'burger-box')) {
+          setDetectedDraft(draft);
+        }
+        setHasInitializedDraftCheck(true);
+      }).catch(() => {
+        setHasInitializedDraftCheck(true);
+      });
     }
   }, [hasInitializedDraftCheck]);
 

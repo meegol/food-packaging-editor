@@ -43,8 +43,14 @@ export function saveThemePreference(themeId: string): void {
   }
 }
 
+import {
+  saveDraftToIndexedDB,
+  loadDraftFromIndexedDB,
+  clearDraftFromIndexedDB,
+} from './indexedDbStorage';
+
 /**
- * Save draft state directly to localStorage
+ * Save draft state to IndexedDB (for high-capacity images) and localStorage (for instant hydration)
  */
 export function saveDraft(
   templateId: string,
@@ -53,25 +59,51 @@ export function saveDraft(
   theme: string,
   projectName = 'Untitled Packaging Project'
 ): boolean {
+  const existing = loadDraft();
+  const projectData: PackagingProjectData = {
+    metadata: {
+      name: projectName,
+      version: CURRENT_SCHEMA_VERSION,
+      createdAt: existing?.metadata.createdAt || Date.now(),
+      updatedAt: Date.now(),
+    },
+    templateId,
+    dimensions,
+    graphics,
+    theme,
+  };
+
+  // 1. Asynchronously save complete project with high-res assets to IndexedDB
+  saveDraftToIndexedDB(projectData).catch((err) => {
+    console.warn('Background IndexedDB autosave error:', err);
+  });
+
+  // 2. Synchronously save to localStorage for instant startup hydration
   try {
-    const existing = loadDraft();
-    const projectData: PackagingProjectData = {
-      metadata: {
-        name: projectName,
-        version: CURRENT_SCHEMA_VERSION,
-        createdAt: existing?.metadata.createdAt || Date.now(),
-        updatedAt: Date.now(),
-      },
-      templateId,
-      dimensions,
-      graphics,
-      theme,
-    };
     localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(projectData));
     return true;
   } catch (err) {
-    console.warn('Could not autosave draft to localStorage:', err);
-    return false;
+    // If QuotaExceededError occurs (typically ~5MB limit), strip heavy image strings for localStorage
+    try {
+      const lightweightGraphics = graphics.map((g) => {
+        if (g.src && g.src.length > 2048) {
+          // Keep item metadata but mark source for IndexedDB hydration
+          return { ...g, src: `indexeddb:${g.id}` };
+        }
+        return g;
+      });
+
+      const lightweightData: PackagingProjectData = {
+        ...projectData,
+        graphics: lightweightGraphics,
+      };
+
+      localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(lightweightData));
+      return true;
+    } catch (fallbackErr) {
+      console.warn('Could not autosave draft to localStorage:', fallbackErr);
+      return false;
+    }
   }
 }
 
@@ -105,7 +137,7 @@ export function saveDraftDebounced(
 }
 
 /**
- * Load draft from local storage
+ * Load draft synchronously from local storage
  */
 export function loadDraft(): PackagingProjectData | null {
   try {
@@ -123,6 +155,22 @@ export function loadDraft(): PackagingProjectData | null {
 }
 
 /**
+ * High-capacity draft loader checking IndexedDB first for full-resolution images
+ */
+export async function loadDraftAsync(): Promise<PackagingProjectData | null> {
+  try {
+    const idbData = await loadDraftFromIndexedDB();
+    if (idbData && idbData.templateId && idbData.dimensions) {
+      return idbData;
+    }
+  } catch (err) {
+    console.warn('IndexedDB load error, falling back to localStorage:', err);
+  }
+
+  return loadDraft();
+}
+
+/**
  * Check if a saved draft exists
  */
 export function hasDraft(): boolean {
@@ -130,14 +178,18 @@ export function hasDraft(): boolean {
 }
 
 /**
- * Clear existing draft from localStorage
+ * Clear existing draft from both localStorage and IndexedDB
  */
 export function clearDraft(): void {
   try {
     localStorage.removeItem(STORAGE_KEY_DRAFT);
   } catch (err) {
-    console.warn('Failed to clear draft:', err);
+    console.warn('Failed to clear localStorage draft:', err);
   }
+
+  clearDraftFromIndexedDB().catch((err) => {
+    console.warn('Failed to clear IndexedDB draft:', err);
+  });
 }
 
 /**
