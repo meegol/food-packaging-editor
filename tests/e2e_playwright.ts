@@ -92,11 +92,7 @@ async function runTests() {
     const turntableSlider = page.locator('.turntable-slider');
     await turntableSlider.waitFor({ state: 'visible', timeout: 3000 });
 
-    await turntableSlider.evaluate((el: HTMLInputElement) => {
-      el.value = '135';
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-    });
+    await turntableSlider.fill('135');
     await page.waitForTimeout(400);
 
     const degreeBadge = await page.locator('.turntable-degree-badge').innerText();
@@ -105,6 +101,22 @@ async function runTests() {
     const turntablePath = path.join(SCREENSHOT_DIR, '04_assembled_burger_turntable_rotated.png');
     await page.screenshot({ path: turntablePath });
     console.log(`   ✓ Screenshot 4 (Turntable 135°): ${turntablePath}`);
+
+    // Test Open Lid on Burger Box in 3/4 Hero view
+    console.log('\n3b. Testing Burger Box Open Lid:');
+    await page.locator('.preview-pill-btn:has-text("3/4 Hero")').click();
+    await page.waitForTimeout(300);
+    const opennessSlider = page.locator('.openness-slider');
+    if (await opennessSlider.isVisible()) {
+      await opennessSlider.fill('0.65');
+      await page.waitForTimeout(400);
+      const burgerOpenPath = path.join(SCREENSHOT_DIR, '04b_burger_open_lid.png');
+      await page.screenshot({ path: burgerOpenPath });
+      console.log(`   ✓ Screenshot 4b (Burger Box Open Lid): ${burgerOpenPath}`);
+      // Reset openness to 0
+      await opennessSlider.fill('0');
+      await page.waitForTimeout(200);
+    }
 
     // 2f. Test Wheel Scrolling over Preview
     console.log('\n4. Testing Mouse-Wheel / Touchpad Scrolling:');
@@ -164,9 +176,9 @@ async function runTests() {
 
     // Pizza Box with Open Lid
     await selectTemplate('Pizza Box');
-    const opennessSlider = page.locator('.openness-slider');
-    if (await opennessSlider.isVisible()) {
-      await opennessSlider.fill('0.65');
+    const pizzaOpenSlider = page.locator('.openness-slider');
+    if (await pizzaOpenSlider.isVisible()) {
+      await pizzaOpenSlider.fill('0.65');
       await page.waitForTimeout(500);
     }
     const pizzaPath = path.join(SCREENSHOT_DIR, '08_pizza_box_open_lid.png');

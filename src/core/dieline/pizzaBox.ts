@@ -56,6 +56,21 @@ export function generatePizzaBoxDieline(dimensions: PackagingDimensions): Dielin
     isBase: true,
   });
 
+  // Front Base Wall
+  const baseFrontRect = { x: startX, y: startY - d, width: w, height: d };
+  panels.push({
+    id: 'pizza-base-front',
+    name: 'Front Base Wall',
+    polygon: [
+      { x: startX + taper, y: startY - d },
+      { x: startX + w - taper, y: startY - d },
+      { x: startX + w, y: startY },
+      { x: startX, y: startY },
+    ],
+    bounds: baseFrontRect,
+    center: { x: startX + w / 2, y: startY - d / 2 },
+  });
+
   // Left Outer Wall
   const leftOuterRect = { x: startX - d, y: startY, width: d, height: l };
   panels.push({

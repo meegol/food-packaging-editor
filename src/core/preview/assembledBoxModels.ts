@@ -80,7 +80,7 @@ export function generateAssembledModel(
   const l = dimensions.length * scale;
   // Ensure vertical height is clearly legible even on flat packaging (e.g. pizza box or stick pack)
   const rawD = dimensions.depth * scale;
-  const minDepth = templateId === 'pizza-box' ? 46 : templateId === 'sachet-stick-pack' ? 18 : 32;
+  const minDepth = templateId === 'pizza-box' ? 34 : templateId === 'sachet-stick-pack' ? 18 : 28;
   const d = Math.max(rawD, minDepth);
 
   let faces3D: Face3DDefinition[] = [];
@@ -194,9 +194,9 @@ export function buildBurgerBox3D(w: number, l: number, d: number, openness: numb
   const hl = l / 2;
   const hd = d / 2;
 
-  // Base tray taper: bottom is 84% width and length of the rim
-  const bw = hw * 0.84;
-  const bl = hl * 0.84;
+  // Base tray: subtle draft angle (~2-3 degrees) for realistic paperboard carton look
+  const bw = hw * 0.95;
+  const bl = hl * 0.95;
 
   const faces: Face3DDefinition[] = [
     // Base Bottom (exterior facing -Y)
@@ -216,9 +216,10 @@ export function buildBurgerBox3D(w: number, l: number, d: number, openness: numb
       id: 'burger-base-front',
       name: 'Base Front Wall',
       panelId: 'base-front',
+      doubleSided: openness > 0.05,
       vertices: [
-        { x: -hw, y: 0, z: hl },
-        { x: hw, y: 0, z: hl },
+        { x: -hw, y: hd, z: hl },
+        { x: hw, y: hd, z: hl },
         { x: bw, y: -hd, z: bl },
         { x: -bw, y: -hd, z: bl },
       ],
@@ -228,9 +229,10 @@ export function buildBurgerBox3D(w: number, l: number, d: number, openness: numb
       id: 'burger-rear-hinge',
       name: 'Rear Hinge Wall',
       panelId: 'rear-hinge',
+      doubleSided: openness > 0.05,
       vertices: [
-        { x: hw, y: 0, z: -hl },
-        { x: -hw, y: 0, z: -hl },
+        { x: hw, y: hd, z: -hl },
+        { x: -hw, y: hd, z: -hl },
         { x: -bw, y: -hd, z: -bl },
         { x: bw, y: -hd, z: -bl },
       ],
@@ -240,9 +242,10 @@ export function buildBurgerBox3D(w: number, l: number, d: number, openness: numb
       id: 'burger-base-left',
       name: 'Base Left Wall',
       panelId: 'base-left',
+      doubleSided: openness > 0.05,
       vertices: [
-        { x: -hw, y: 0, z: -hl },
-        { x: -hw, y: 0, z: hl },
+        { x: -hw, y: hd, z: -hl },
+        { x: -hw, y: hd, z: hl },
         { x: -bw, y: -hd, z: bl },
         { x: -bw, y: -hd, z: -bl },
       ],
@@ -252,9 +255,10 @@ export function buildBurgerBox3D(w: number, l: number, d: number, openness: numb
       id: 'burger-base-right',
       name: 'Base Right Wall',
       panelId: 'base-right',
+      doubleSided: openness > 0.05,
       vertices: [
-        { x: hw, y: 0, z: hl },
-        { x: hw, y: 0, z: -hl },
+        { x: hw, y: hd, z: hl },
+        { x: hw, y: hd, z: -hl },
         { x: bw, y: -hd, z: -bl },
         { x: bw, y: -hd, z: bl },
       ],
@@ -277,111 +281,99 @@ export function buildBurgerBox3D(w: number, l: number, d: number, openness: numb
     });
   }
 
-  // Top Lid assembly rotates around rear hinge axis: (y = 0, z = -hl)
-  const hingeY = 0;
+  // Top Lid assembly rotates around rear top hinge axis: (y = hd, z = -hl)
+  const hingeY = hd;
   const hingeZ = -hl;
-  const hingeAngle = (openness * 110 * Math.PI) / 180;
+  const hingeAngle = (openness * 105 * Math.PI) / 180;
   const cosH = Math.cos(hingeAngle);
   const sinH = Math.sin(hingeAngle);
 
+  // Rigid-body lid rotation around (hingeY, hingeZ)
   const rotLid = (p: Vector3): Vector3 => {
     const dy = p.y - hingeY;
     const dz = p.z - hingeZ;
     return {
       x: p.x,
-      y: hingeY + dy * cosH - dz * sinH,
-      z: hingeZ + dy * sinH + dz * cosH,
+      y: hingeY + dy * cosH + dz * sinH,
+      z: hingeZ - dy * sinH + dz * cosH,
     };
   };
 
-  // Lid has slight top taper (88% width and length)
-  const lw = hw * 0.88;
-  const ll = hl * 0.88;
-  // Lid rim slightly overlaps base rim for clean fit
-  const rw = hw * 1.02;
-  const rl = hl * 1.02;
+  // Lid has slight outer clearance to snugly fit over base tray
+  const rw = hw * 1.01;
+  const rl = hl * 1.01;
+  const lidY = hd + 0.5;
+  const tuckH = d * 0.55;
+  const sideFlapH = d * 0.65;
 
   // Top Lid Main Panel (facing +Y)
   faces.push({
     id: 'burger-lid-top',
     name: 'Top Lid (Branding)',
     panelId: 'lid-top',
-    doubleSided: openness > 0.1,
+    doubleSided: openness > 0.05,
     vertices: [
-      rotLid({ x: -lw, y: hd, z: -ll }),
-      rotLid({ x: lw, y: hd, z: -ll }),
-      rotLid({ x: lw, y: hd, z: ll }),
-      rotLid({ x: -lw, y: hd, z: ll }),
+      rotLid({ x: -rw, y: lidY, z: -rl }),
+      rotLid({ x: rw, y: lidY, z: -rl }),
+      rotLid({ x: rw, y: lidY, z: rl }),
+      rotLid({ x: -rw, y: lidY, z: rl }),
     ],
   });
 
-  // Lid Front Wall (facing +Z)
+  // Lid Front Closure Flap (folds down 90° from lid front edge)
   faces.push({
     id: 'burger-lid-front',
-    name: 'Lid Front Flap',
+    name: 'Lid Front Closure Flap',
     panelId: 'lid-front',
-    doubleSided: openness > 0.1,
+    doubleSided: true,
     vertices: [
-      rotLid({ x: -lw, y: hd, z: ll }),
-      rotLid({ x: lw, y: hd, z: ll }),
-      rotLid({ x: rw, y: 0, z: rl }),
-      rotLid({ x: -rw, y: 0, z: rl }),
+      rotLid({ x: -rw, y: lidY, z: rl + 0.5 }),
+      rotLid({ x: rw, y: lidY, z: rl + 0.5 }),
+      rotLid({ x: rw * 0.94, y: lidY - tuckH, z: rl + 0.5 }),
+      rotLid({ x: -rw * 0.94, y: lidY - tuckH, z: rl + 0.5 }),
     ],
   });
 
-  // Lid Front Closure Lock Tab (protrudes downward from front rim)
+  // Lid Front Closure Lock Tab (protrudes downward from center of front flap)
+  const tabW = rw * 0.42;
   faces.push({
     id: 'burger-lid-tab',
     name: 'Closure Lock Tab',
     panelId: 'lid-front',
     doubleSided: true,
     vertices: [
-      rotLid({ x: -hw * 0.45, y: 0, z: rl }),
-      rotLid({ x: hw * 0.45, y: 0, z: rl }),
-      rotLid({ x: hw * 0.38, y: -12, z: rl + 1 }),
-      rotLid({ x: -hw * 0.38, y: -12, z: rl + 1 }),
+      rotLid({ x: -tabW, y: lidY - tuckH, z: rl + 0.5 }),
+      rotLid({ x: tabW, y: lidY - tuckH, z: rl + 0.5 }),
+      rotLid({ x: tabW * 0.75, y: lidY - tuckH - 12, z: rl + 0.5 }),
+      rotLid({ x: -tabW * 0.75, y: lidY - tuckH - 12, z: rl + 0.5 }),
     ],
   });
 
-  // Lid Left Flap (facing -X)
+  // Lid Left Flap (folds down 90° along left rim)
   faces.push({
     id: 'burger-lid-left',
     name: 'Lid Left Flap',
     panelId: 'lid-left',
-    doubleSided: openness > 0.1,
+    doubleSided: true,
     vertices: [
-      rotLid({ x: -rw, y: 0, z: -rl }),
-      rotLid({ x: -rw, y: 0, z: rl }),
-      rotLid({ x: -lw, y: hd, z: ll }),
-      rotLid({ x: -lw, y: hd, z: -ll }),
+      rotLid({ x: -rw - 0.5, y: lidY, z: -rl }),
+      rotLid({ x: -rw - 0.5, y: lidY, z: rl }),
+      rotLid({ x: -rw - 0.5, y: lidY - sideFlapH, z: rl * 0.92 }),
+      rotLid({ x: -rw - 0.5, y: lidY - sideFlapH, z: -rl * 0.92 }),
     ],
   });
 
-  // Lid Right Flap (facing +X)
+  // Lid Right Flap (folds down 90° along right rim)
   faces.push({
     id: 'burger-lid-right',
     name: 'Lid Right Flap',
     panelId: 'lid-right',
-    doubleSided: openness > 0.1,
+    doubleSided: true,
     vertices: [
-      rotLid({ x: rw, y: 0, z: rl }),
-      rotLid({ x: rw, y: 0, z: -rl }),
-      rotLid({ x: lw, y: hd, z: -ll }),
-      rotLid({ x: lw, y: hd, z: ll }),
-    ],
-  });
-
-  // Lid Rear Wall (facing -Z)
-  faces.push({
-    id: 'burger-lid-rear',
-    name: 'Lid Rear Wall',
-    panelId: 'rear-hinge',
-    doubleSided: openness > 0.1,
-    vertices: [
-      rotLid({ x: lw, y: hd, z: -ll }),
-      rotLid({ x: -lw, y: hd, z: -ll }),
-      rotLid({ x: -hw, y: 0, z: -hl }),
-      rotLid({ x: hw, y: 0, z: -hl }),
+      rotLid({ x: rw + 0.5, y: lidY, z: rl }),
+      rotLid({ x: rw + 0.5, y: lidY, z: -rl }),
+      rotLid({ x: rw + 0.5, y: lidY - sideFlapH, z: -rl * 0.92 }),
+      rotLid({ x: rw + 0.5, y: lidY - sideFlapH, z: rl * 0.92 }),
     ],
   });
 
@@ -414,6 +406,7 @@ export function buildPizzaBox3D(w: number, l: number, d: number, openness: numbe
       id: 'pizza-rear',
       name: 'Rear Wall',
       panelId: 'pizza-rear',
+      doubleSided: openness > 0.05,
       vertices: [
         { x: hw, y: hd, z: -hl },
         { x: -hw, y: hd, z: -hl },
@@ -426,6 +419,7 @@ export function buildPizzaBox3D(w: number, l: number, d: number, openness: numbe
       id: 'pizza-left-outer',
       name: 'Left Outer Wall',
       panelId: 'pizza-left-outer',
+      doubleSided: openness > 0.05,
       vertices: [
         { x: -hw, y: hd, z: -hl },
         { x: -hw, y: hd, z: hl },
@@ -438,6 +432,7 @@ export function buildPizzaBox3D(w: number, l: number, d: number, openness: numbe
       id: 'pizza-right-outer',
       name: 'Right Outer Wall',
       panelId: 'pizza-right-outer',
+      doubleSided: openness > 0.05,
       vertices: [
         { x: hw, y: hd, z: hl },
         { x: hw, y: hd, z: -hl },
@@ -448,8 +443,9 @@ export function buildPizzaBox3D(w: number, l: number, d: number, openness: numbe
     // Front Base Wall (facing +Z)
     {
       id: 'pizza-front-wall',
-      name: 'Front Wall',
-      panelId: 'pizza-lid-front',
+      name: 'Front Base Wall',
+      panelId: 'pizza-base-front',
+      doubleSided: openness > 0.05,
       vertices: [
         { x: -hw, y: hd, z: hl },
         { x: hw, y: hd, z: hl },
@@ -459,7 +455,7 @@ export function buildPizzaBox3D(w: number, l: number, d: number, openness: numbe
     },
   ];
 
-  // Inside bottom tray visible when lid is opened
+  // Inside bottom tray & roll-over inner walls visible when lid is opened
   if (openness > 0.05) {
     faces.push({
       id: 'pizza-tray-inside',
@@ -467,10 +463,38 @@ export function buildPizzaBox3D(w: number, l: number, d: number, openness: numbe
       panelId: 'pizza-base',
       doubleSided: true,
       vertices: [
-        { x: -hw + 3, y: -hd + 1, z: -hl + 3 },
-        { x: hw - 3, y: -hd + 1, z: -hl + 3 },
-        { x: hw - 3, y: -hd + 1, z: hl - 3 },
-        { x: -hw + 3, y: -hd + 1, z: hl - 3 },
+        { x: -hw + 2, y: -hd + 1, z: -hl + 2 },
+        { x: hw - 2, y: -hd + 1, z: -hl + 2 },
+        { x: hw - 2, y: -hd + 1, z: hl - 2 },
+        { x: -hw + 2, y: -hd + 1, z: hl - 2 },
+      ],
+    });
+
+    // Roll-Over Left Inner Wall
+    faces.push({
+      id: 'pizza-left-inner',
+      name: 'Left Inner Wall (Roll-Over)',
+      panelId: 'pizza-left-inner',
+      doubleSided: true,
+      vertices: [
+        { x: -hw + 2, y: -hd + 1, z: hl - 2 },
+        { x: -hw + 2, y: -hd + 1, z: -hl + 2 },
+        { x: -hw + 2, y: hd, z: -hl + 2 },
+        { x: -hw + 2, y: hd, z: hl - 2 },
+      ],
+    });
+
+    // Roll-Over Right Inner Wall
+    faces.push({
+      id: 'pizza-right-inner',
+      name: 'Right Inner Wall (Roll-Over)',
+      panelId: 'pizza-right-inner',
+      doubleSided: true,
+      vertices: [
+        { x: hw - 2, y: -hd + 1, z: -hl + 2 },
+        { x: hw - 2, y: -hd + 1, z: hl - 2 },
+        { x: hw - 2, y: hd, z: hl - 2 },
+        { x: hw - 2, y: hd, z: -hl + 2 },
       ],
     });
   }
@@ -482,69 +506,74 @@ export function buildPizzaBox3D(w: number, l: number, d: number, openness: numbe
   const cosH = Math.cos(hingeAngle);
   const sinH = Math.sin(hingeAngle);
 
+  // Rigid-body lid rotation around (hingeY, hingeZ)
   const rotLid = (p: Vector3): Vector3 => {
     const dy = p.y - hingeY;
     const dz = p.z - hingeZ;
     return {
       x: p.x,
-      y: hingeY + dy * cosH - dz * sinH,
-      z: hingeZ + dy * sinH + dz * cosH,
+      y: hingeY + dy * cosH + dz * sinH,
+      z: hingeZ - dy * sinH + dz * cosH,
     };
   };
+
+  const lidY = hd + 0.5;
+  const tuckH = d * 0.85;
+  const sideFlapH = d * 0.75;
 
   // Top Lid Main Panel (facing +Y)
   faces.push({
     id: 'pizza-lid',
     name: 'Top Lid (Main)',
     panelId: 'pizza-lid',
-    doubleSided: openness > 0.1,
+    doubleSided: openness > 0.05,
     vertices: [
-      rotLid({ x: -hw, y: hd, z: -hl }),
-      rotLid({ x: hw, y: hd, z: -hl }),
-      rotLid({ x: hw, y: hd, z: hl }),
-      rotLid({ x: -hw, y: hd, z: hl }),
+      rotLid({ x: -hw, y: lidY, z: -hl }),
+      rotLid({ x: hw, y: lidY, z: -hl }),
+      rotLid({ x: hw, y: lidY, z: hl }),
+      rotLid({ x: -hw, y: lidY, z: hl }),
     ],
   });
 
-  // Front Tuck Flap (folds down at front edge)
+  // Front Tuck Flap (folds down 90° at front edge)
   faces.push({
     id: 'pizza-lid-front',
-    name: 'Lid Front Tuck Flap',
+    name: 'Lid Front Closure Flap',
     panelId: 'pizza-lid-front',
     doubleSided: true,
     vertices: [
-      rotLid({ x: -hw, y: hd, z: hl }),
-      rotLid({ x: hw, y: hd, z: hl }),
-      rotLid({ x: hw * 0.98, y: -hd + 2, z: hl }),
-      rotLid({ x: -hw * 0.98, y: -hd + 2, z: hl }),
+      rotLid({ x: -hw, y: lidY, z: hl + 0.5 }),
+      rotLid({ x: hw, y: lidY, z: hl + 0.5 }),
+      rotLid({ x: hw * 0.95, y: lidY - tuckH, z: hl + 0.5 }),
+      rotLid({ x: -hw * 0.95, y: lidY - tuckH, z: hl + 0.5 }),
     ],
   });
 
-  // Left Lid Side Flap
+  // Left Lid Side Tuck Flap (folds down 90° along left rim)
   faces.push({
     id: 'pizza-lid-left',
-    name: 'Lid Left Side Flap',
+    name: 'Lid Left Tuck Flap',
     panelId: 'pizza-lid-left',
     doubleSided: true,
     vertices: [
-      rotLid({ x: -hw, y: hd, z: -hl }),
-      rotLid({ x: -hw, y: hd, z: hl }),
-      rotLid({ x: -hw + 2, y: -hd + 4, z: hl }),
-      rotLid({ x: -hw + 2, y: -hd + 4, z: -hl }),
+      rotLid({ x: -hw - 0.5, y: lidY, z: -hl }),
+      rotLid({ x: -hw - 0.5, y: lidY, z: hl }),
+      rotLid({ x: -hw - 0.5, y: lidY - sideFlapH, z: hl * 0.92 }),
+      rotLid({ x: -hw - 0.5, y: lidY - sideFlapH, z: -hl * 0.92 }),
     ],
   });
 
-  // Right Lid Side Flap
+  // Right Lid Side Tuck Flap (folds down 90° along right rim)
   faces.push({
     id: 'pizza-lid-right',
-    name: 'Lid Right Side Flap',
+    name: 'Lid Right Tuck Flap',
     panelId: 'pizza-lid-right',
     doubleSided: true,
     vertices: [
-      rotLid({ x: hw, y: hd, z: hl }),
-      rotLid({ x: hw, y: hd, z: -hl }),
-      rotLid({ x: hw - 2, y: -hd + 4, z: -hl }),
-      rotLid({ x: hw - 2, y: -hd + 4, z: hl }),
+      rotLid({ x: hw + 0.5, y: lidY, z: hl }),
+      rotLid({ x: hw + 0.5, y: lidY, z: -hl }),
+      rotLid({ x: hw + 0.5, y: lidY - sideFlapH, z: -hl * 0.92 }),
+      rotLid({ x: hw + 0.5, y: lidY - sideFlapH, z: hl * 0.92 }),
     ],
   });
 
