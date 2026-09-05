@@ -1,9 +1,10 @@
-import { TEMPLATES, getTemplateById, generateDieline } from '/home/migoldev/Documents/thesis/src/core/dieline';
-import { generateAssembledModel } from '/home/migoldev/Documents/thesis/src/core/preview/assembledBoxModels';
-import { getQuadAffineMatrix, mapPanelGraphicsToFace } from '/home/migoldev/Documents/thesis/src/core/preview/graphicProjection';
-import { parseProjectFile } from '/home/migoldev/Documents/thesis/src/core/storage/projectStorage';
-import { GraphicItem } from '/home/migoldev/Documents/thesis/src/core/graphics/types';
-import { ViewAngle, MaterialFinish } from '/home/migoldev/Documents/thesis/src/core/preview/previewTypes';
+import { TEMPLATES, getTemplateById, generateDieline } from '../src/core/dieline';
+import { generateAssembledModel } from '../src/core/preview/assembledBoxModels';
+import { getQuadAffineMatrix, mapPanelGraphicsToFace } from '../src/core/preview/graphicProjection';
+import { parseProjectFile } from '../src/core/storage/projectStorage';
+import { GraphicItem } from '../src/core/graphics/types';
+import { ViewAngle } from '../src/core/preview/previewTypes';
+import { PanelFace } from '../src/core/dieline/types';
 
 let passed = 0;
 let total = 0;
@@ -49,7 +50,6 @@ for (const tmpl of TEMPLATES) {
 // -----------------------------------------------------------
 console.log('\n📦 Test Suite 2: 2D Assembled Perspective Models');
 const viewAngles: ViewAngle[] = ['isometric', 'front', 'top', 'side'];
-const materials: MaterialFinish[] = ['white', 'kraft', 'dark', 'cream'];
 
 for (const tmpl of TEMPLATES) {
   const dieline = generateDieline(tmpl.id, tmpl.defaultDimensions);
@@ -86,7 +86,7 @@ for (const tmpl of TEMPLATES) {
 // -----------------------------------------------------------
 console.log('\n🎨 Test Suite 3: Artwork & Typography Projection Engine');
 const burgerDieline = generateDieline('burger-box', getTemplateById('burger-box').defaultDimensions);
-const topLidPanel = burgerDieline.panels.find(p => p.id === 'lid-top' || p.id === 'top-lid' || p.isLid)!;
+const topLidPanel = burgerDieline.panels.find((p: PanelFace) => p.id === 'lid-top' || p.id === 'top-lid' || p.isLid)!;
 assert(topLidPanel !== undefined, 'Burger box has lid panel');
 
 const testGraphics: GraphicItem[] = [
