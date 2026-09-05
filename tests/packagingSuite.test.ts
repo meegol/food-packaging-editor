@@ -48,13 +48,14 @@ for (const tmpl of TEMPLATES) {
 // -----------------------------------------------------------
 // TEST SUITE 2: 2D Assembled Models for All 12 Templates
 // -----------------------------------------------------------
-console.log('\n📦 Test Suite 2: 2D Assembled Perspective Models');
-const viewAngles: ViewAngle[] = ['isometric', 'front', 'top', 'side'];
+console.log('\n📦 Test Suite 2: 3D Assembled Perspective Models & 360° Turntable Rotation');
+const viewAngles: ViewAngle[] = ['isometric', 'front', 'side', 'back', 'left', 'top', 'bottom'];
+const turntableYaws = [0, 45, 90, 135, 180, 225, 270, 315];
 
 for (const tmpl of TEMPLATES) {
   const dieline = generateDieline(tmpl.id, tmpl.defaultDimensions);
 
-  // Test across different angles and openness levels
+  // 1. Test across all cardinal angles
   for (const angle of viewAngles) {
     const model = generateAssembledModel(
       tmpl.id,
@@ -71,13 +72,34 @@ for (const tmpl of TEMPLATES) {
       }
     );
 
-    assert(model.faces.length > 0, `${tmpl.name} [Angle: ${angle}]: Model produced ${model.faces.length} visible faces`);
-    assert(model.shadow.rx > 0 && model.shadow.ry > 0, `${tmpl.name} [Angle: ${angle}]: Ground shadow valid`);
+    assert(model.faces.length > 0, `${tmpl.name} [Cardinal Angle: ${angle}]: Model produced ${model.faces.length} visible faces`);
+    assert(model.shadow.rx > 0 && model.shadow.ry > 0, `${tmpl.name} [Cardinal Angle: ${angle}]: Ground shadow valid`);
 
     for (const face of model.faces) {
       assert(face.points.length >= 3 || face.pathD !== undefined, `${tmpl.name} -> Face "${face.name}": Has valid geometry`);
-      assert(face.lighting > 0, `${tmpl.name} -> Face "${face.name}": Has valid lighting factor (${face.lighting})`);
+      assert(face.lighting > 0, `${tmpl.name} -> Face "${face.name}": Has valid lighting factor (${face.lighting.toFixed(2)})`);
     }
+  }
+
+  // 2. Test continuous 360° turntable rotation steps
+  for (const yaw of turntableYaws) {
+    const model = generateAssembledModel(
+      tmpl.id,
+      tmpl.defaultDimensions,
+      dieline.panels,
+      [],
+      {
+        viewAngle: 'custom',
+        material: 'white',
+        lighting: 'light',
+        openness: 0,
+        showShadow: true,
+        zoom: 1,
+        yaw,
+        pitch: 15,
+      }
+    );
+    assert(model.faces.length > 0, `${tmpl.name} [360° Yaw ${yaw}°]: Model has ${model.faces.length} visible faces`);
   }
 }
 

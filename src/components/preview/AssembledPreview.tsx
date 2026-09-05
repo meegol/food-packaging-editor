@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { 
   Eye, 
   Rotate3d, 
@@ -6,9 +6,12 @@ import {
   Sparkles, 
   Sun, 
   Moon, 
-  Camera 
+  Camera,
+  Layers,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
-import { DielineResult } from '../../core/dieline/types';
+import { DielineResult, PanelFace } from '../../core/dieline/types';
 import { GraphicItem } from '../../core/graphics/types';
 import { 
   ViewAngle, 
@@ -30,24 +33,149 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
   graphics,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Preview configuration states
-  const [viewAngle, setViewAngle] = useState<ViewAngle>('isometric');
+  // 3D Turntable angles (yaw: 0-360 deg, pitch: -65 to +65 deg)
+  const [yaw, setYaw] = useState<number>(35);
+  const [pitch, setPitch] = useState<number>(24);
+  const [viewAnglePreset, setViewAnglePreset] = useState<ViewAngle>('isometric');
+
+  // Drag interaction state
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const lastMousePos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Material & studio lighting
   const [material, setMaterial] = useState<MaterialFinish>('white');
   const [lighting, setLighting] = useState<StudioLighting>('dark');
   const [openness, setOpenness] = useState<number>(0);
   const [hoveredFaceName, setHoveredFaceName] = useState<string | null>(null);
 
+  // All-Sides Proof Sheet drawer open/closed state
+  const [showSidesStrip, setShowSidesStrip] = useState<boolean>(true);
+  const [selectedPanelId, setSelectedPanelId] = useState<string | null>(null);
+
+  // Angle preset snapping
+  const snapToAngle = (preset: ViewAngle) => {
+    setViewAnglePreset(preset);
+    switch (preset) {
+      case 'front':
+        setYaw(0);
+        setPitch(5);
+        break;
+      case 'side':
+        setYaw(90);
+        setPitch(5);
+        break;
+      case 'back':
+        setYaw(180);
+        setPitch(5);
+        break;
+      case 'left':
+        setYaw(270);
+        setPitch(5);
+        break;
+      case 'top':
+        setYaw(0);
+        setPitch(80);
+        break;
+      case 'bottom':
+        setYaw(0);
+        setPitch(-80);
+        break;
+      case 'isometric':
+      default:
+        setYaw(35);
+        setPitch(24);
+        break;
+    }
+  };
+
+  // Click on a panel from the All-Sides Strip to snap turntable to it
+  const snapToPanel = (panel: PanelFace) => {
+    setSelectedPanelId(panel.id);
+    const pid = (panel.id + ' ' + panel.name).toLowerCase();
+    if (pid.includes('front') || pid.includes('window') || pid.includes('center')) {
+      snapToAngle('front');
+    } else if (pid.includes('back') || pid.includes('rear') || pid.includes('spine')) {
+      snapToAngle('back');
+    } else if (pid.includes('right')) {
+      snapToAngle('side');
+    } else if (pid.includes('left')) {
+      snapToAngle('left');
+    } else if (pid.includes('top') || pid.includes('lid') || pid.includes('header')) {
+      snapToAngle('top');
+    } else if (pid.includes('bottom') || pid.includes('base') || pid.includes('seal')) {
+      snapToAngle('bottom');
+    } else {
+      snapToAngle('isometric');
+    }
+  };
+
+  // Mouse wheel scrolling over preview rotates 360 degrees
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const onWheelHandler = (e: WheelEvent) => {
+      e.preventDefault();
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      setYaw((prev) => {
+        const next = (prev + delta * 0.25) % 360;
+        return next < 0 ? next + 360 : next;
+      });
+      setViewAnglePreset('custom');
+    };
+
+    container.addEventListener('wheel', onWheelHandler, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', onWheelHandler);
+    };
+  }, []);
+
+  // Drag-to-orbit handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return; // Only primary button
+    setIsDragging(true);
+    lastMousePos.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const dx = e.clientX - lastMousePos.current.x;
+    const dy = e.clientY - lastMousePos.current.y;
+    lastMousePos.current = { x: e.clientX, y: e.clientY };
+
+    setYaw((prev) => {
+      const next = (prev + dx * 0.45) % 360;
+      return next < 0 ? next + 360 : next;
+    });
+    setPitch((prev) => Math.max(-65, Math.min(65, prev - dy * 0.35)));
+    setViewAnglePreset('custom');
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Window-level mouseup listener so releasing outside canvas ends drag
+  useEffect(() => {
+    const onGlobalMouseUp = () => setIsDragging(false);
+    window.addEventListener('mouseup', onGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', onGlobalMouseUp);
+  }, []);
+
   const settings: PreviewSettings = useMemo(() => ({
-    viewAngle,
+    viewAngle: viewAnglePreset,
     material,
     lighting,
     openness,
     showShadow: true,
     zoom: 1,
-  }), [viewAngle, material, lighting, openness]);
+    yaw,
+    pitch,
+  }), [viewAnglePreset, material, lighting, openness, yaw, pitch]);
 
-  // Generate 2D assembled model geometry
+  // Generate 3D assembled model geometry
   const model = useMemo(() => {
     return generateAssembledModel(
       dieline.templateId,
@@ -117,23 +245,23 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
   // Calculate dynamic fill for a face based on its lighting angle
   const getFaceFill = (lightingFactor: number) => {
     if (material === 'kraft') {
-      if (lightingFactor > 1.1) return '#d5b991';
-      if (lightingFactor < 0.9) return '#9e7949';
+      if (lightingFactor > 1.08) return '#d5b991';
+      if (lightingFactor < 0.88) return '#9e7949';
       return '#bfa074';
     }
     if (material === 'dark') {
-      if (lightingFactor > 1.1) return '#334155';
-      if (lightingFactor < 0.9) return '#0f172a';
+      if (lightingFactor > 1.08) return '#334155';
+      if (lightingFactor < 0.88) return '#0f172a';
       return '#1e293b';
     }
     if (material === 'cream') {
-      if (lightingFactor > 1.1) return '#fffbeb';
-      if (lightingFactor < 0.9) return '#fde68a';
+      if (lightingFactor > 1.08) return '#fffbeb';
+      if (lightingFactor < 0.88) return '#fde68a';
       return '#fef3c7';
     }
     // White
-    if (lightingFactor > 1.1) return '#ffffff';
-    if (lightingFactor < 0.9) return '#cbd5e1';
+    if (lightingFactor > 1.08) return '#ffffff';
+    if (lightingFactor < 0.88) return '#cbd5e1';
     return '#f1f5f9';
   };
 
@@ -153,7 +281,6 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
     const url = URL.createObjectURL(svgBlob);
 
     img.onload = () => {
-      // Draw background if not transparent
       if (lighting === 'light') {
         ctx.fillStyle = '#f8fafc';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -161,12 +288,11 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
         ctx.fillStyle = '#0f172a';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
-
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
 
       const a = document.createElement('a');
-      a.download = `${dieline.templateId}-2D-assembled-mockup.png`;
+      a.download = `${dieline.templateId}-360-mockup-${Math.round(yaw)}deg.png`;
       a.href = canvas.toDataURL('image/png');
       a.click();
     };
@@ -180,18 +306,18 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
     const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.download = `${dieline.templateId}-2D-assembled-mockup.svg`;
+    a.download = `${dieline.templateId}-360-mockup.svg`;
     a.href = url;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  // Check if template has an interactive openness/extension feature
+  // Interactive openness/extension feature
   const hasOpennessControl = [
     'burger-box',
     'pizza-box',
     'dessert-sleeve-box',
-    'round-food-tub'
+    'round-food-tub',
   ].includes(dieline.templateId);
 
   const opennessLabel = dieline.templateId === 'dessert-sleeve-box' 
@@ -201,44 +327,75 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
     : 'Open Lid';
 
   return (
-    <div className="assembled-preview-container" style={bgStyle}>
-      {/* Top Floating Control Bar */}
+    <div
+      ref={containerRef}
+      className="assembled-preview-container"
+      style={bgStyle}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+    >
+      {/* 1. Top Control Bar (Angle Presets, Material, Studio, Export) */}
       <div className="preview-toolbar">
-        {/* Angle Presets */}
+        {/* Cardinal Face Snap Presets */}
         <div className="preview-toolbar-group">
           <span className="preview-group-label">Angle:</span>
           <button
             type="button"
-            className={`preview-pill-btn ${viewAngle === 'isometric' ? 'active' : ''}`}
-            onClick={() => setViewAngle('isometric')}
-            title="Isometric 3/4 Perspective"
+            className={`preview-pill-btn ${viewAnglePreset === 'isometric' ? 'active' : ''}`}
+            onClick={() => snapToAngle('isometric')}
+            title="Isometric 3/4 Hero View (35°)"
           >
             <Rotate3d size={13} />
             <span>3/4 Hero</span>
           </button>
           <button
             type="button"
-            className={`preview-pill-btn ${viewAngle === 'front' ? 'active' : ''}`}
-            onClick={() => setViewAngle('front')}
-            title="Straight Front View"
+            className={`preview-pill-btn ${viewAnglePreset === 'front' ? 'active' : ''}`}
+            onClick={() => snapToAngle('front')}
+            title="Straight Front Face (0°)"
           >
             <span>Front</span>
           </button>
           <button
             type="button"
-            className={`preview-pill-btn ${viewAngle === 'top' ? 'active' : ''}`}
-            onClick={() => setViewAngle('top')}
-            title="Top-Down Plan View"
+            className={`preview-pill-btn ${viewAnglePreset === 'side' ? 'active' : ''}`}
+            onClick={() => snapToAngle('side')}
+            title="Right Side Wall (90°)"
+          >
+            <span>Right</span>
+          </button>
+          <button
+            type="button"
+            className={`preview-pill-btn ${viewAnglePreset === 'back' ? 'active' : ''}`}
+            onClick={() => snapToAngle('back')}
+            title="Rear Back Wall (180°)"
+          >
+            <span>Back</span>
+          </button>
+          <button
+            type="button"
+            className={`preview-pill-btn ${viewAnglePreset === 'left' ? 'active' : ''}`}
+            onClick={() => snapToAngle('left')}
+            title="Left Side Wall (270°)"
+          >
+            <span>Left</span>
+          </button>
+          <button
+            type="button"
+            className={`preview-pill-btn ${viewAnglePreset === 'top' ? 'active' : ''}`}
+            onClick={() => snapToAngle('top')}
+            title="Top Lid View (Pitch 80°)"
           >
             <span>Top</span>
           </button>
           <button
             type="button"
-            className={`preview-pill-btn ${viewAngle === 'side' ? 'active' : ''}`}
-            onClick={() => setViewAngle('side')}
-            title="Side Elevation View"
+            className={`preview-pill-btn ${viewAnglePreset === 'bottom' ? 'active' : ''}`}
+            onClick={() => snapToAngle('bottom')}
+            title="Bottom Base View (Pitch -80°)"
           >
-            <span>Side</span>
+            <span>Bottom</span>
           </button>
         </div>
 
@@ -260,7 +417,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
             type="button"
             className={`preview-material-btn ${material === 'kraft' ? 'active' : ''}`}
             onClick={() => setMaterial('kraft')}
-            title="Natural Brown Kraft Corrugated Paper"
+            title="Natural Brown Kraft Cardboard"
           >
             <span className="material-swatch kraft" />
             <span>Kraft</span>
@@ -274,11 +431,20 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
             <span className="material-swatch dark" />
             <span>Dark</span>
           </button>
+          <button
+            type="button"
+            className={`preview-material-btn ${material === 'cream' ? 'active' : ''}`}
+            onClick={() => setMaterial('cream')}
+            title="Bakery Cream Paperboard"
+          >
+            <span className="material-swatch cream" />
+            <span>Cream</span>
+          </button>
         </div>
 
         <div className="toolbar-divider" />
 
-        {/* Studio Lighting Backdrop */}
+        {/* Studio Lighting */}
         <div className="preview-toolbar-group">
           <button
             type="button"
@@ -318,110 +484,153 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
             title="Download Scalable Vector Mockup SVG"
           >
             <Download size={13} />
-            <span>SVG</span>
           </button>
         </div>
       </div>
 
-      {/* Assembly / Openness Slider (for boxes with hinge or sliding tray) */}
+      {/* 2. Turntable 360° Rotation Slider Bar */}
+      <div className="preview-turntable-bar">
+        <Rotate3d size={14} style={{ color: 'var(--accent-secondary)' }} />
+        <span className="turntable-label">Scroll to Spin:</span>
+        <button
+          type="button"
+          className="turntable-step-btn"
+          onClick={() => {
+            setYaw((prev) => (prev - 45 + 360) % 360);
+            setViewAnglePreset('custom');
+          }}
+          title="Turn Left 45°"
+        >
+          -45°
+        </button>
+        <input
+          type="range"
+          min="0"
+          max="360"
+          step="1"
+          value={Math.round(yaw)}
+          onChange={(e) => {
+            setYaw(parseFloat(e.target.value));
+            setViewAnglePreset('custom');
+          }}
+          className="turntable-slider"
+          title="360° Turntable Angle"
+        />
+        <button
+          type="button"
+          className="turntable-step-btn"
+          onClick={() => {
+            setYaw((prev) => (prev + 45) % 360);
+            setViewAnglePreset('custom');
+          }}
+          title="Turn Right 45°"
+        >
+          +45°
+        </button>
+        <span className="turntable-degree-badge">{Math.round(yaw)}°</span>
+      </div>
+
+      {/* 3. Openness / Lid Extension Slider */}
       {hasOpennessControl && (
         <div className="preview-openness-bar">
-          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-            {opennessLabel}:
-          </span>
+          <span className="preview-group-label">{opennessLabel}:</span>
           <input
             type="range"
             min="0"
             max="1"
-            step="0.02"
+            step="0.01"
             value={openness}
             onChange={(e) => setOpenness(parseFloat(e.target.value))}
             className="openness-slider"
+            title={`Adjust ${opennessLabel}`}
           />
-          <span style={{ fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', color: 'var(--text-muted)' }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', minWidth: '28px' }}>
             {Math.round(openness * 100)}%
           </span>
         </div>
       )}
 
-      {/* SVG Packaging Mockup Canvas */}
+      {/* 4. Main 3D Assembled SVG Viewport */}
       <svg
         ref={svgRef}
-        viewBox="0 0 800 600"
+        viewBox="0 0 800 700"
         className="assembled-svg-viewport"
+        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
       >
         <defs>
-          {/* Soft Ground Shadow Filter */}
-          <filter id="ground-shadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="16" />
-          </filter>
+          {/* Ground Contact Shadow Filter */}
+          <radialGradient id="ground-shadow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#000000" stopOpacity="0.55" />
+            <stop offset="45%" stopColor="#000000" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+          </radialGradient>
 
-          {/* Crease Edge Highlight Filter */}
-          <filter id="crease-highlight" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="rgba(255,255,255,0.4)" />
-          </filter>
-
-          {/* Clip paths for each assembled face to clip graphics precisely */}
+          {/* Define Face Clipping Paths */}
           {model.faces.map((face) => {
             if (face.pathD) {
               return (
-                <clipPath id={`clip-${face.id}`} key={`clip-${face.id}`}>
+                <clipPath key={`clip-${face.id}`} id={`clip-${face.id}`}>
                   <path d={face.pathD} />
                 </clipPath>
               );
             }
-            const pts = face.points.map(p => `${p.x},${p.y}`).join(' ');
             return (
-              <clipPath id={`clip-${face.id}`} key={`clip-${face.id}`}>
-                <polygon points={pts} />
+              <clipPath key={`clip-${face.id}`} id={`clip-${face.id}`}>
+                <polygon points={face.points.map(p => `${p.x},${p.y}`).join(' ')} />
               </clipPath>
             );
           })}
         </defs>
 
-        {/* 1. Ground Shadow */}
+        {/* Ground Ambient Contact Shadow */}
         {settings.showShadow && (
           <ellipse
             cx={model.shadow.cx}
             cy={model.shadow.cy}
             rx={model.shadow.rx}
             ry={model.shadow.ry}
-            fill="#000000"
-            opacity={lighting === 'light' ? model.shadow.opacity * 0.4 : model.shadow.opacity}
-            filter="url(#ground-shadow)"
+            fill="url(#ground-shadow)"
           />
         )}
 
-        {/* 2. Window Contents Simulation */}
-        {dieline.templateId === 'sandwich-wedge-box' && (
-          <g opacity={0.9}>
-            {/* Visual simulation of delicious cut sandwich layers visible through cello window */}
-            <path
-              d="M 330 250 L 460 300 L 440 420 L 310 370 Z"
-              fill="#fef08a"
-              stroke="#ca8a04"
-              strokeWidth={1}
-            />
-            {/* Lettuce layer */}
-            <path d="M 320 280 L 450 330" stroke="#22c55e" strokeWidth={5} strokeLinecap="round" />
-            {/* Tomato layer */}
-            <path d="M 315 310 L 445 360" stroke="#ef4444" strokeWidth={6} strokeLinecap="round" />
-            {/* Cheese layer */}
-            <path d="M 310 340 L 440 390" stroke="#eab308" strokeWidth={4} strokeLinecap="round" />
+        {/* Template-Specific Interior Decorations */}
+        {dieline.templateId === 'burger-box' && openness > 0.15 && (
+          <g opacity={Math.min(1, openness * 1.5)}>
+            <ellipse cx="400" cy="335" rx="55" ry="24" fill="#ca8a04" stroke="#854d0e" strokeWidth={1} />
+            <ellipse cx="400" cy="328" rx="52" ry="18" fill="#451a03" stroke="#292524" strokeWidth={1} />
+            <path d="M 350 326 Q 400 338 450 326" stroke="#22c55e" strokeWidth={5} strokeLinecap="round" />
+            <path d="M 355 330 Q 400 342 445 330" stroke="#ef4444" strokeWidth={4} strokeLinecap="round" />
+            <path d="M 360 334 Q 400 346 440 334" stroke="#eab308" strokeWidth={3} strokeLinecap="round" />
+          </g>
+        )}
+
+        {dieline.templateId === 'pizza-box' && openness > 0.15 && (
+          <g opacity={Math.min(1, openness * 1.5)}>
+            <ellipse cx="400" cy="335" rx="85" ry="42" fill="#fde047" stroke="#ca8a04" strokeWidth={1.5} />
+            <ellipse cx="400" cy="335" rx="76" ry="36" fill="#ef4444" opacity={0.6} />
+            {/* Pepperoni slices */}
+            {[
+              { cx: 370, cy: 330 },
+              { cx: 430, cy: 335 },
+              { cx: 400, cy: 320 },
+              { cx: 390, cy: 345 },
+              { cx: 420, cy: 325 },
+            ].map((pep, pidx) => (
+              <ellipse key={`pep-${pidx}`} cx={pep.cx} cy={pep.cy} rx={9} ry={5} fill="#b91c1c" />
+            ))}
           </g>
         )}
 
         {dieline.templateId === 'fries-scoop-box' && (
           <g>
-            {/* Golden French Fries peeking out of the top scoop */}
             {[
-              { x1: 360, y1: 280, x2: 350, y2: 210, w: 10, fill: '#f59e0b' },
-              { x1: 375, y1: 275, x2: 370, y2: 195, w: 11, fill: '#fbbf24' },
-              { x1: 395, y1: 270, x2: 395, y2: 185, w: 12, fill: '#f59e0b' },
-              { x1: 415, y1: 275, x2: 420, y2: 190, w: 11, fill: '#fbbf24' },
-              { x1: 435, y1: 280, x2: 445, y2: 205, w: 10, fill: '#f59e0b' },
-              { x1: 380, y1: 280, x2: 385, y2: 220, w: 9, fill: '#d97706' },
-              { x1: 410, y1: 280, x2: 405, y2: 215, w: 9, fill: '#d97706' },
+              { x1: 360, y1: 290, x2: 350, y2: 215, w: 11, fill: '#f59e0b' },
+              { x1: 375, y1: 285, x2: 370, y2: 195, w: 12, fill: '#fbbf24' },
+              { x1: 395, y1: 280, x2: 395, y2: 185, w: 13, fill: '#f59e0b' },
+              { x1: 415, y1: 285, x2: 420, y2: 190, w: 12, fill: '#fbbf24' },
+              { x1: 435, y1: 290, x2: 445, y2: 210, w: 11, fill: '#f59e0b' },
+              { x1: 380, y1: 290, x2: 385, y2: 225, w: 10, fill: '#d97706' },
+              { x1: 410, y1: 290, x2: 405, y2: 220, w: 10, fill: '#d97706' },
             ].map((fry, idx) => (
               <line
                 key={`fry-${idx}`}
@@ -438,10 +647,8 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
         )}
 
         {dieline.templateId === 'bread-loaf-bag' && (
-          <g opacity={0.85}>
-            {/* Sliced golden bread loaf visual inside poly bag */}
+          <g opacity={0.88}>
             <rect x="330" y="270" width="140" height="150" rx="20" fill="#fde68a" stroke="#d97706" strokeWidth={1.5} />
-            {/* Bread slice crust ridges */}
             {[0, 1, 2, 3, 4, 5, 6].map(i => (
               <line
                 key={`slice-${i}`}
@@ -459,11 +666,10 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
 
         {dieline.templateId === 'dessert-sleeve-box' && openness > 0.05 && (
           <g opacity={0.95}>
-            {/* Colorful gourmet macarons resting inside the pulled-out tray */}
             {[
-              { cx: 530, cy: 370, color: '#f43f5e' },
-              { cx: 560, cy: 385, color: '#10b981' },
-              { cx: 590, cy: 400, color: '#f59e0b' },
+              { cx: 400, cy: 385, color: '#f43f5e' },
+              { cx: 435, cy: 385, color: '#10b981' },
+              { cx: 365, cy: 385, color: '#f59e0b' },
             ].map((mac, idx) => (
               <ellipse
                 key={`mac-${idx}`}
@@ -479,7 +685,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
           </g>
         )}
 
-        {/* 3. Render Assembled Model Faces */}
+        {/* 3D Depth-Sorted Packaging Faces */}
         {model.faces.map((face) => {
           const fill = getFaceFill(face.lighting);
           const stroke = materialStyles.stroke;
@@ -491,7 +697,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
               onMouseEnter={() => setHoveredFaceName(face.name)}
               onMouseLeave={() => setHoveredFaceName(null)}
             >
-              {/* Base Face Geometry */}
+              {/* Base Geometry */}
               {face.pathD ? (
                 <path
                   d={face.pathD}
@@ -499,7 +705,6 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                   stroke={stroke}
                   strokeWidth={1.2}
                   strokeLinejoin="round"
-                  style={{ transition: 'fill 0.2s ease' }}
                 />
               ) : (
                 <polygon
@@ -508,18 +713,16 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                   stroke={stroke}
                   strokeWidth={1.2}
                   strokeLinejoin="round"
-                  style={{ transition: 'fill 0.2s ease' }}
                 />
               )}
 
-              {/* 4. Projected User Graphics on Face */}
+              {/* Projected User Graphics on Face */}
               <g clipPath={`url(#clip-${face.id})`}>
                 {face.graphics.map((g) => {
-                  // Quad affine mapping
                   const p0 = face.points[0];
                   const p1 = face.points[1];
                   const p2 = face.points[2];
-                  const p3 = face.points[3];
+                  const p3 = face.points.length >= 4 ? face.points[3] : face.points[2];
 
                   const targetW = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 100;
                   const targetH = Math.hypot(p3.x - p0.x, p3.y - p0.y) || 100;
@@ -591,14 +794,14 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                 })}
               </g>
 
-              {/* Crease / Corner Accent Lines */}
+              {/* Subtle Crease Accent Lines */}
               {!face.pathD && face.points.length >= 4 && (
                 <line
                   x1={face.points[0].x}
                   y1={face.points[0].y}
                   x2={face.points[1].x}
                   y2={face.points[1].y}
-                  stroke="rgba(255, 255, 255, 0.3)"
+                  stroke="rgba(255, 255, 255, 0.25)"
                   strokeWidth={1}
                 />
               )}
@@ -607,7 +810,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
         })}
       </svg>
 
-      {/* Hovered Face Badge */}
+      {/* Hover Face Pill */}
       {hoveredFaceName && (
         <div className="preview-hover-tag">
           <Eye size={12} color="var(--accent-secondary)" />
@@ -615,13 +818,124 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
         </div>
       )}
 
+      {/* 5. All-Sides Scrollable Proof Sheet / Strip */}
+      <div className="preview-all-sides-container">
+        <div className="preview-sides-header">
+          <div className="sides-header-title">
+            <Layers size={13} style={{ color: 'var(--accent-primary)' }} />
+            <span>All-Sides Proof Sheet ({dieline.panels.length} Sides)</span>
+            <span className="sides-header-hint">• Scroll to inspect all panels • Click to spin 3D view</span>
+          </div>
+          <button
+            type="button"
+            className="sides-toggle-btn"
+            onClick={() => setShowSidesStrip(!showSidesStrip)}
+            title={showSidesStrip ? 'Collapse Sides Strip' : 'Expand All Sides Strip'}
+          >
+            {showSidesStrip ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+          </button>
+        </div>
+
+        {showSidesStrip && (
+          <div className="preview-sides-strip" tabIndex={0} role="region" aria-label="All Packaging Sides Scroll Strip">
+            {dieline.panels.map((panel) => {
+              const panelGraphics = graphics.filter(g => g.panelId === panel.id);
+              const isSelected = selectedPanelId === panel.id;
+
+              return (
+                <div
+                  key={panel.id}
+                  className={`preview-side-card ${isSelected ? 'active' : ''}`}
+                  onClick={() => snapToPanel(panel)}
+                  title={`Click to rotate 3D view to "${panel.name}"`}
+                >
+                  {/* Miniature 2D SVG Proof of the Face */}
+                  <div className="side-card-preview-box">
+                    <svg
+                      viewBox={`${panel.bounds.x - 4} ${panel.bounds.y - 4} ${panel.bounds.width + 8} ${panel.bounds.height + 8}`}
+                      className="side-card-svg"
+                    >
+                      {/* Panel Background Polygon */}
+                      <polygon
+                        points={panel.polygon.map(p => `${p.x},${p.y}`).join(' ')}
+                        fill={materialStyles.base}
+                        stroke={materialStyles.stroke}
+                        strokeWidth={1}
+                      />
+
+                      {/* Render Graphics On Panel */}
+                      {panelGraphics.map((g) => {
+                        return (
+                          <g
+                            key={g.id}
+                            transform={`translate(${g.x}, ${g.y}) rotate(${g.angle || 0}) scale(${g.scaleX || 1}, ${g.scaleY || 1})`}
+                          >
+                            {g.type === 'text' && (
+                              <text
+                                x={0}
+                                y={0}
+                                fill={g.fill || '#000000'}
+                                fontSize={g.fontSize || 14}
+                                fontFamily={g.fontFamily}
+                                fontWeight={g.fontWeight}
+                                textAnchor={g.textAlign === 'center' ? 'middle' : g.textAlign === 'right' ? 'end' : 'start'}
+                                dominantBaseline="central"
+                              >
+                                {g.text}
+                              </text>
+                            )}
+
+                            {g.type === 'image' && g.src && (
+                              <image
+                                href={g.src}
+                                x={-15}
+                                y={-15}
+                                width={30}
+                                height={30}
+                                preserveAspectRatio="xMidYMid meet"
+                              />
+                            )}
+
+                            {g.type === 'icon' && g.src && (
+                              <image
+                                href={g.src}
+                                x={-10}
+                                y={-10}
+                                width={20}
+                                height={20}
+                                preserveAspectRatio="xMidYMid meet"
+                              />
+                            )}
+
+                            {g.type === 'barcode' && (
+                              <rect x={-15} y={-6} width={30} height={12} fill="#000000" opacity={0.8} />
+                            )}
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  </div>
+
+                  <div className="side-card-info">
+                    <span className="side-card-name" title={panel.name}>{panel.name}</span>
+                    <span className="side-card-dim">
+                      {Math.round(panel.bounds.width)} × {Math.round(panel.bounds.height)} mm
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Footer Info Badge */}
       <div className="preview-footer-info">
         <Sparkles size={13} color="var(--accent-primary)" />
         <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{dieline.templateName}</span>
         <span style={{ color: 'var(--border-medium)' }}>|</span>
         <span style={{ color: 'var(--text-secondary)' }}>
-          {materialStyles.name} • 1:1 Ground-Truth Projection
+          360° Scroll Turntable • {materialStyles.name}
         </span>
       </div>
     </div>

@@ -1,4 +1,4 @@
-export type ViewAngle = 'isometric' | 'front' | 'top' | 'side';
+export type ViewAngle = 'isometric' | 'front' | 'top' | 'side' | 'back' | 'left' | 'bottom' | 'custom';
 
 export type MaterialFinish = 'kraft' | 'white' | 'dark' | 'cream';
 
@@ -70,4 +70,7 @@ export interface PreviewSettings {
   openness: number; // 0 (closed) to 1 (fully open/extended)
   showShadow: boolean;
   zoom: number;
+  yaw?: number;    // In degrees (0 to 360)
+  pitch?: number;  // In degrees (-60 to +60)
 }
+

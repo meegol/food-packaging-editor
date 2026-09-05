@@ -1,10 +1,16 @@
 import { PackagingDimensions, PanelFace } from '../dieline/types';
 import { GraphicItem } from '../graphics/types';
-import { AssembledFaceData, AssembledModelResult, PreviewSettings, ViewAngle } from './previewTypes';
+import { AssembledFaceData, AssembledModelResult, PreviewSettings } from './previewTypes';
 import { mapPanelGraphicsToFace } from './graphicProjection';
+import {
+  Camera3D,
+  Face3DDefinition,
+  projectFaces3D,
+  Vector3,
+} from './engine3d';
 
 /**
- * Generates the assembled 3D perspective / 2.5D model for any of the 12 packaging templates.
+ * Generates the assembled 3D perspective / 360-degree turntable model for any of the 12 packaging templates.
  */
 export function generateAssembledModel(
   templateId: string,
@@ -14,39 +20,153 @@ export function generateAssembledModel(
   settings: PreviewSettings
 ): AssembledModelResult {
   const { viewAngle, openness } = settings;
-  const panelMap = new Map(panels.map(p => [p.id, p]));
+  const panelMap = new Map(panels.map((p) => [p.id, p]));
 
-  // Base canvas coordinate center
+  // Canvas center and camera setup
   const cx = 400;
   const cy = 340;
 
+  // Resolve yaw and pitch angles
+  let yaw = settings.yaw;
+  let pitch = settings.pitch;
+
+  if (yaw === undefined || pitch === undefined) {
+    switch (viewAngle) {
+      case 'front':
+        yaw = 0;
+        pitch = 5;
+        break;
+      case 'side':
+        yaw = 90;
+        pitch = 5;
+        break;
+      case 'back':
+        yaw = 180;
+        pitch = 5;
+        break;
+      case 'left':
+        yaw = 270;
+        pitch = 5;
+        break;
+      case 'top':
+        yaw = 0;
+        pitch = 85;
+        break;
+      case 'bottom':
+        yaw = 0;
+        pitch = -85;
+        break;
+      case 'isometric':
+      default:
+        yaw = 35;
+        pitch = 24;
+        break;
+    }
+  }
+
+  const camera: Camera3D = {
+    cx,
+    cy,
+    distance: 850,
+    yawDeg: yaw,
+    pitchDeg: pitch,
+    zoom: settings.zoom || 1,
+  };
+
+  // Normalization scale so templates comfortably fill viewport (target ~210mm)
+  const maxDim = Math.max(dimensions.width, dimensions.length, dimensions.depth, 1);
+  const scale = 220 / maxDim;
+  const w = dimensions.width * scale;
+  const l = dimensions.length * scale;
+  const d = dimensions.depth * scale;
+
+  let faces3D: Face3DDefinition[] = [];
+
   switch (templateId) {
     case 'burger-box':
-      return buildBurgerBoxModel(dimensions, panelMap, graphics, viewAngle, openness, cx, cy);
+      faces3D = buildBurgerBox3D(w, l, d, openness);
+      break;
     case 'pizza-box':
-      return buildPizzaBoxModel(dimensions, panelMap, graphics, viewAngle, openness, cx, cy);
+      faces3D = buildPizzaBox3D(w, l, d, openness);
+      break;
     case 'sandwich-wedge-box':
-      return buildSandwichWedgeModel(dimensions, panelMap, graphics, viewAngle, openness, cx, cy);
+      faces3D = buildSandwichWedge3D(w, l, d, openness);
+      break;
     case 'fries-scoop-box':
-      return buildFriesScoopModel(dimensions, panelMap, graphics, viewAngle, openness, cx, cy);
+      faces3D = buildFriesScoop3D(w, l, d, openness);
+      break;
     case 'pillow-box':
-      return buildPillowBoxModel(dimensions, panelMap, graphics, viewAngle, openness, cx, cy);
+      faces3D = buildPillowBox3D(w, l, d, openness);
+      break;
     case 'dessert-sleeve-box':
-      return buildDessertSleeveModel(dimensions, panelMap, graphics, viewAngle, openness, cx, cy);
+      faces3D = buildDessertSleeve3D(w, l, d, openness);
+      break;
     case 'round-food-tub':
-      return buildRoundFoodTubModel(dimensions, panelMap, graphics, viewAngle, openness, cx, cy);
+      faces3D = buildRoundFoodTub3D(w, l, d, openness);
+      break;
     case 'standup-pouch':
-      return buildStandUpPouchModel(dimensions, panelMap, graphics, viewAngle, openness, cx, cy);
+      faces3D = buildStandUpPouch3D(w, l, d, openness);
+      break;
     case 'side-gusset-bag':
-      return buildSideGussetBagModel(dimensions, panelMap, graphics, viewAngle, openness, cx, cy);
+      faces3D = buildSideGussetBag3D(w, l, d, openness);
+      break;
     case 'sachet-stick-pack':
-      return buildSachetStickPackModel(dimensions, panelMap, graphics, viewAngle, openness, cx, cy);
+      faces3D = buildSachetStickPack3D(w, l, d, openness);
+      break;
     case 'bread-loaf-bag':
-      return buildBreadLoafBagModel(dimensions, panelMap, graphics, viewAngle, openness, cx, cy);
+      faces3D = buildBreadLoafBag3D(w, l, d, openness);
+      break;
     case 'burger-wrapper':
     default:
-      return buildBurgerWrapperModel(dimensions, panelMap, graphics, viewAngle, openness, cx, cy);
+      faces3D = buildBurgerWrapper3D(w, l, d, openness);
+      break;
   }
+
+  // Project 3D faces to 2D screen with Painter's depth sorting and studio lighting
+  const projectedFaces = projectFaces3D(faces3D, camera);
+
+  // Map user graphics to each visible face
+  const faces: AssembledFaceData[] = projectedFaces.map((pf) => {
+    const panel = findPanel(panelMap, pf.panelId);
+    // Determine face dimensions in 2D for affine projection
+    const p0 = pf.points[0];
+    const p1 = pf.points[1];
+    const p3 = pf.points.length >= 4 ? pf.points[3] : pf.points[2];
+    const targetW = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 100;
+    const targetH = Math.hypot(p3.x - p0.x, p3.y - p0.y) || 100;
+
+    const mappedGraphics = panel ? mapPanelGraphicsToFace(panel, graphics, targetW, targetH) : [];
+
+    return {
+      id: pf.id,
+      name: pf.name,
+      panelId: pf.panelId,
+      points: pf.points,
+      lighting: pf.lighting,
+      pathD: pf.pathD,
+      graphics: mappedGraphics,
+    };
+  });
+
+  // Dynamic shadow position at base of object
+  const shadowY = cy + (d / 2) * 0.9 + 40;
+  const shadowRx = Math.max(80, (w * 0.65 + l * 0.5) * 0.7);
+  const shadowRy = Math.max(22, (w * 0.2 + l * 0.28) * 0.7);
+
+  return {
+    templateId,
+    viewAngle,
+    width: 800,
+    height: 700,
+    faces,
+    shadow: {
+      cx,
+      cy: shadowY,
+      rx: shadowRx,
+      ry: shadowRy,
+      opacity: 0.45,
+    },
+  };
 }
 
 function findPanel(panels: Map<string, PanelFace>, ...possibleIds: string[]): PanelFace | undefined {
@@ -54,7 +174,7 @@ function findPanel(panels: Map<string, PanelFace>, ...possibleIds: string[]): Pa
     const p = panels.get(id);
     if (p) return p;
   }
-  const firstId = possibleIds[0].toLowerCase();
+  const firstId = possibleIds[0]?.toLowerCase() || '';
   for (const p of panels.values()) {
     if (p.id.toLowerCase().includes(firstId) || p.name.toLowerCase().includes(firstId)) {
       return p;
@@ -64,944 +184,1088 @@ function findPanel(panels: Map<string, PanelFace>, ...possibleIds: string[]): Pa
 }
 
 // -------------------------------------------------------------
-// 1. Burger Clamshell Box
+// 1. Burger Clamshell Box 3D Geometry
 // -------------------------------------------------------------
-function buildBurgerBoxModel(
-  dims: PackagingDimensions,
-  panels: Map<string, PanelFace>,
-  graphics: GraphicItem[],
-  viewAngle: ViewAngle,
-  openness: number,
-  cx: number,
-  cy: number
-): AssembledModelResult {
-  // Scaling
-  const scale = Math.min(220 / dims.width, 220 / dims.length, 140 / dims.depth);
-  const w = dims.width * scale;
-  const l = dims.length * scale;
-  const d = dims.depth * scale;
+function buildBurgerBox3D(w: number, l: number, d: number, openness: number): Face3DDefinition[] {
+  const hw = w / 2;
+  const hl = l / 2;
+  const hd = d / 2;
 
-  // Isometric angle factors (30 deg)
-  const cos30 = Math.cos(Math.PI / 6);
-  const sin30 = Math.sin(Math.PI / 6);
+  // Base tray (bottom Y = -hd, rim Y = 0, with inward bottom taper)
+  const tw = hw * 0.88;
+  const tl = hl * 0.88;
 
-  // Vectors for width (towards right-down) and length (towards left-down)
-  let wx = (w / 2) * cos30;
-  let wy = (w / 2) * sin30;
-  let lx = -(l / 2) * cos30;
-  let ly = (l / 2) * sin30;
-
-  if (viewAngle === 'front') {
-    wx = w / 2; wy = 0;
-    lx = 0; ly = l * 0.15;
-  } else if (viewAngle === 'top') {
-    wx = w / 2; wy = 0;
-    lx = 0; ly = l / 2;
-  } else if (viewAngle === 'side') {
-    wx = 0; wy = w * 0.15;
-    lx = -l / 2; ly = 0;
-  }
-
-  const baseH = d * 0.48;
-  const lidH = d * 0.52;
-  const lidTiltY = openness * 35; // Tilt up when opened
-
-  // Base Tray Points
-  // Base Front Wall
-  const bf0 = { x: cx + lx - wx, y: cy + ly - wy };
-  const bf1 = { x: cx + lx + wx, y: cy + ly + wy };
-  const bf2 = { x: cx + lx + wx, y: cy + ly + wy + baseH };
-  const bf3 = { x: cx + lx - wx, y: cy + ly - wy + baseH };
-
-  // Base Right Wall
-  const br0 = { x: cx + lx + wx, y: cy + ly + wy };
-  const br1 = { x: cx - lx + wx, y: cy - ly + wy };
-  const br2 = { x: cx - lx + wx, y: cy - ly + wy + baseH };
-  const br3 = { x: cx + lx + wx, y: cy + ly + wy + baseH };
-
-  // Top Lid (hinged at rear, tilted by openness)
-  const lidCenterY = cy - lidH - lidTiltY;
-  const lt0 = { x: cx - lx - wx, y: lidCenterY - ly - wy - lidTiltY * 0.3 };
-  const lt1 = { x: cx - lx + wx, y: lidCenterY - ly + wy - lidTiltY * 0.3 };
-  const lt2 = { x: cx + lx + wx, y: lidCenterY + ly + wy };
-  const lt3 = { x: cx + lx - wx, y: lidCenterY + ly - wy };
-
-  // Top Lid Front Flap
-  const lf0 = lt3;
-  const lf1 = lt2;
-  const lf2 = { x: lt2.x, y: lt2.y + lidH };
-  const lf3 = { x: lt3.x, y: lt3.y + lidH };
-
-  // Top Lid Right Flap
-  const lr0 = lt2;
-  const lr1 = lt1;
-  const lr2 = { x: lt1.x, y: lt1.y + lidH };
-  const lr3 = { x: lt2.x, y: lt2.y + lidH };
-
-  const pBaseFront = findPanel(panels, 'base-front', 'front-wall-base');
-  const pBaseRight = findPanel(panels, 'base-right', 'right-wall-base');
-  const pLidFront = findPanel(panels, 'lid-front', 'front-wall-top');
-  const pLidRight = findPanel(panels, 'lid-right', 'right-wall-top');
-  const pLidTop = findPanel(panels, 'lid-top', 'top-lid');
-
-  const faces: AssembledFaceData[] = [
+  const faces: Face3DDefinition[] = [
+    // Base Bottom (points in -Y)
     {
-      id: 'base-front',
+      id: 'burger-base-bottom',
+      name: 'Base Bottom',
+      panelId: 'base-bottom',
+      vertices: [
+        { x: -tw, y: -hd, z: tl },
+        { x: tw, y: -hd, z: tl },
+        { x: tw, y: -hd, z: -tl },
+        { x: -tw, y: -hd, z: -tl },
+      ],
+    },
+    // Base Front (points in +Z)
+    {
+      id: 'burger-base-front',
       name: 'Base Front Wall',
-      panelId: pBaseFront?.id ?? 'base-front',
-      points: [bf0, bf1, bf2, bf3],
-      lighting: 0.95,
-      graphics: mapPanelGraphicsToFace(pBaseFront, graphics, w, baseH),
+      panelId: 'base-front',
+      vertices: [
+        { x: -hw, y: 0, z: hl },
+        { x: hw, y: 0, z: hl },
+        { x: tw, y: -hd, z: tl },
+        { x: -tw, y: -hd, z: tl },
+      ],
     },
+    // Base Rear Hinge Wall (points in -Z, goes from -hd to +hd)
     {
-      id: 'base-right',
+      id: 'burger-rear-hinge',
+      name: 'Rear Hinge Wall',
+      panelId: 'rear-hinge',
+      vertices: [
+        { x: hw, y: hd, z: -hl },
+        { x: -hw, y: hd, z: -hl },
+        { x: -tw, y: -hd, z: -tl },
+        { x: tw, y: -hd, z: -tl },
+      ],
+    },
+    // Base Left Wall (points in -X)
+    {
+      id: 'burger-base-left',
+      name: 'Base Left Wall',
+      panelId: 'base-left',
+      vertices: [
+        { x: -hw, y: 0, z: -hl },
+        { x: -hw, y: 0, z: hl },
+        { x: -tw, y: -hd, z: tl },
+        { x: -tw, y: -hd, z: -tl },
+      ],
+    },
+    // Base Right Wall (points in +X)
+    {
+      id: 'burger-base-right',
       name: 'Base Right Wall',
-      panelId: pBaseRight?.id ?? 'base-right',
-      points: [br0, br1, br2, br3],
-      lighting: 0.82,
-      graphics: mapPanelGraphicsToFace(pBaseRight, graphics, l, baseH),
-    },
-    {
-      id: 'lid-front',
-      name: 'Lid Front Flap',
-      panelId: pLidFront?.id ?? 'lid-front',
-      points: [lf0, lf1, lf2, lf3],
-      lighting: 1.05,
-      graphics: mapPanelGraphicsToFace(pLidFront, graphics, w, lidH),
-    },
-    {
-      id: 'lid-right',
-      name: 'Lid Right Flap',
-      panelId: pLidRight?.id ?? 'lid-right',
-      points: [lr0, lr1, lr2, lr3],
-      lighting: 0.88,
-      graphics: mapPanelGraphicsToFace(pLidRight, graphics, l, lidH),
-    },
-    {
-      id: 'top-lid',
-      name: 'Top Lid Face',
-      panelId: pLidTop?.id ?? 'lid-top',
-      points: [lt0, lt1, lt2, lt3],
-      lighting: 1.15,
-      graphics: mapPanelGraphicsToFace(pLidTop, graphics, w, l),
+      panelId: 'base-right',
+      vertices: [
+        { x: hw, y: 0, z: hl },
+        { x: hw, y: 0, z: -hl },
+        { x: tw, y: -hd, z: -tl },
+        { x: tw, y: -hd, z: tl },
+      ],
     },
   ];
 
-  return {
-    templateId: 'burger-box',
-    viewAngle,
-    width: 800,
-    height: 600,
-    faces,
-    shadow: {
-      cx,
-      cy: cy + baseH + ly + 15,
-      rx: (w + l) * 0.65,
-      ry: (w + l) * 0.22,
-      opacity: 0.45,
-    },
+  // Lid (hinged at rear top rim: Y = hd, Z = -hl)
+  // When openness > 0, rotate lid points around hinge line
+  const hingeY = hd;
+  const hingeZ = -hl;
+  const hingeAngle = (openness * 110 * Math.PI) / 180;
+  const cosH = Math.cos(hingeAngle);
+  const sinH = Math.sin(hingeAngle);
+
+  const rotLid = (p: Vector3): Vector3 => {
+    const dy = p.y - hingeY;
+    const dz = p.z - hingeZ;
+    return {
+      x: p.x,
+      y: hingeY + dy * cosH - dz * sinH,
+      z: hingeZ + dy * sinH + dz * cosH,
+    };
   };
+
+  const lidTw = hw * 0.92;
+  const lidTl = hl * 0.92;
+
+  // Top Lid (at Y = hd)
+  faces.push({
+    id: 'burger-lid-top',
+    name: 'Top Lid (Branding)',
+    panelId: 'lid-top',
+    vertices: [
+      rotLid({ x: -lidTw, y: hd, z: -lidTl }),
+      rotLid({ x: lidTw, y: hd, z: -lidTl }),
+      rotLid({ x: lidTw, y: hd, z: lidTl }),
+      rotLid({ x: -lidTw, y: hd, z: lidTl }),
+    ],
+  });
+
+  // Lid Front Flap
+  faces.push({
+    id: 'burger-lid-front',
+    name: 'Lid Front Flap',
+    panelId: 'lid-front',
+    vertices: [
+      rotLid({ x: -lidTw, y: hd, z: lidTl }),
+      rotLid({ x: lidTw, y: hd, z: lidTl }),
+      rotLid({ x: hw, y: 0, z: hl }),
+      rotLid({ x: -hw, y: 0, z: hl }),
+    ],
+  });
+
+  // Lid Left Flap
+  faces.push({
+    id: 'burger-lid-left',
+    name: 'Lid Left Flap',
+    panelId: 'lid-left',
+    vertices: [
+      rotLid({ x: -lidTw, y: hd, z: -lidTl }),
+      rotLid({ x: -lidTw, y: hd, z: lidTl }),
+      rotLid({ x: -hw, y: 0, z: hl }),
+      rotLid({ x: -hw, y: 0, z: -hl }),
+    ],
+  });
+
+  // Lid Right Flap
+  faces.push({
+    id: 'burger-lid-right',
+    name: 'Lid Right Flap',
+    panelId: 'lid-right',
+    vertices: [
+      rotLid({ x: lidTw, y: hd, z: lidTl }),
+      rotLid({ x: lidTw, y: hd, z: -lidTl }),
+      rotLid({ x: hw, y: 0, z: -hl }),
+      rotLid({ x: hw, y: 0, z: hl }),
+    ],
+  });
+
+  return faces;
 }
 
 // -------------------------------------------------------------
-// 2. Pizza Box (Roll-End Tuck Top)
+// 2. Pizza Box 3D Geometry (Roll-End Corrugated Box)
 // -------------------------------------------------------------
-function buildPizzaBoxModel(
-  dims: PackagingDimensions,
-  panels: Map<string, PanelFace>,
-  graphics: GraphicItem[],
-  viewAngle: ViewAngle,
-  openness: number,
-  cx: number,
-  cy: number
-): AssembledModelResult {
-  const scale = Math.min(270 / dims.width, 270 / dims.length, 120 / dims.depth);
-  const w = dims.width * scale;
-  const l = dims.length * scale;
-  const d = Math.max(dims.depth * scale, 24);
+function buildPizzaBox3D(w: number, l: number, d: number, openness: number): Face3DDefinition[] {
+  const hw = w / 2;
+  const hl = l / 2;
+  const hd = d / 2;
 
-  const cos30 = Math.cos(Math.PI / 6);
-  const sin30 = Math.sin(Math.PI / 6);
-
-  const wx = (w / 2) * cos30;
-  const wy = (w / 2) * sin30;
-  const lx = -(l / 2) * cos30;
-  const ly = (l / 2) * sin30;
-
-  const lidTilt = openness * 40;
-
-  // Front Wall
-  const f0 = { x: cx + lx - wx, y: cy + ly - wy };
-  const f1 = { x: cx + lx + wx, y: cy + ly + wy };
-  const f2 = { x: cx + lx + wx, y: cy + ly + wy + d };
-  const f3 = { x: cx + lx - wx, y: cy + ly - wy + d };
-
-  // Right Wall
-  const r0 = { x: cx + lx + wx, y: cy + ly + wy };
-  const r1 = { x: cx - lx + wx, y: cy - ly + wy };
-  const r2 = { x: cx - lx + wx, y: cy - ly + wy + d };
-  const r3 = { x: cx + lx + wx, y: cy + ly + wy + d };
-
-  // Top Lid
-  const t0 = { x: cx - lx - wx, y: cy - ly - wy - lidTilt * 0.3 };
-  const t1 = { x: cx - lx + wx, y: cy - ly + wy - lidTilt * 0.3 };
-  const t2 = { x: cx + lx + wx, y: cy + ly + wy - lidTilt };
-  const t3 = { x: cx + lx - wx, y: cy + ly - wy - lidTilt };
-
-  const pPizzaFront = findPanel(panels, 'pizza-front', 'front-wall');
-  const pPizzaRight = findPanel(panels, 'pizza-right-outer', 'right-wall-outer');
-  const pPizzaLid = findPanel(panels, 'pizza-lid', 'top-lid');
-
-  const faces: AssembledFaceData[] = [
+  const faces: Face3DDefinition[] = [
+    // Bottom Base
     {
-      id: 'pizza-front',
+      id: 'pizza-base',
+      name: 'Base Bottom',
+      panelId: 'pizza-base',
+      vertices: [
+        { x: -hw, y: -hd, z: hl },
+        { x: hw, y: -hd, z: hl },
+        { x: hw, y: -hd, z: -hl },
+        { x: -hw, y: -hd, z: -hl },
+      ],
+    },
+    // Rear Wall
+    {
+      id: 'pizza-rear',
+      name: 'Rear Wall',
+      panelId: 'pizza-rear',
+      vertices: [
+        { x: hw, y: hd, z: -hl },
+        { x: -hw, y: hd, z: -hl },
+        { x: -hw, y: -hd, z: -hl },
+        { x: hw, y: -hd, z: -hl },
+      ],
+    },
+    // Left Outer Side
+    {
+      id: 'pizza-left-outer',
+      name: 'Left Wall',
+      panelId: 'pizza-left-outer',
+      vertices: [
+        { x: -hw, y: hd, z: -hl },
+        { x: -hw, y: hd, z: hl },
+        { x: -hw, y: -hd, z: hl },
+        { x: -hw, y: -hd, z: -hl },
+      ],
+    },
+    // Right Outer Side
+    {
+      id: 'pizza-right-outer',
+      name: 'Right Wall',
+      panelId: 'pizza-right-outer',
+      vertices: [
+        { x: hw, y: hd, z: hl },
+        { x: hw, y: hd, z: -hl },
+        { x: hw, y: -hd, z: -hl },
+        { x: hw, y: -hd, z: hl },
+      ],
+    },
+    // Front Base Rim
+    {
+      id: 'pizza-front-rim',
       name: 'Front Wall',
-      panelId: pPizzaFront?.id ?? 'pizza-front',
-      points: [f0, f1, f2, f3],
-      lighting: 0.95,
-      graphics: mapPanelGraphicsToFace(pPizzaFront, graphics, w, d),
-    },
-    {
-      id: 'pizza-right',
-      name: 'Right Sidewall',
-      panelId: pPizzaRight?.id ?? 'pizza-right-outer',
-      points: [r0, r1, r2, r3],
-      lighting: 0.85,
-      graphics: mapPanelGraphicsToFace(pPizzaRight, graphics, l, d),
-    },
-    {
-      id: 'pizza-top',
-      name: 'Top Lid',
-      panelId: pPizzaLid?.id ?? 'pizza-lid',
-      points: [t0, t1, t2, t3],
-      lighting: 1.15,
-      graphics: mapPanelGraphicsToFace(pPizzaLid, graphics, w, l),
+      panelId: 'pizza-lid-front',
+      vertices: [
+        { x: -hw, y: hd, z: hl },
+        { x: hw, y: hd, z: hl },
+        { x: hw, y: -hd, z: hl },
+        { x: -hw, y: -hd, z: hl },
+      ],
     },
   ];
 
-  return {
-    templateId: 'pizza-box',
-    viewAngle,
-    width: 800,
-    height: 600,
-    faces,
-    shadow: {
-      cx,
-      cy: cy + d + ly + 15,
-      rx: (w + l) * 0.7,
-      ry: (w + l) * 0.22,
-      opacity: 0.45,
-    },
+  // Top Lid hinged at rear top edge: Y = hd, Z = -hl
+  const hingeY = hd;
+  const hingeZ = -hl;
+  const hingeAngle = (openness * 95 * Math.PI) / 180;
+  const cosH = Math.cos(hingeAngle);
+  const sinH = Math.sin(hingeAngle);
+
+  const rotLid = (p: Vector3): Vector3 => {
+    const dy = p.y - hingeY;
+    const dz = p.z - hingeZ;
+    return {
+      x: p.x,
+      y: hingeY + dy * cosH - dz * sinH,
+      z: hingeZ + dy * sinH + dz * cosH,
+    };
   };
+
+  // Top Lid Main Artwork Face
+  faces.push({
+    id: 'pizza-lid',
+    name: 'Top Lid (Main)',
+    panelId: 'pizza-lid',
+    vertices: [
+      rotLid({ x: -hw, y: hd, z: -hl }),
+      rotLid({ x: hw, y: hd, z: -hl }),
+      rotLid({ x: hw, y: hd, z: hl }),
+      rotLid({ x: -hw, y: hd, z: hl }),
+    ],
+  });
+
+  // Front Tuck Flap
+  faces.push({
+    id: 'pizza-lid-front',
+    name: 'Lid Front Tuck Flap',
+    panelId: 'pizza-lid-front',
+    vertices: [
+      rotLid({ x: -hw, y: hd, z: hl }),
+      rotLid({ x: hw, y: hd, z: hl }),
+      rotLid({ x: hw, y: -hd, z: hl }),
+      rotLid({ x: -hw, y: -hd, z: hl }),
+    ],
+  });
+
+  // Left Lid Flap
+  faces.push({
+    id: 'pizza-lid-left',
+    name: 'Lid Left Side Flap',
+    panelId: 'pizza-lid-left',
+    vertices: [
+      rotLid({ x: -hw, y: hd, z: -hl }),
+      rotLid({ x: -hw, y: hd, z: hl }),
+      rotLid({ x: -hw, y: 0, z: hl }),
+      rotLid({ x: -hw, y: 0, z: -hl }),
+    ],
+  });
+
+  // Right Lid Flap
+  faces.push({
+    id: 'pizza-lid-right',
+    name: 'Lid Right Side Flap',
+    panelId: 'pizza-lid-right',
+    vertices: [
+      rotLid({ x: hw, y: hd, z: hl }),
+      rotLid({ x: hw, y: hd, z: -hl }),
+      rotLid({ x: hw, y: 0, z: -hl }),
+      rotLid({ x: hw, y: 0, z: hl }),
+    ],
+  });
+
+  return faces;
 }
 
 // -------------------------------------------------------------
-// 3. Sandwich Wedge Box
+// 3. Sandwich Wedge Box 3D Geometry (Right-Triangular Prism)
 // -------------------------------------------------------------
-function buildSandwichWedgeModel(
-  dims: PackagingDimensions,
-  panels: Map<string, PanelFace>,
-  graphics: GraphicItem[],
-  viewAngle: ViewAngle,
-  _openness: number,
-  cx: number,
-  cy: number
-): AssembledModelResult {
-  const scale = Math.min(180 / dims.width, 240 / dims.length, 240 / dims.depth);
-  const w = dims.width * scale;
-  const h = dims.depth * scale; // vertical height
-  const l = dims.length * scale; // hypotenuse depth
+function buildSandwichWedge3D(w: number, l: number, d: number, _openness: number): Face3DDefinition[] {
+  const hw = w / 2;
+  const hl = l / 2;
+  const hd = d / 2;
 
-  const cos30 = Math.cos(Math.PI / 6);
-  const sin30 = Math.sin(Math.PI / 6);
-
-  const wx = (w / 2) * cos30;
-  const wy = (w / 2) * sin30;
-
-  // Triangular prism apex (top back)
-  const apex = { x: cx, y: cy - h * 0.65 };
-  const apexRight = { x: cx + wx, y: cy - h * 0.65 + wy };
-
-  // Bottom front
-  const frontLeft = { x: cx - wx - l * 0.4, y: cy + h * 0.35 + wy };
-  const frontRight = { x: cx + wx - l * 0.4, y: cy + h * 0.35 + 2 * wy };
-
-  // Bottom back
-  const backRight = { x: cx + wx, y: cy + h * 0.35 };
-
-  // Slanted Window Face (Apex to Front)
-  const sw0 = apex;
-  const sw1 = apexRight;
-  const sw2 = frontRight;
-  const sw3 = frontLeft;
-
-  // Right Triangular Side
-  const rs0 = apexRight;
-  const rs1 = backRight;
-  const rs2 = frontRight;
-
-  const faces: AssembledFaceData[] = [
+  return [
+    // 1. Horizontal Base (bottom Y = -hd)
     {
-      id: 'wedge-right-side',
+      id: 'sandwich-base',
+      name: 'Bottom Base',
+      panelId: 'sandwich-base',
+      vertices: [
+        { x: -hw, y: -hd, z: hl },
+        { x: hw, y: -hd, z: hl },
+        { x: hw, y: -hd, z: -hl },
+        { x: -hw, y: -hd, z: -hl },
+      ],
+    },
+    // 2. Vertical Rear Spine (at Z = -hl)
+    {
+      id: 'sandwich-back',
+      name: 'Back Spine (Branding)',
+      panelId: 'sandwich-back',
+      vertices: [
+        { x: hw, y: hd, z: -hl },
+        { x: -hw, y: hd, z: -hl },
+        { x: -hw, y: -hd, z: -hl },
+        { x: hw, y: -hd, z: -hl },
+      ],
+    },
+    // 3. Slanted Front Face with Window (Hypotenuse from apex down to front base)
+    {
+      id: 'sandwich-front',
+      name: 'Front Window Face',
+      panelId: 'sandwich-front',
+      vertices: [
+        { x: -hw, y: hd, z: -hl },
+        { x: hw, y: hd, z: -hl },
+        { x: hw, y: -hd, z: hl },
+        { x: -hw, y: -hd, z: hl },
+      ],
+    },
+    // 4. Left Triangular Side (at X = -hw)
+    {
+      id: 'sandwich-left-side',
+      name: 'Left Triangular Side',
+      panelId: 'sandwich-left-side',
+      vertices: [
+        { x: -hw, y: hd, z: -hl },
+        { x: -hw, y: -hd, z: hl },
+        { x: -hw, y: -hd, z: -hl },
+      ],
+    },
+    // 5. Right Triangular Side (at X = +hw)
+    {
+      id: 'sandwich-right-side',
       name: 'Right Triangular Side',
-      panelId: 'right-triangle-side',
-      points: [rs0, rs1, rs2, rs2],
-      lighting: 0.85,
-      graphics: mapPanelGraphicsToFace(panels.get('right-triangle-side'), graphics, l, h),
+      panelId: 'sandwich-right-side',
+      vertices: [
+        { x: hw, y: hd, z: -hl },
+        { x: hw, y: -hd, z: -hl },
+        { x: hw, y: -hd, z: hl },
+      ],
     },
+    // 6. Top Apex Tuck Flap
     {
-      id: 'wedge-slanted-window',
-      name: 'Slanted Front Face (Window)',
-      panelId: 'slanted-front-window',
-      points: [sw0, sw1, sw2, sw3],
-      lighting: 1.15,
-      graphics: mapPanelGraphicsToFace(panels.get('slanted-front-window'), graphics, w, l),
+      id: 'sandwich-tuck-flap',
+      name: 'Apex Tuck Flap',
+      panelId: 'sandwich-tuck-flap',
+      vertices: [
+        { x: -hw, y: hd + 4, z: -hl },
+        { x: hw, y: hd + 4, z: -hl },
+        { x: hw, y: hd, z: -hl },
+        { x: -hw, y: hd, z: -hl },
+      ],
     },
   ];
-
-  return {
-    templateId: 'sandwich-wedge-box',
-    viewAngle,
-    width: 800,
-    height: 600,
-    faces,
-    shadow: {
-      cx: cx - l * 0.2,
-      cy: cy + h * 0.35 + wy + 15,
-      rx: (w + l) * 0.55,
-      ry: (w + l) * 0.2,
-      opacity: 0.4,
-    },
-  };
 }
 
 // -------------------------------------------------------------
-// 4. French Fries Scoop Box
+// 4. Fries Scoop Box 3D Geometry (Curved Front & Tall Arched Back)
 // -------------------------------------------------------------
-function buildFriesScoopModel(
-  dims: PackagingDimensions,
-  panels: Map<string, PanelFace>,
-  graphics: GraphicItem[],
-  viewAngle: ViewAngle,
-  _openness: number,
-  cx: number,
-  cy: number
-): AssembledModelResult {
-  const scale = Math.min(220 / dims.width, 240 / dims.depth);
-  const w = dims.width * scale;
-  const h = dims.depth * scale;
-  const t = Math.max(dims.length * scale, 40);
+function buildFriesScoop3D(w: number, l: number, d: number, _openness: number): Face3DDefinition[] {
+  const hw = w / 2;
+  const hl = l / 2;
+  const hd = d / 2;
 
-  // Tapered front scoop
-  const topW = w * 1.1;
-  const botW = w * 0.8;
-  const scoopY = cy - h * 0.1;
-  const backY = cy - h * 0.5;
-  const botY = cy + h * 0.45;
+  // Base bottom is slightly smaller (tapered)
+  const bw = hw * 0.75;
+  const bl = hl * 0.75;
 
-  // Front scoop points (U-cutout)
-  const sf0 = { x: cx - topW / 2, y: scoopY };
-  const sf1 = { x: cx + topW / 2, y: scoopY };
-  const sf2 = { x: cx + botW / 2, y: botY };
-  const sf3 = { x: cx - botW / 2, y: botY };
-
-  // Back arch points
-  const sb0 = { x: cx - topW / 2 - 5, y: backY };
-  const sb1 = { x: cx + topW / 2 + 5, y: backY };
-  const sb2 = sf1;
-  const sb3 = sf0;
-
-  // Right taper side
-  const sr0 = sf1;
-  const sr1 = { x: sf1.x + t * 0.5, y: backY + 30 };
-  const sr2 = { x: sf2.x + t * 0.4, y: botY - 5 };
-  const sr3 = sf2;
-
-  const faces: AssembledFaceData[] = [
+  return [
+    // Bottom Base
     {
-      id: 'fries-back-scoop',
-      name: 'High Back Support',
-      panelId: 'back-scoop',
-      points: [sb0, sb1, sb2, sb3],
-      lighting: 0.75,
-      graphics: mapPanelGraphicsToFace(panels.get('back-scoop'), graphics, w, h * 0.4),
+      id: 'fries-bottom',
+      name: 'Bottom Base',
+      panelId: 'fries-bottom',
+      vertices: [
+        { x: -bw, y: -hd, z: bl },
+        { x: bw, y: -hd, z: bl },
+        { x: bw, y: -hd, z: -bl },
+        { x: -bw, y: -hd, z: -bl },
+      ],
     },
+    // Tall Back Arched Wall
     {
-      id: 'fries-right-taper',
+      id: 'fries-back',
+      name: 'Back Scoop Wall',
+      panelId: 'fries-back',
+      vertices: [
+        { x: hw, y: hd * 1.25, z: -hl },
+        { x: -hw, y: hd * 1.25, z: -hl },
+        { x: -bw, y: -hd, z: -bl },
+        { x: bw, y: -hd, z: -bl },
+      ],
+    },
+    // Low Front Scoop Face
+    {
+      id: 'fries-front',
+      name: 'Front Scoop Lip',
+      panelId: 'fries-front',
+      vertices: [
+        { x: -hw * 0.95, y: -hd + d * 0.45, z: hl },
+        { x: hw * 0.95, y: -hd + d * 0.45, z: hl },
+        { x: bw, y: -hd, z: bl },
+        { x: -bw, y: -hd, z: bl },
+      ],
+    },
+    // Left Tapered Wall (connecting low front to high back)
+    {
+      id: 'fries-left',
+      name: 'Left Tapered Side',
+      panelId: 'fries-left',
+      vertices: [
+        { x: -hw, y: hd * 1.25, z: -hl },
+        { x: -hw * 0.95, y: -hd + d * 0.45, z: hl },
+        { x: -bw, y: -hd, z: bl },
+        { x: -bw, y: -hd, z: -bl },
+      ],
+    },
+    // Right Tapered Wall (connecting high back to low front)
+    {
+      id: 'fries-right',
       name: 'Right Tapered Side',
-      panelId: 'right-taper-side',
-      points: [sr0, sr1, sr2, sr3],
-      lighting: 0.85,
-      graphics: mapPanelGraphicsToFace(panels.get('right-taper-side'), graphics, t, h),
-    },
-    {
-      id: 'fries-front-scoop',
-      name: 'Front Scoop Face',
-      panelId: 'front-scoop',
-      points: [sf0, sf1, sf2, sf3],
-      lighting: 1.1,
-      graphics: mapPanelGraphicsToFace(panels.get('front-scoop'), graphics, w, h * 0.6),
+      panelId: 'fries-right',
+      vertices: [
+        { x: hw * 0.95, y: -hd + d * 0.45, z: hl },
+        { x: hw, y: hd * 1.25, z: -hl },
+        { x: bw, y: -hd, z: -bl },
+        { x: bw, y: -hd, z: bl },
+      ],
     },
   ];
-
-  return {
-    templateId: 'fries-scoop-box',
-    viewAngle,
-    width: 800,
-    height: 600,
-    faces,
-    shadow: {
-      cx,
-      cy: botY + 12,
-      rx: botW * 0.75,
-      ry: 20,
-      opacity: 0.5,
-    },
-  };
 }
 
 // -------------------------------------------------------------
-// 5. Pillow Packaging Box
+// 5. Pillow Box 3D Geometry (Convex Curved Pillow)
 // -------------------------------------------------------------
-function buildPillowBoxModel(
-  dims: PackagingDimensions,
-  panels: Map<string, PanelFace>,
-  graphics: GraphicItem[],
-  viewAngle: ViewAngle,
-  _openness: number,
-  cx: number,
-  cy: number
-): AssembledModelResult {
-  const scale = Math.min(260 / dims.length, 190 / dims.width);
-  const w = dims.length * scale; // length is horizontal span
-  const h = dims.width * scale;  // width is vertical span
-  const bulge = dims.depth * scale * 0.45;
+function buildPillowBox3D(w: number, l: number, d: number, _openness: number): Face3DDefinition[] {
+  const hw = w / 2;
+  const hl = l / 2;
+  const hd = d / 2;
 
-  const halfW = w / 2;
-  const halfH = h / 2;
+  // Approximate curved elliptical pillow volume using multi-band front and back facets
+  const bulgeZ = hd * 0.85;
 
-  // 4 corners of pillow
-  const p0 = { x: cx - halfW, y: cy - halfH * 0.7 };
-  const p1 = { x: cx + halfW, y: cy - halfH * 0.7 };
-  const p2 = { x: cx + halfW, y: cy + halfH * 0.7 };
-  const p3 = { x: cx - halfW, y: cy + halfH * 0.7 };
-
-  // Curved convex SVG path
-  const pathD = `
-    M ${cx - halfW} ${cy}
-    C ${cx - halfW} ${cy - halfH - bulge}, ${cx + halfW} ${cy - halfH - bulge}, ${cx + halfW} ${cy}
-    C ${cx + halfW} ${cy + halfH + bulge}, ${cx - halfW} ${cy + halfH + bulge}, ${cx - halfW} ${cy}
-    Z
-  `;
-
-  const faces: AssembledFaceData[] = [
+  return [
+    // Front Face (Bulging in +Z)
     {
       id: 'pillow-front',
-      name: 'Front Pillow Face',
-      panelId: 'front-convex',
-      points: [p0, p1, p2, p3],
-      pathD,
-      lighting: 1.1,
-      graphics: mapPanelGraphicsToFace(panels.get('front-convex'), graphics, w, h),
+      name: 'Front Face (Logo)',
+      panelId: 'pillow-front',
+      vertices: [
+        { x: -hw, y: hl, z: 0 },
+        { x: hw, y: hl, z: 0 },
+        { x: hw, y: -hl, z: 0 },
+        { x: -hw, y: -hl, z: 0 },
+      ],
+      // Use bulge normal hint for authentic radial curvature shading
+      pathDGenerator: (pts) => {
+        const [p0, p1, p2, p3] = pts;
+        const midTopX = (p0.x + p1.x) / 2;
+        const midTopY = (p0.y + p1.y) / 2 - 12;
+        const midBotX = (p3.x + p2.x) / 2;
+        const midBotY = (p3.y + p2.y) / 2 + 12;
+        return `M ${p0.x} ${p0.y} Q ${midTopX} ${midTopY} ${p1.x} ${p1.y} L ${p2.x} ${p2.y} Q ${midBotX} ${midBotY} ${p3.x} ${p3.y} Z`;
+      },
+    },
+    // Back Face (Bulging in -Z)
+    {
+      id: 'pillow-back',
+      name: 'Back Face',
+      panelId: 'pillow-back',
+      vertices: [
+        { x: hw, y: hl, z: -bulgeZ },
+        { x: -hw, y: hl, z: -bulgeZ },
+        { x: -hw, y: -hl, z: -bulgeZ },
+        { x: hw, y: -hl, z: -bulgeZ },
+      ],
+    },
+    // Top Curved Tuck End Cap
+    {
+      id: 'pillow-top',
+      name: 'Top Tuck Cap',
+      panelId: 'pillow-top-outer',
+      vertices: [
+        { x: -hw, y: hl, z: -bulgeZ },
+        { x: hw, y: hl, z: -bulgeZ },
+        { x: hw, y: hl, z: 0 },
+        { x: -hw, y: hl, z: 0 },
+      ],
+    },
+    // Bottom Curved Tuck End Cap
+    {
+      id: 'pillow-bottom',
+      name: 'Bottom Tuck Cap',
+      panelId: 'pillow-top-inner',
+      vertices: [
+        { x: -hw, y: -hl, z: 0 },
+        { x: hw, y: -hl, z: 0 },
+        { x: hw, y: -hl, z: -bulgeZ },
+        { x: -hw, y: -hl, z: -bulgeZ },
+      ],
     },
   ];
-
-  return {
-    templateId: 'pillow-box',
-    viewAngle,
-    width: 800,
-    height: 600,
-    faces,
-    shadow: {
-      cx,
-      cy: cy + halfH + bulge + 8,
-      rx: halfW * 0.9,
-      ry: 24,
-      opacity: 0.45,
-    },
-  };
 }
 
 // -------------------------------------------------------------
-// 6. Dessert Window Sleeve Box
+// 6. Dessert Sleeve Box 3D Geometry (Outer Sleeve + Sliding Inner Tray)
 // -------------------------------------------------------------
-function buildDessertSleeveModel(
-  dims: PackagingDimensions,
-  panels: Map<string, PanelFace>,
-  graphics: GraphicItem[],
-  viewAngle: ViewAngle,
-  openness: number,
-  cx: number,
-  cy: number
-): AssembledModelResult {
-  const scale = Math.min(220 / dims.length, 180 / dims.width, 140 / dims.depth);
-  const l = dims.length * scale;
-  const w = dims.width * scale;
-  const d = Math.max(dims.depth * scale, 30);
+function buildDessertSleeve3D(w: number, l: number, d: number, openness: number): Face3DDefinition[] {
+  const hw = w / 2;
+  const hl = l / 2;
+  const hd = d / 2;
 
-  const cos30 = Math.cos(Math.PI / 6);
-  const sin30 = Math.sin(Math.PI / 6);
-
-  const lx = (l / 2) * cos30;
-  const ly = (l / 2) * sin30;
-  const wx = -(w / 2) * cos30;
-  const wy = (w / 2) * sin30;
-
-  // Inner tray sliding out from right opening
-  const slideDistance = openness * (l * 0.45);
-  const tx = slideDistance * cos30;
-  const ty = slideDistance * sin30;
-
-  // Sleeve Front Face
-  const sf0 = { x: cx + wx - lx, y: cy + wy - ly };
-  const sf1 = { x: cx + wx + lx, y: cy + wy + ly };
-  const sf2 = { x: cx + wx + lx, y: cy + wy + ly + d };
-  const sf3 = { x: cx + wx - lx, y: cy + wy - ly + d };
-
-  // Sleeve Top Face (Window)
-  const st0 = { x: cx - wx - lx, y: cy - wy - ly };
-  const st1 = { x: cx - wx + lx, y: cy - wy + ly };
-  const st2 = sf1;
-  const st3 = sf0;
-
-  // Inner Tray Front (sliding out)
-  const tf0 = { x: sf1.x + tx * 0.2, y: sf1.y + ty * 0.2 + 2 };
-  const tf1 = { x: sf1.x + tx, y: sf1.y + ty + 2 };
-  const tf2 = { x: sf2.x + tx, y: sf2.y + ty - 2 };
-  const tf3 = { x: sf2.x + tx * 0.2, y: sf2.y + ty * 0.2 - 2 };
-
-  const faces: AssembledFaceData[] = [
-    {
-      id: 'tray-slide-front',
-      name: 'Inner Tray Serving Face',
-      panelId: 'tray-front',
-      points: [tf0, tf1, tf2, tf3],
-      lighting: 0.9,
-      graphics: mapPanelGraphicsToFace(panels.get('tray-front'), graphics, slideDistance, d),
-    },
-    {
-      id: 'sleeve-front',
-      name: 'Sleeve Front Face',
-      panelId: 'sleeve-front',
-      points: [sf0, sf1, sf2, sf3],
-      lighting: 0.95,
-      graphics: mapPanelGraphicsToFace(panels.get('sleeve-front'), graphics, l, d),
-    },
+  const faces: Face3DDefinition[] = [
+    // Outer Sleeve Top (with window)
     {
       id: 'sleeve-top',
-      name: 'Sleeve Top Face (Window)',
-      panelId: 'sleeve-top-window',
-      points: [st0, st1, st2, st3],
-      lighting: 1.15,
-      graphics: mapPanelGraphicsToFace(panels.get('sleeve-top-window'), graphics, l, w),
+      name: 'Outer Sleeve Top',
+      panelId: 'sleeve-top',
+      vertices: [
+        { x: -hw, y: hd, z: -hl },
+        { x: hw, y: hd, z: -hl },
+        { x: hw, y: hd, z: hl },
+        { x: -hw, y: hd, z: hl },
+      ],
+    },
+    // Outer Sleeve Bottom
+    {
+      id: 'sleeve-bottom',
+      name: 'Outer Sleeve Bottom',
+      panelId: 'sleeve-bottom',
+      vertices: [
+        { x: -hw, y: -hd, z: hl },
+        { x: hw, y: -hd, z: hl },
+        { x: hw, y: -hd, z: -hl },
+        { x: -hw, y: -hd, z: -hl },
+      ],
+    },
+    // Outer Sleeve Left
+    {
+      id: 'sleeve-left',
+      name: 'Outer Sleeve Left',
+      panelId: 'sleeve-left',
+      vertices: [
+        { x: -hw, y: hd, z: -hl },
+        { x: -hw, y: hd, z: hl },
+        { x: -hw, y: -hd, z: hl },
+        { x: -hw, y: -hd, z: -hl },
+      ],
+    },
+    // Outer Sleeve Right
+    {
+      id: 'sleeve-right',
+      name: 'Outer Sleeve Right',
+      panelId: 'sleeve-right',
+      vertices: [
+        { x: hw, y: hd, z: hl },
+        { x: hw, y: hd, z: -hl },
+        { x: hw, y: -hd, z: -hl },
+        { x: hw, y: -hd, z: hl },
+      ],
     },
   ];
 
-  return {
-    templateId: 'dessert-sleeve-box',
-    viewAngle,
-    width: 800,
-    height: 600,
-    faces,
-    shadow: {
-      cx: cx + tx * 0.3,
-      cy: cy + wy + ly + d + 14,
-      rx: (l + w + slideDistance) * 0.55,
-      ry: (l + w) * 0.18,
-      opacity: 0.45,
+  // Inner Sliding Tray (slides forward in +Z by slideOffset)
+  const slideOffset = openness * (l * 0.7);
+  const tw = hw - 2;
+  const tl = hl - 2;
+  const thd = hd - 2;
+
+  faces.push(
+    // Tray Base
+    {
+      id: 'tray-base',
+      name: 'Inner Tray Base',
+      panelId: 'tray-base',
+      vertices: [
+        { x: -tw, y: -thd, z: tl + slideOffset },
+        { x: tw, y: -thd, z: tl + slideOffset },
+        { x: tw, y: -thd, z: -tl + slideOffset },
+        { x: -tw, y: -thd, z: -tl + slideOffset },
+      ],
     },
-  };
+    // Tray Front Wall (Pull Tab End)
+    {
+      id: 'tray-front',
+      name: 'Tray Front Wall',
+      panelId: 'tray-top-wall',
+      vertices: [
+        { x: -tw, y: thd, z: tl + slideOffset },
+        { x: tw, y: thd, z: tl + slideOffset },
+        { x: tw, y: -thd, z: tl + slideOffset },
+        { x: -tw, y: -thd, z: tl + slideOffset },
+      ],
+    },
+    // Tray Rear Wall
+    {
+      id: 'tray-back',
+      name: 'Tray Back Wall',
+      panelId: 'tray-bottom-wall',
+      vertices: [
+        { x: tw, y: thd, z: -tl + slideOffset },
+        { x: -tw, y: thd, z: -tl + slideOffset },
+        { x: -tw, y: -thd, z: -tl + slideOffset },
+        { x: tw, y: -thd, z: -tl + slideOffset },
+      ],
+    },
+    // Tray Left Wall
+    {
+      id: 'tray-left',
+      name: 'Tray Left Wall',
+      panelId: 'tray-left-wall',
+      vertices: [
+        { x: -tw, y: thd, z: -tl + slideOffset },
+        { x: -tw, y: thd, z: tl + slideOffset },
+        { x: -tw, y: -thd, z: tl + slideOffset },
+        { x: -tw, y: -thd, z: -tl + slideOffset },
+      ],
+    },
+    // Tray Right Wall
+    {
+      id: 'tray-right',
+      name: 'Tray Right Wall',
+      panelId: 'tray-right-wall',
+      vertices: [
+        { x: tw, y: thd, z: tl + slideOffset },
+        { x: tw, y: thd, z: -tl + slideOffset },
+        { x: tw, y: -thd, z: -tl + slideOffset },
+        { x: tw, y: -thd, z: tl + slideOffset },
+      ],
+    }
+  );
+
+  return faces;
 }
 
 // -------------------------------------------------------------
-// 7. Round Food Tub with Lid
+// 7. Round Food Tub 3D Geometry (Tapered Conical Cylinder with Lid)
 // -------------------------------------------------------------
-function buildRoundFoodTubModel(
-  dims: PackagingDimensions,
-  panels: Map<string, PanelFace>,
-  graphics: GraphicItem[],
-  viewAngle: ViewAngle,
-  openness: number,
-  cx: number,
-  cy: number
-): AssembledModelResult {
-  const scale = Math.min(220 / dims.width, 220 / dims.depth);
-  const topRadius = (dims.width * scale) / 2;
-  const botRadius = topRadius * 0.78;
-  const h = dims.depth * scale;
-  const lidLift = openness * 45;
+function buildRoundFoodTub3D(w: number, _l: number, d: number, openness: number): Face3DDefinition[] {
+  const rTop = w / 2;
+  const rBot = rTop * 0.78;
+  const hd = d / 2;
 
-  const topY = cy - h * 0.45 - lidLift;
-  const bodyTopY = cy - h * 0.45;
-  const botY = cy + h * 0.45;
+  const numSegments = 16;
+  const faces: Face3DDefinition[] = [];
 
-  // Lid Top Disc
-  const lt0 = { x: cx - topRadius, y: topY };
-  const lt1 = { x: cx + topRadius, y: topY };
-  const lt2 = { x: cx + topRadius, y: topY + topRadius * 0.45 };
-  const lt3 = { x: cx - topRadius, y: topY + topRadius * 0.45 };
+  // Conical Tub Facets around perimeter
+  for (let i = 0; i < numSegments; i++) {
+    const th0 = (i / numSegments) * Math.PI * 2;
+    const th1 = ((i + 1) / numSegments) * Math.PI * 2;
 
-  // Tub Body Wrap
-  const tb0 = { x: cx - topRadius * 0.98, y: bodyTopY + topRadius * 0.2 };
-  const tb1 = { x: cx + topRadius * 0.98, y: bodyTopY + topRadius * 0.2 };
-  const tb2 = { x: cx + botRadius, y: botY };
-  const tb3 = { x: cx - botRadius, y: botY };
+    const x0Top = rTop * Math.sin(th0);
+    const z0Top = rTop * Math.cos(th0);
+    const x1Top = rTop * Math.sin(th1);
+    const z1Top = rTop * Math.cos(th1);
 
-  const faces: AssembledFaceData[] = [
-    {
-      id: 'tub-body',
-      name: 'Conical Tub Body',
-      panelId: 'tub-body-wrap',
-      points: [tb0, tb1, tb2, tb3],
-      lighting: 1.0,
-      graphics: mapPanelGraphicsToFace(panels.get('tub-body-wrap'), graphics, topRadius * 2, h),
-    },
-    {
-      id: 'tub-lid',
-      name: 'Lid Top Disc',
-      panelId: 'lid-top-disc',
-      points: [lt0, lt1, lt2, lt3],
-      lighting: 1.2,
-      graphics: mapPanelGraphicsToFace(panels.get('lid-top-disc'), graphics, topRadius * 2, topRadius * 2),
-    },
-  ];
+    const x0Bot = rBot * Math.sin(th0);
+    const z0Bot = rBot * Math.cos(th0);
+    const x1Bot = rBot * Math.sin(th1);
+    const z1Bot = rBot * Math.cos(th1);
 
-  return {
-    templateId: 'round-food-tub',
-    viewAngle,
-    width: 800,
-    height: 600,
-    faces,
-    shadow: {
-      cx,
-      cy: botY + 12,
-      rx: botRadius * 1.1,
-      ry: botRadius * 0.35,
-      opacity: 0.5,
-    },
-  };
+    const isRearSeam = i === Math.floor(numSegments / 2);
+
+    faces.push({
+      id: `tub-segment-${i}`,
+      name: isRearSeam ? 'Glue Seam' : `Tub Wall (${Math.round((th0 * 180) / Math.PI)}°)`,
+      panelId: isRearSeam ? 'tub-glue-seam' : 'tub-body',
+      vertices: [
+        { x: x0Top, y: hd, z: z0Top },
+        { x: x1Top, y: hd, z: z1Top },
+        { x: x1Bot, y: -hd, z: z1Bot },
+        { x: x0Bot, y: -hd, z: z0Bot },
+      ],
+    });
+  }
+
+  // Bottom Base Disc (approx 8-point polygon)
+  const botPts: Vector3[] = [];
+  for (let i = 0; i < 8; i++) {
+    const th = (i / 8) * Math.PI * 2;
+    botPts.push({ x: rBot * Math.sin(th), y: -hd, z: rBot * Math.cos(th) });
+  }
+  faces.push({
+    id: 'tub-bottom',
+    name: 'Bottom Disc',
+    panelId: 'tub-bottom-disc',
+    vertices: botPts,
+  });
+
+  // Top Lid (Lifts upward when openness > 0)
+  const lidLift = hd + 4 + openness * 75;
+  const rLid = rTop * 1.04;
+  const lidPts: Vector3[] = [];
+  for (let i = 0; i < 12; i++) {
+    const th = (i / 12) * Math.PI * 2;
+    lidPts.push({ x: rLid * Math.sin(th), y: lidLift, z: rLid * Math.cos(th) });
+  }
+  faces.push({
+    id: 'tub-lid-top',
+    name: 'Top Lid Disc',
+    panelId: 'tub-lid-top',
+    vertices: lidPts,
+  });
+
+  return faces;
 }
 
 // -------------------------------------------------------------
-// 8. Stand-up Ziplock Pouch
+// 8. Stand-up Ziplock Pouch 3D Geometry
 // -------------------------------------------------------------
-function buildStandUpPouchModel(
-  dims: PackagingDimensions,
-  panels: Map<string, PanelFace>,
-  graphics: GraphicItem[],
-  viewAngle: ViewAngle,
-  _openness: number,
-  cx: number,
-  cy: number
-): AssembledModelResult {
-  const scale = Math.min(220 / dims.width, 260 / dims.length);
-  const w = dims.width * scale;
-  const h = dims.length * scale; // length is pouch height
-  const gussetD = Math.max(dims.depth * scale * 0.4, 25);
+function buildStandUpPouch3D(w: number, l: number, d: number, _openness: number): Face3DDefinition[] {
+  const hw = w / 2;
+  const hl = l / 2; // pouch height
+  const hd = d / 2; // pouch depth / gusset
 
-  const halfW = w / 2;
-  const topY = cy - h / 2;
-  const botY = cy + h / 2;
-
-  // Front face points
-  const f0 = { x: cx - halfW, y: topY };
-  const f1 = { x: cx + halfW, y: topY };
-  const f2 = { x: cx + halfW * 0.95, y: botY };
-  const f3 = { x: cx - halfW * 0.95, y: botY };
-
-  // Bottom gusset ellipse curve
-  const pathD = `
-    M ${f0.x} ${f0.y}
-    L ${f1.x} ${f1.y}
-    C ${f1.x + 8} ${cy}, ${f2.x + 8} ${botY - gussetD}, ${f2.x} ${botY}
-    C ${cx} ${botY + gussetD}, ${cx} ${botY + gussetD}, ${f3.x} ${botY}
-    C ${f3.x - 8} ${botY - gussetD}, ${f0.x - 8} ${cy}, ${f0.x} ${f0.y}
-    Z
-  `;
-
-  const faces: AssembledFaceData[] = [
+  return [
+    // Front Face (puffed forward in +Z)
     {
       id: 'pouch-front',
       name: 'Front Face (Artwork)',
-      panelId: 'front-face',
-      points: [f0, f1, f2, f3],
-      pathD,
-      lighting: 1.05,
-      graphics: mapPanelGraphicsToFace(panels.get('front-face'), graphics, w, h),
+      panelId: 'pouch-front',
+      vertices: [
+        { x: -hw, y: hl, z: 0 },
+        { x: hw, y: hl, z: 0 },
+        { x: hw, y: -hl, z: hd * 0.5 },
+        { x: -hw, y: -hl, z: hd * 0.5 },
+      ],
+    },
+    // Back Face (puffed backward in -Z)
+    {
+      id: 'pouch-back',
+      name: 'Back Face',
+      panelId: 'pouch-back',
+      vertices: [
+        { x: hw, y: hl, z: 0 },
+        { x: -hw, y: hl, z: 0 },
+        { x: -hw, y: -hl, z: -hd * 0.5 },
+        { x: hw, y: -hl, z: -hd * 0.5 },
+      ],
+    },
+    // Bottom Oval Gusset
+    {
+      id: 'pouch-gusset',
+      name: 'Bottom Gusset',
+      panelId: 'pouch-gusset',
+      vertices: [
+        { x: -hw, y: -hl, z: hd * 0.5 },
+        { x: hw, y: -hl, z: hd * 0.5 },
+        { x: hw, y: -hl, z: -hd * 0.5 },
+        { x: -hw, y: -hl, z: -hd * 0.5 },
+      ],
     },
   ];
-
-  return {
-    templateId: 'standup-pouch',
-    viewAngle,
-    width: 800,
-    height: 600,
-    faces,
-    shadow: {
-      cx,
-      cy: botY + gussetD * 0.6,
-      rx: halfW * 1.05,
-      ry: gussetD * 0.7,
-      opacity: 0.45,
-    },
-  };
 }
 
 // -------------------------------------------------------------
-// 9. Side Gusset Coffee/Cookie Bag
+// 9. Side Gusset Bag 3D Geometry (Coffee / Cookie Bag)
 // -------------------------------------------------------------
-function buildSideGussetBagModel(
-  dims: PackagingDimensions,
-  panels: Map<string, PanelFace>,
-  graphics: GraphicItem[],
-  viewAngle: ViewAngle,
-  _openness: number,
-  cx: number,
-  cy: number
-): AssembledModelResult {
-  const scale = Math.min(200 / dims.width, 270 / dims.length, 140 / dims.depth);
-  const w = dims.width * scale;
-  const h = dims.length * scale;
-  const d = dims.depth * scale * 0.65;
+function buildSideGussetBag3D(w: number, l: number, d: number, _openness: number): Face3DDefinition[] {
+  const hw = w / 2;
+  const hl = l / 2; // height
+  const hd = d / 2; // depth
 
-  const cos30 = Math.cos(Math.PI / 6);
-  const sin30 = Math.sin(Math.PI / 6);
-
-  const dx = d * cos30;
-  const dy = d * sin30;
-
-  const topY = cy - h / 2;
-  const botY = cy + h / 2;
-
-  // Front Panel
-  const f0 = { x: cx - w / 2, y: topY };
-  const f1 = { x: cx + w / 2, y: topY };
-  const f2 = { x: cx + w / 2, y: botY };
-  const f3 = { x: cx - w / 2, y: botY };
-
-  // Right Pleated Gusset Side
-  const g0 = f1;
-  const g1 = { x: f1.x + dx, y: f1.y - dy };
-  const g2 = { x: f2.x + dx, y: f2.y - dy };
-  const g3 = f2;
-
-  const faces: AssembledFaceData[] = [
-    {
-      id: 'bag-right-gusset',
-      name: 'Right Gusset Side',
-      panelId: 'right-gusset-panel',
-      points: [g0, g1, g2, g3],
-      lighting: 0.82,
-      graphics: mapPanelGraphicsToFace(panels.get('right-gusset-panel'), graphics, d, h),
-    },
+  return [
+    // Front Face
     {
       id: 'bag-front',
       name: 'Front Face (Window)',
-      panelId: 'front-face-window',
-      points: [f0, f1, f2, f3],
-      lighting: 1.1,
-      graphics: mapPanelGraphicsToFace(panels.get('front-face-window'), graphics, w, h),
+      panelId: 'bag-front',
+      vertices: [
+        { x: -hw, y: hl, z: hd },
+        { x: hw, y: hl, z: hd },
+        { x: hw, y: -hl, z: hd },
+        { x: -hw, y: -hl, z: hd },
+      ],
+    },
+    // Back Left Panel
+    {
+      id: 'bag-back-left',
+      name: 'Back Left Panel',
+      panelId: 'bag-back-left',
+      vertices: [
+        { x: 0, y: hl, z: -hd },
+        { x: -hw, y: hl, z: -hd },
+        { x: -hw, y: -hl, z: -hd },
+        { x: 0, y: -hl, z: -hd },
+      ],
+    },
+    // Back Right Panel
+    {
+      id: 'bag-back-right',
+      name: 'Back Right Panel',
+      panelId: 'bag-back-right',
+      vertices: [
+        { x: hw, y: hl, z: -hd },
+        { x: 0, y: hl, z: -hd },
+        { x: 0, y: -hl, z: -hd },
+        { x: hw, y: -hl, z: -hd },
+      ],
+    },
+    // Left Pleated Gusset
+    {
+      id: 'bag-gusset-left',
+      name: 'Left Gusset Side',
+      panelId: 'bag-gusset-left',
+      vertices: [
+        { x: -hw, y: hl, z: -hd },
+        { x: -hw, y: hl, z: hd },
+        { x: -hw, y: -hl, z: hd },
+        { x: -hw, y: -hl, z: -hd },
+      ],
+    },
+    // Right Pleated Gusset
+    {
+      id: 'bag-gusset-right',
+      name: 'Right Gusset Side',
+      panelId: 'bag-gusset-right',
+      vertices: [
+        { x: hw, y: hl, z: hd },
+        { x: hw, y: hl, z: -hd },
+        { x: hw, y: -hl, z: -hd },
+        { x: hw, y: -hl, z: hd },
+      ],
+    },
+    // Block Bottom Base
+    {
+      id: 'bag-bottom',
+      name: 'Block Bottom Base',
+      panelId: 'bag-block-bottom',
+      vertices: [
+        { x: -hw, y: -hl, z: hd },
+        { x: hw, y: -hl, z: hd },
+        { x: hw, y: -hl, z: -hd },
+        { x: -hw, y: -hl, z: -hd },
+      ],
+    },
+    // Folded Tin-Tie Header
+    {
+      id: 'bag-top-header',
+      name: 'Tin-Tie Folded Header',
+      panelId: 'bag-top-header',
+      vertices: [
+        { x: -hw, y: hl + 18, z: 0 },
+        { x: hw, y: hl + 18, z: 0 },
+        { x: hw, y: hl, z: 0 },
+        { x: -hw, y: hl, z: 0 },
+      ],
     },
   ];
-
-  return {
-    templateId: 'side-gusset-bag',
-    viewAngle,
-    width: 800,
-    height: 600,
-    faces,
-    shadow: {
-      cx: cx + dx * 0.35,
-      cy: botY + 14,
-      rx: (w + dx) * 0.65,
-      ry: 22,
-      opacity: 0.45,
-    },
-  };
 }
 
 // -------------------------------------------------------------
-// 10. Single-Serve Sachet Stick Pack
+// 10. Single-Serve Sachet Stick Pack 3D Geometry
 // -------------------------------------------------------------
-function buildSachetStickPackModel(
-  dims: PackagingDimensions,
-  panels: Map<string, PanelFace>,
-  graphics: GraphicItem[],
-  viewAngle: ViewAngle,
-  _openness: number,
-  cx: number,
-  cy: number
-): AssembledModelResult {
-  const scale = Math.min(100 / dims.width, 320 / dims.length);
-  const w = dims.width * scale;
-  const h = dims.length * scale;
+function buildSachetStickPack3D(w: number, l: number, d: number, _openness: number): Face3DDefinition[] {
+  const hw = w / 2;
+  const hl = l / 2; // length
+  const hd = Math.max(8, d / 2);
 
-  const halfW = w / 2;
-  const topY = cy - h / 2;
-  const botY = cy + h / 2;
-
-  const f0 = { x: cx - halfW, y: topY };
-  const f1 = { x: cx + halfW, y: topY };
-  const f2 = { x: cx + halfW, y: botY };
-  const f3 = { x: cx - halfW, y: botY };
-
-  const faces: AssembledFaceData[] = [
+  return [
+    // Front Face
     {
       id: 'sachet-front',
       name: 'Front Face (Branding)',
-      panelId: 'front-face',
-      points: [f0, f1, f2, f3],
-      lighting: 1.12,
-      graphics: mapPanelGraphicsToFace(panels.get('front-face'), graphics, w, h),
+      panelId: 'sachet-front',
+      vertices: [
+        { x: -hw, y: hl - 12, z: hd * 0.6 },
+        { x: hw, y: hl - 12, z: hd * 0.6 },
+        { x: hw, y: -hl + 12, z: hd * 0.6 },
+        { x: -hw, y: -hl + 12, z: hd * 0.6 },
+      ],
+    },
+    // Back Face
+    {
+      id: 'sachet-back',
+      name: 'Back Face (Ingredients)',
+      panelId: 'sachet-back-left',
+      vertices: [
+        { x: hw, y: hl - 12, z: -hd * 0.6 },
+        { x: -hw, y: hl - 12, z: -hd * 0.6 },
+        { x: -hw, y: -hl + 12, z: -hd * 0.6 },
+        { x: hw, y: -hl + 12, z: -hd * 0.6 },
+      ],
+    },
+    // Top Heat-Seal Crimp
+    {
+      id: 'sachet-top-seal',
+      name: 'Top Heat-Seal Crimp',
+      panelId: 'sachet-top-seal',
+      vertices: [
+        { x: -hw, y: hl, z: 0 },
+        { x: hw, y: hl, z: 0 },
+        { x: hw, y: hl - 12, z: 0 },
+        { x: -hw, y: hl - 12, z: 0 },
+      ],
+    },
+    // Bottom Heat-Seal Crimp
+    {
+      id: 'sachet-bottom-seal',
+      name: 'Bottom Heat-Seal Crimp',
+      panelId: 'sachet-bottom-seal',
+      vertices: [
+        { x: -hw, y: -hl + 12, z: 0 },
+        { x: hw, y: -hl + 12, z: 0 },
+        { x: hw, y: -hl, z: 0 },
+        { x: -hw, y: -hl, z: 0 },
+      ],
     },
   ];
-
-  return {
-    templateId: 'sachet-stick-pack',
-    viewAngle,
-    width: 800,
-    height: 600,
-    faces,
-    shadow: {
-      cx,
-      cy: botY + 12,
-      rx: halfW * 1.2,
-      ry: 16,
-      opacity: 0.4,
-    },
-  };
 }
 
 // -------------------------------------------------------------
-// 11. Sliced Bread Loaf Bag
+// 11. Sliced Bread Loaf Bag 3D Geometry
 // -------------------------------------------------------------
-function buildBreadLoafBagModel(
-  dims: PackagingDimensions,
-  panels: Map<string, PanelFace>,
-  graphics: GraphicItem[],
-  viewAngle: ViewAngle,
-  _openness: number,
-  cx: number,
-  cy: number
-): AssembledModelResult {
-  const scale = Math.min(190 / dims.width, 260 / dims.length, 140 / dims.depth);
-  const w = dims.width * scale;
-  const h = dims.length * scale * 0.75;
-  const d = dims.depth * scale * 0.6;
+function buildBreadLoafBag3D(w: number, l: number, d: number, _openness: number): Face3DDefinition[] {
+  const hw = w / 2;
+  const hl = l / 2; // height
+  const hd = d / 2; // depth
 
-  const cos30 = Math.cos(Math.PI / 6);
-  const sin30 = Math.sin(Math.PI / 6);
-  const dx = d * cos30;
-  const dy = d * sin30;
-
-  const botY = cy + h / 2;
-  const topY = cy - h / 2 + 20;
-
-  // Front loaf panel
-  const f0 = { x: cx - w / 2, y: topY };
-  const f1 = { x: cx + w / 2, y: topY };
-  const f2 = { x: cx + w / 2, y: botY };
-  const f3 = { x: cx - w / 2, y: botY };
-
-  // Right gusset side
-  const g0 = f1;
-  const g1 = { x: f1.x + dx, y: f1.y - dy };
-  const g2 = { x: f2.x + dx, y: f2.y - dy };
-  const g3 = f2;
-
-  const faces: AssembledFaceData[] = [
-    {
-      id: 'bread-right-gusset',
-      name: 'Right Gusset Side',
-      panelId: 'right-gusset-face',
-      points: [g0, g1, g2, g3],
-      lighting: 0.85,
-      graphics: mapPanelGraphicsToFace(panels.get('right-gusset-face'), graphics, d, h),
-    },
+  return [
+    // Front Clear Face (Window)
     {
       id: 'bread-front',
       name: 'Front Loaf Face (Window)',
-      panelId: 'front-face-window',
-      points: [f0, f1, f2, f3],
-      lighting: 1.1,
-      graphics: mapPanelGraphicsToFace(panels.get('front-face-window'), graphics, w, h),
+      panelId: 'bread-front',
+      vertices: [
+        { x: -hw, y: hl * 0.8, z: hd },
+        { x: hw, y: hl * 0.8, z: hd },
+        { x: hw, y: -hl, z: hd },
+        { x: -hw, y: -hl, z: hd },
+      ],
+    },
+    // Back Face
+    {
+      id: 'bread-back',
+      name: 'Back Face',
+      panelId: 'bread-back-left',
+      vertices: [
+        { x: hw, y: hl * 0.8, z: -hd },
+        { x: -hw, y: hl * 0.8, z: -hd },
+        { x: -hw, y: -hl, z: -hd },
+        { x: hw, y: -hl, z: -hd },
+      ],
+    },
+    // Left Gusset
+    {
+      id: 'bread-gusset-left',
+      name: 'Left Gusset Side',
+      panelId: 'bread-gusset-left',
+      vertices: [
+        { x: -hw, y: hl * 0.8, z: -hd },
+        { x: -hw, y: hl * 0.8, z: hd },
+        { x: -hw, y: -hl, z: hd },
+        { x: -hw, y: -hl, z: -hd },
+      ],
+    },
+    // Right Gusset
+    {
+      id: 'bread-gusset-right',
+      name: 'Right Gusset Side',
+      panelId: 'bread-gusset-right',
+      vertices: [
+        { x: hw, y: hl * 0.8, z: hd },
+        { x: hw, y: hl * 0.8, z: -hd },
+        { x: hw, y: -hl, z: -hd },
+        { x: hw, y: -hl, z: hd },
+      ],
+    },
+    // Bottom Sealed Base
+    {
+      id: 'bread-bottom',
+      name: 'Bottom Base',
+      panelId: 'bread-bottom-seal',
+      vertices: [
+        { x: -hw, y: -hl, z: hd },
+        { x: hw, y: -hl, z: hd },
+        { x: hw, y: -hl, z: -hd },
+        { x: -hw, y: -hl, z: -hd },
+      ],
+    },
+    // Top Bunched Neck with Twist Tie
+    {
+      id: 'bread-top-header',
+      name: 'Twist-Tie Gathered Neck',
+      panelId: 'bread-top-header',
+      vertices: [
+        { x: -hw * 0.5, y: hl, z: 0 },
+        { x: hw * 0.5, y: hl, z: 0 },
+        { x: hw * 0.8, y: hl * 0.8, z: 0 },
+        { x: -hw * 0.8, y: hl * 0.8, z: 0 },
+      ],
     },
   ];
-
-  return {
-    templateId: 'bread-loaf-bag',
-    viewAngle,
-    width: 800,
-    height: 600,
-    faces,
-    shadow: {
-      cx: cx + dx * 0.35,
-      cy: botY + 15,
-      rx: (w + dx) * 0.7,
-      ry: 24,
-      opacity: 0.45,
-    },
-  };
 }
 
 // -------------------------------------------------------------
-// 12. Burger & Food Wrapper Sheet
+// 12. Burger Wrapper Sheet 3D Geometry (Folded Wrap)
 // -------------------------------------------------------------
-function buildBurgerWrapperModel(
-  dims: PackagingDimensions,
-  panels: Map<string, PanelFace>,
-  graphics: GraphicItem[],
-  viewAngle: ViewAngle,
-  _openness: number,
-  cx: number,
-  cy: number
-): AssembledModelResult {
-  const scale = Math.min(260 / dims.width, 260 / dims.length);
-  const size = dims.width * scale * 0.65;
-  const half = size / 2;
+function buildBurgerWrapper3D(w: number, l: number, d: number, _openness: number): Face3DDefinition[] {
+  const hw = w / 2;
+  const hl = l / 2;
+  const hd = Math.max(12, d / 2);
 
-  // Folded hexagonal/octagonal wrapped package
-  const f0 = { x: cx - half * 0.8, y: cy - half };
-  const f1 = { x: cx + half * 0.8, y: cy - half };
-  const f2 = { x: cx + half, y: cy - half * 0.4 };
-  const f3 = { x: cx + half, y: cy + half * 0.4 };
-  const f4 = { x: cx + half * 0.8, y: cy + half };
-  const f5 = { x: cx - half * 0.8, y: cy + half };
-  const f6 = { x: cx - half, y: cy + half * 0.4 };
-  const f7 = { x: cx - half, y: cy - half * 0.4 };
-
-  const pathD = `M ${f0.x} ${f0.y} L ${f1.x} ${f1.y} L ${f2.x} ${f2.y} L ${f3.x} ${f3.y} L ${f4.x} ${f4.y} L ${f5.x} ${f5.y} L ${f6.x} ${f6.y} L ${f7.x} ${f7.y} Z`;
-
-  // Center target face for sticker/branding
-  const c0 = { x: cx - half * 0.5, y: cy - half * 0.5 };
-  const c1 = { x: cx + half * 0.5, y: cy - half * 0.5 };
-  const c2 = { x: cx + half * 0.5, y: cy + half * 0.5 };
-  const c3 = { x: cx - half * 0.5, y: cy + half * 0.5 };
-
-  const faces: AssembledFaceData[] = [
+  return [
+    // Central Wrap Target & Seal
     {
       id: 'wrapper-center',
       name: 'Central Wrap Target & Seal',
-      panelId: 'center-base',
-      points: [c0, c1, c2, c3],
-      pathD,
-      lighting: 1.15,
-      graphics: mapPanelGraphicsToFace(panels.get('center-base'), graphics, size, size),
+      panelId: 'wrapper-center',
+      vertices: [
+        { x: -hw * 0.6, y: hl * 0.6, z: hd },
+        { x: hw * 0.6, y: hl * 0.6, z: hd },
+        { x: hw * 0.6, y: -hl * 0.6, z: hd },
+        { x: -hw * 0.6, y: -hl * 0.6, z: hd },
+      ],
+    },
+    // Top Fold Flap
+    {
+      id: 'wrapper-top',
+      name: 'Top Fold Flap',
+      panelId: 'wrapper-top',
+      vertices: [
+        { x: -hw, y: hl, z: 0 },
+        { x: hw, y: hl, z: 0 },
+        { x: hw * 0.6, y: hl * 0.6, z: hd },
+        { x: -hw * 0.6, y: hl * 0.6, z: hd },
+      ],
+    },
+    // Bottom Fold Flap
+    {
+      id: 'wrapper-bottom',
+      name: 'Bottom Fold Flap',
+      panelId: 'wrapper-bottom',
+      vertices: [
+        { x: -hw * 0.6, y: -hl * 0.6, z: hd },
+        { x: hw * 0.6, y: -hl * 0.6, z: hd },
+        { x: hw, y: -hl, z: 0 },
+        { x: -hw, y: -hl, z: 0 },
+      ],
+    },
+    // Left Fold Flap
+    {
+      id: 'wrapper-left',
+      name: 'Left Fold Flap',
+      panelId: 'wrapper-left',
+      vertices: [
+        { x: -hw, y: hl, z: 0 },
+        { x: -hw * 0.6, y: hl * 0.6, z: hd },
+        { x: -hw * 0.6, y: -hl * 0.6, z: hd },
+        { x: -hw, y: -hl, z: 0 },
+      ],
+    },
+    // Right Fold Flap
+    {
+      id: 'wrapper-right',
+      name: 'Right Fold Flap',
+      panelId: 'wrapper-right',
+      vertices: [
+        { x: hw * 0.6, y: hl * 0.6, z: hd },
+        { x: hw, y: hl, z: 0 },
+        { x: hw, y: -hl, z: 0 },
+        { x: hw * 0.6, y: -hl * 0.6, z: hd },
+      ],
     },
   ];
-
-  return {
-    templateId: 'burger-wrapper',
-    viewAngle,
-    width: 800,
-    height: 600,
-    faces,
-    shadow: {
-      cx,
-      cy: cy + half + 12,
-      rx: half * 1.1,
-      ry: 26,
-      opacity: 0.4,
-    },
-  };
 }
