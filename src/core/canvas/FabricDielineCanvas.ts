@@ -180,7 +180,7 @@ export class FabricDielineCanvas {
             fontSize: item.fontSize || 15,
             fontFamily: item.fontFamily || 'Inter, sans-serif',
             fontWeight: (item.fontWeight || '600') as string,
-            fill: item.fill || '#f8fafc',
+            fill: item.fill || '#1e293b',
             textAlign: item.textAlign || 'center',
             lineHeight: item.lineHeight || 1.25,
             scaleX: item.scaleX ?? 1,
@@ -245,7 +245,7 @@ export class FabricDielineCanvas {
 
             const maxW = targetPanel.bounds.width * fitRatio;
             const maxH = targetPanel.bounds.height * fitRatio;
-            const scaleFit = Math.min(maxW / (fabricImg.width || 1), maxH / (fabricImg.height || 1), 1);
+            const scaleFit = Math.min(maxW / (fabricImg.width || 1), maxH / (fabricImg.height || 1));
             sX = scaleFit;
             sY = scaleFit;
             item.scaleX = sX;

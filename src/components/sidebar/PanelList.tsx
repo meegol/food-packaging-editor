@@ -74,7 +74,7 @@ export const PanelList: React.FC<PanelListProps> = ({
       fontSize: 16,
       fontWeight: '700',
       textAlign: 'center',
-      fill: '#f8fafc',
+      fill: '#1e293b',
       clipToPanel: true,
       x: panel.center.x,
       y: panel.center.y,

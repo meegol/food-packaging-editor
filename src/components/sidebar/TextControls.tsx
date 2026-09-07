@@ -46,7 +46,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
   const [fontSize, setFontSize] = useState<number>(18);
   const [fontWeight, setFontWeight] = useState<'400' | '600' | '700'>('700');
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center');
-  const [fill, setFill] = useState('#f8fafc');
+  const [fill, setFill] = useState('#1e293b');
   const [clipToPanel, setClipToPanel] = useState(true);
   const [angle, setAngle] = useState<number>(0);
 

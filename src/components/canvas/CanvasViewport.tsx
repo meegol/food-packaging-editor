@@ -195,7 +195,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
         const pw = targetPanel.bounds.width;
         const ph = targetPanel.bounds.height;
         const fitRatio = 0.70;
-        const scaleFit = Math.min((pw * fitRatio) / nw, (ph * fitRatio) / nh, 1);
+        const scaleFit = Math.min((pw * fitRatio) / nw, (ph * fitRatio) / nh);
 
         const newItem: GraphicItem = {
           id: `img-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -233,7 +233,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
       fontSize: 16,
       fontWeight: '700',
       textAlign: 'center',
-      fill: '#f8fafc',
+      fill: '#1e293b',
       clipToPanel: true,
       x: activePanel.center.x,
       y: activePanel.center.y,
@@ -258,7 +258,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
         const pw = activePanel.bounds.width;
         const ph = activePanel.bounds.height;
         const fitRatio = 0.70;
-        const scaleFit = Math.min((pw * fitRatio) / nw, (ph * fitRatio) / nh, 1);
+        const scaleFit = Math.min((pw * fitRatio) / nw, (ph * fitRatio) / nh);
 
         const newItem: GraphicItem = {
           id: `img-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,

@@ -37,7 +37,7 @@ const PRESETS: CompliancePreset[] = [
     category: 'recycling',
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
       <polygon points="32,8 54,46 10,46" stroke="#10b981" stroke-width="3" stroke-linejoin="round"/>
-      <text x="32" y="34" fill="#f8fafc" font-size="12" font-family="sans-serif" font-weight="bold" text-anchor="middle">20</text>
+      <text x="32" y="34" fill="#1e293b" font-size="12" font-family="sans-serif" font-weight="bold" text-anchor="middle">20</text>
       <text x="32" y="58" fill="#10b981" font-size="9" font-family="sans-serif" font-weight="bold" text-anchor="middle">PAP</text>
     </svg>`,
   },
@@ -47,7 +47,7 @@ const PRESETS: CompliancePreset[] = [
     category: 'recycling',
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
       <polygon points="32,8 54,46 10,46" stroke="#10b981" stroke-width="3" stroke-linejoin="round"/>
-      <text x="32" y="34" fill="#f8fafc" font-size="12" font-family="sans-serif" font-weight="bold" text-anchor="middle">05</text>
+      <text x="32" y="34" fill="#1e293b" font-size="12" font-family="sans-serif" font-weight="bold" text-anchor="middle">05</text>
       <text x="32" y="58" fill="#10b981" font-size="9" font-family="sans-serif" font-weight="bold" text-anchor="middle">PP</text>
     </svg>`,
   },
@@ -57,7 +57,7 @@ const PRESETS: CompliancePreset[] = [
     category: 'recycling',
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
       <polygon points="32,8 54,46 10,46" stroke="#10b981" stroke-width="3" stroke-linejoin="round"/>
-      <text x="32" y="34" fill="#f8fafc" font-size="12" font-family="sans-serif" font-weight="bold" text-anchor="middle">01</text>
+      <text x="32" y="34" fill="#1e293b" font-size="12" font-family="sans-serif" font-weight="bold" text-anchor="middle">01</text>
       <text x="32" y="58" fill="#10b981" font-size="9" font-family="sans-serif" font-weight="bold" text-anchor="middle">PET</text>
     </svg>`,
   },
@@ -80,8 +80,8 @@ const PRESETS: CompliancePreset[] = [
     id: 'handling-microwave-safe',
     name: 'Microwave Safe',
     category: 'handling',
-    svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8fafc" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="8" y="14" width="48" height="36" rx="4" stroke="#94a3b8"/>
+    svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="8" y="14" width="48" height="36" rx="4" stroke="#64748b"/>
       <path d="M18 26 C20 22, 22 22, 24 26 C26 30, 28 30, 30 26 C32 22, 34 22, 36 26" stroke="#f59e0b"/>
       <path d="M18 36 C20 32, 22 32, 24 36 C26 40, 28 40, 30 36 C32 32, 34 32, 36 36" stroke="#f59e0b"/>
       <line x1="46" y1="20" x2="46" y2="44" stroke="#64748b"/>
@@ -91,7 +91,7 @@ const PRESETS: CompliancePreset[] = [
     id: 'handling-keep-upright',
     name: 'Keep Upright',
     category: 'handling',
-    svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8fafc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#1e293b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
       <line x1="22" y1="46" x2="22" y2="16"/>
       <polyline points="14,24 22,16 30,24"/>
       <line x1="42" y1="46" x2="42" y2="16"/>
@@ -104,7 +104,7 @@ const PRESETS: CompliancePreset[] = [
     name: 'Keep Dry',
     category: 'handling',
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 36 C12 22 20 14 32 14 C44 14 52 22 52 36 Z" stroke="#f8fafc" fill="rgba(255,255,255,0.05)"/>
+      <path d="M12 36 C12 22 20 14 32 14 C44 14 52 22 52 36 Z" stroke="#1e293b" fill="rgba(30,41,59,0.08)"/>
       <line x1="32" y1="14" x2="32" y2="48"/>
       <path d="M32 48 C32 52 28 54 26 52"/>
       <line x1="20" y1="8" x2="22" y2="12" stroke="#38bdf8"/>
@@ -132,7 +132,7 @@ const PRESETS: CompliancePreset[] = [
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
       <circle cx="32" cy="32" r="28" stroke="#10b981" stroke-width="2.5"/>
       <circle cx="32" cy="32" r="24" stroke="#10b981" stroke-width="1" stroke-dasharray="3 2"/>
-      <text x="32" y="32" fill="#f8fafc" font-size="11" font-family="sans-serif" font-weight="bold" text-anchor="middle">HALAL</text>
+      <text x="32" y="32" fill="#1e293b" font-size="11" font-family="sans-serif" font-weight="bold" text-anchor="middle">HALAL</text>
       <text x="32" y="44" fill="#10b981" font-size="7" font-family="sans-serif" font-weight="600" text-anchor="middle">حلال</text>
     </svg>`,
   },
@@ -143,7 +143,7 @@ const PRESETS: CompliancePreset[] = [
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
       <circle cx="32" cy="32" r="28" stroke="#f59e0b" stroke-width="2.5"/>
       <line x1="16" y1="16" x2="48" y2="48" stroke="#ef4444" stroke-width="3.5" stroke-linecap="round"/>
-      <text x="32" y="28" fill="#f8fafc" font-size="8" font-family="sans-serif" font-weight="bold" text-anchor="middle">GLUTEN</text>
+      <text x="32" y="28" fill="#1e293b" font-size="8" font-family="sans-serif" font-weight="bold" text-anchor="middle">GLUTEN</text>
       <text x="32" y="40" fill="#f59e0b" font-size="8" font-family="sans-serif" font-weight="bold" text-anchor="middle">FREE</text>
     </svg>`,
   },
@@ -153,8 +153,8 @@ const PRESETS: CompliancePreset[] = [
     category: 'certification',
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
       <circle cx="32" cy="32" r="28" stroke="#38bdf8" stroke-width="2.5"/>
-      <circle cx="32" cy="32" r="18" stroke="#f8fafc" stroke-width="2"/>
-      <text x="32" y="37" fill="#f8fafc" font-size="15" font-family="serif" font-weight="bold" text-anchor="middle">U</text>
+      <circle cx="32" cy="32" r="18" stroke="#1e293b" stroke-width="2"/>
+      <text x="32" y="37" fill="#1e293b" font-size="15" font-family="serif" font-weight="bold" text-anchor="middle">U</text>
       <text x="32" y="58" fill="#38bdf8" font-size="7" font-family="sans-serif" font-weight="bold" text-anchor="middle">PAREVE</text>
     </svg>`,
   },
@@ -288,7 +288,17 @@ export const ComplianceIconControls: React.FC<ComplianceIconControlsProps> = ({
             }}
           >
             <div
-              style={{ width: '40px', height: '40px', marginBottom: '6px' }}
+              style={{
+                width: '42px',
+                height: '42px',
+                marginBottom: '6px',
+                backgroundColor: '#f1f5f9',
+                borderRadius: '6px',
+                padding: '3px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
               dangerouslySetInnerHTML={{ __html: preset.svgString }}
             />
             <div style={{
