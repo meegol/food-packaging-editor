@@ -76,7 +76,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
         const pw = targetPanel.bounds.width;
         const ph = targetPanel.bounds.height;
         const fitRatio = 0.70;
-        const scaleFit = Math.min((pw * fitRatio) / nw, (ph * fitRatio) / nh, 1);
+        const scaleFit = Math.min((pw * fitRatio) / nw, (ph * fitRatio) / nh);
 
         const newItem: GraphicItem = {
           id: `img-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -813,26 +813,14 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                 />
               )}
 
-              {/* Projected User Graphics on Face */}
+              {/* Projected User Graphics on Face (Anchored to 3D Planar Space) */}
               <g clipPath={`url(#clip-${face.id})`}>
                 {face.graphics.map((g) => {
-                  const p0 = face.points[0];
-                  const p1 = face.points[1];
-                  const p2 = face.points[2];
-                  const p3 = face.points.length >= 4 ? face.points[3] : face.points[2];
-
-                  const targetW = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 100;
-                  const targetH = Math.hypot(p3.x - p0.x, p3.y - p0.y) || 100;
-
-                  const transformMatrix = getQuadAffineMatrix(p0, p1, p2, p3, targetW, targetH);
-                  const imgW = g.width || 60;
-                  const imgH = g.height || 60;
-
-                  return (
-                    <g key={g.id} transform={transformMatrix}>
-                      <g
-                        transform={`translate(${g.x}, ${g.y}) rotate(${g.rotation})`}
-                      >
+                  if (g.transformMatrix) {
+                    const imgW = g.width || 60;
+                    const imgH = g.height || 60;
+                    return (
+                      <g key={g.id} transform={g.transformMatrix}>
                         {g.type === 'text' && (
                           <text
                             x={0}
@@ -856,7 +844,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                             y={-imgH / 2}
                             width={imgW}
                             height={imgH}
-                            preserveAspectRatio="xMidYMid meet"
+                            preserveAspectRatio="none"
                           />
                         )}
 
@@ -871,6 +859,87 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                           />
                         )}
 
+                        {(g.type === 'barcode' || g.type === 'qrcode') && g.src && (
+                          <image
+                            href={g.src}
+                            x={-imgW / 2}
+                            y={-imgH / 2}
+                            width={imgW}
+                            height={imgH}
+                            preserveAspectRatio="contain"
+                          />
+                        )}
+
+                        {g.type === 'barcode' && !g.src && (
+                          <g transform={`scale(${imgW / 90}, ${imgH / 44})`}>
+                            <rect x={-45} y={-22} width={90} height={44} fill="#ffffff" stroke="#cbd5e1" strokeWidth={0.5} />
+                            <line x1={-38} y1={-16} x2={-38} y2={12} stroke="#0f172a" strokeWidth={3} />
+                            <line x1={-32} y1={-16} x2={-32} y2={12} stroke="#0f172a" strokeWidth={1.5} />
+                            <line x1={-26} y1={-16} x2={-26} y2={12} stroke="#0f172a" strokeWidth={4} />
+                            <line x1={-18} y1={-16} x2={-18} y2={12} stroke="#0f172a" strokeWidth={2} />
+                            <line x1={-12} y1={-16} x2={-12} y2={12} stroke="#0f172a" strokeWidth={3} />
+                            <line x1={-4} y1={-16} x2={-4} y2={12} stroke="#0f172a" strokeWidth={1.5} />
+                            <line x1={2} y1={-16} x2={2} y2={12} stroke="#0f172a" strokeWidth={4} />
+                            <line x1={10} y1={-16} x2={10} y2={12} stroke="#0f172a" strokeWidth={2} />
+                            <line x1={18} y1={-16} x2={18} y2={12} stroke="#0f172a" strokeWidth={3.5} />
+                            <line x1={26} y1={-16} x2={26} y2={12} stroke="#0f172a" strokeWidth={1.5} />
+                            <line x1={34} y1={-16} x2={34} y2={12} stroke="#0f172a" strokeWidth={3} />
+                            <text x={0} y={18} fontSize={5} fontFamily="monospace" textAnchor="middle" fill="#0f172a">9 780201 379624</text>
+                          </g>
+                        )}
+                      </g>
+                    );
+                  }
+
+                  // Fallback for legacy 2D matrix
+                  const p0 = face.points[0];
+                  const p1 = face.points[1];
+                  const p2 = face.points[2];
+                  const p3 = face.points.length >= 4 ? face.points[3] : face.points[2];
+                  const targetW = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 100;
+                  const targetH = Math.hypot(p3.x - p0.x, p3.y - p0.y) || 100;
+                  const transformMatrix = getQuadAffineMatrix(p0, p1, p2, p3, targetW, targetH);
+                  const imgW = g.width || 60;
+                  const imgH = g.height || 60;
+
+                  return (
+                    <g key={g.id} transform={transformMatrix}>
+                      <g transform={`translate(${g.x}, ${g.y}) rotate(${g.rotation})`}>
+                        {g.type === 'text' && (
+                          <text
+                            x={0}
+                            y={0}
+                            fill={g.fill}
+                            fontSize={g.fontSize}
+                            fontFamily={g.fontFamily}
+                            fontWeight={g.fontWeight}
+                            textAnchor={g.textAlign === 'center' ? 'middle' : g.textAlign === 'right' ? 'end' : 'start'}
+                            dominantBaseline="central"
+                            style={{ userSelect: 'none' }}
+                          >
+                            {g.text}
+                          </text>
+                        )}
+                        {g.type === 'image' && g.src && (
+                          <image
+                            href={g.src}
+                            x={-imgW / 2}
+                            y={-imgH / 2}
+                            width={imgW}
+                            height={imgH}
+                            preserveAspectRatio="none"
+                          />
+                        )}
+                        {g.type === 'icon' && g.src && (
+                          <image
+                            href={g.src}
+                            x={-imgW / 2}
+                            y={-imgH / 2}
+                            width={imgW}
+                            height={imgH}
+                            preserveAspectRatio="xMidYMid meet"
+                          />
+                        )}
                         {g.type === 'barcode' && (
                           <g>
                             <rect x={-30} y={-14} width={60} height={28} fill="#ffffff" />
@@ -1016,7 +1085,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                               <text
                                 x={0}
                                 y={0}
-                                fill={g.fill || '#000000'}
+                                fill={(!g.fill || g.fill === '#f8fafc' || g.fill === '#ffffff') && material !== 'dark' ? '#1e293b' : g.fill || '#1e293b'}
                                 fontSize={g.fontSize || 14}
                                 fontFamily={g.fontFamily}
                                 fontWeight={g.fontWeight}
@@ -1049,7 +1118,18 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                               />
                             )}
 
-                            {g.type === 'barcode' && (
+                            {(g.type === 'barcode' || g.type === 'qrcode') && g.src && (
+                              <image
+                                href={g.src}
+                                x={-imgW / 2}
+                                y={-imgH / 2}
+                                width={imgW}
+                                height={imgH}
+                                preserveAspectRatio="contain"
+                              />
+                            )}
+
+                            {g.type === 'barcode' && !g.src && (
                               <rect x={-15} y={-6} width={30} height={12} fill="#000000" opacity={0.8} />
                             )}
                           </g>

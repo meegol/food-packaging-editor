@@ -25,6 +25,8 @@ export interface Face3DDefinition {
   pathDGenerator?: (pts: Vector2[]) => string;
   // If true, backface culling is disabled (e.g. open carton interior, transparent film)
   doubleSided?: boolean;
+  // Optional custom 4 UV corner mapping [TL, TR, BR, BL] in 3D object space
+  uvCorners3D?: [Vector3, Vector3, Vector3, Vector3];
 }
 
 export interface ProjectedFace3D {
@@ -37,6 +39,7 @@ export interface ProjectedFace3D {
   isFrontFacing: boolean;
   pathD?: string;
   normal: Vector3;
+  face3D: Face3DDefinition;
 }
 
 export interface Camera3D {
@@ -80,8 +83,10 @@ export function dot3(a: Vector3, b: Vector3): number {
  */
 export function rotatePoint3D(p: Vector3, yawRad: number, pitchRad: number): Vector3 {
   // 1. Yaw rotation (around Y axis)
-  const cosY = Math.cos(yawRad);
-  const sinY = Math.sin(yawRad);
+  // Invert yaw so orbiting camera to the right (+yaw) brings right packaging faces to the front (+Z)
+  const effYaw = -yawRad;
+  const cosY = Math.cos(effYaw);
+  const sinY = Math.sin(effYaw);
   const x1 = p.x * cosY + p.z * sinY;
   const y1 = p.y;
   const z1 = -p.x * sinY + p.z * cosY;
@@ -231,6 +236,7 @@ export function projectFaces3D(
       isFrontFacing,
       pathD,
       normal: norm,
+      face3D: face,
     });
   }
 
@@ -254,6 +260,7 @@ export function projectFaces3D(
         isFrontFacing: true,
         pathD: face.pathDGenerator ? face.pathDGenerator(points2D) : undefined,
         normal: { x: 0, y: 1, z: 0 },
+        face3D: face,
       });
     }
     projected.sort((a, b) => a.avgZ - b.avgZ);

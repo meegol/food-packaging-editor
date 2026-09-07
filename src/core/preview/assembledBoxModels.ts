@@ -1,7 +1,7 @@
 import { PackagingDimensions, PanelFace } from '../dieline/types';
 import { GraphicItem } from '../graphics/types';
 import { AssembledFaceData, AssembledModelResult, PreviewSettings } from './previewTypes';
-import { mapPanelGraphicsToFace } from './graphicProjection';
+import { projectPanelGraphicsToFace3D } from './graphicProjection';
 import {
   Camera3D,
   Face3DDefinition,
@@ -128,17 +128,12 @@ export function generateAssembledModel(
   // Project 3D faces to 2D screen with Painter's depth sorting and studio lighting
   const projectedFaces = projectFaces3D(faces3D, camera);
 
-  // Map user graphics to each visible face
+  // Map user graphics to each visible face using true 3D planar projection
   const faces: AssembledFaceData[] = projectedFaces.map((pf) => {
     const panel = findPanel(panelMap, pf.panelId);
-    // Determine face dimensions in 2D for affine projection
-    const p0 = pf.points[0];
-    const p1 = pf.points[1];
-    const p3 = pf.points.length >= 4 ? pf.points[3] : pf.points[2];
-    const targetW = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 100;
-    const targetH = Math.hypot(p3.x - p0.x, p3.y - p0.y) || 100;
-
-    const mappedGraphics = panel ? mapPanelGraphicsToFace(panel, graphics, targetW, targetH) : [];
+    const mappedGraphics = panel
+      ? projectPanelGraphicsToFace3D(panel, graphics, pf.face3D, camera)
+      : [];
 
     return {
       id: pf.id,

@@ -24,6 +24,13 @@ export interface ProjectedGraphic {
   scaleY: number;
   rotation: number; // in degrees
   clipToFace?: boolean;
+
+  // 3D Planar Affine Matrix (matrix(a, b, c, d, e, f)) ready to apply directly in SVG
+  transformMatrix?: string;
+  // Screen center coordinates { x, y } in 2D SVG canvas
+  screenCenter?: { x: number; y: number };
+  // 4 projected corner coordinates on 2D SVG canvas
+  screenCorners?: [{ x: number; y: number }, { x: number; y: number }, { x: number; y: number }, { x: number; y: number }];
 }
 
 export interface AssembledFaceData {
