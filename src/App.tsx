@@ -13,6 +13,7 @@ import {
   saveDraftDebounced,
   parseProjectFile,
   PackagingProjectData,
+  getOrCreateGuestSessionId,
 } from './core/storage/projectStorage';
 
 export const App: React.FC = () => {
@@ -35,6 +36,11 @@ export const App: React.FC = () => {
   const [autosaveStatus, setAutosaveStatus] = useState<'saved' | 'saving' | 'idle'>('saved');
   const [detectedDraft, setDetectedDraft] = useState<PackagingProjectData | null>(null);
   const [hasInitializedDraftCheck, setHasInitializedDraftCheck] = useState(false);
+
+  // Initialize guest session ID for the no-registration workflow
+  useEffect(() => {
+    getOrCreateGuestSessionId();
+  }, []);
 
   // Synchronize active theme with document element immediately
   useEffect(() => {

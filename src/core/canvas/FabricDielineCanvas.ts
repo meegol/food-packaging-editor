@@ -180,6 +180,7 @@ export class FabricDielineCanvas {
             fontSize: item.fontSize || 15,
             fontFamily: item.fontFamily || 'Inter, sans-serif',
             fontWeight: (item.fontWeight || '600') as string,
+            fontStyle: (item.fontStyle || 'normal') as string,
             fill: item.fill || '#1e293b',
             textAlign: item.textAlign || 'center',
             lineHeight: item.lineHeight || 1.25,

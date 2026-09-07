@@ -112,6 +112,19 @@ const PRESETS: CompliancePreset[] = [
       <line x1="44" y1="8" x2="42" y2="12" stroke="#38bdf8"/>
     </svg>`,
   },
+  {
+    id: 'handling-storage-instructions',
+    name: 'Storage Instructions',
+    category: 'handling',
+    svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="10" y="10" width="44" height="44" rx="6" stroke="#f59e0b" stroke-width="2.5"/>
+      <path d="M22 24 L42 24" stroke="#1e293b" stroke-width="2.5"/>
+      <path d="M22 32 L42 32" stroke="#1e293b" stroke-width="2.5"/>
+      <path d="M22 40 L34 40" stroke="#f59e0b" stroke-width="2.5"/>
+      <circle cx="41" cy="40" r="3" fill="#10b981"/>
+      <text x="32" y="58" fill="#64748b" font-size="6" font-family="sans-serif" font-weight="bold" text-anchor="middle">COOL &amp; DRY</text>
+    </svg>`,
+  },
 
   // Dietary & Certification Seals
   {
@@ -156,6 +169,30 @@ const PRESETS: CompliancePreset[] = [
       <circle cx="32" cy="32" r="18" stroke="#1e293b" stroke-width="2"/>
       <text x="32" y="37" fill="#1e293b" font-size="15" font-family="serif" font-weight="bold" text-anchor="middle">U</text>
       <text x="32" y="58" fill="#38bdf8" font-size="7" font-family="sans-serif" font-weight="bold" text-anchor="middle">PAREVE</text>
+    </svg>`,
+  },
+  {
+    id: 'cert-fda',
+    name: 'FDA Food Safe',
+    category: 'certification',
+    svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+      <circle cx="32" cy="32" r="28" stroke="#10b981" stroke-width="2.5"/>
+      <rect x="18" y="15" width="28" height="17" rx="3" fill="#10b981"/>
+      <text x="32" y="28" fill="#ffffff" font-size="10" font-family="sans-serif" font-weight="900" text-anchor="middle">FDA</text>
+      <text x="32" y="44" fill="#1e293b" font-size="7.5" font-family="sans-serif" font-weight="bold" text-anchor="middle">APPROVED</text>
+      <text x="32" y="54" fill="#64748b" font-size="6" font-family="sans-serif" font-weight="600" text-anchor="middle">FOOD GRADE</text>
+    </svg>`,
+  },
+  {
+    id: 'cert-organic',
+    name: '100% Organic',
+    category: 'certification',
+    svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+      <circle cx="32" cy="32" r="28" stroke="#16a34a" stroke-width="2.5"/>
+      <circle cx="32" cy="32" r="24" stroke="#16a34a" stroke-width="1" stroke-dasharray="2 2"/>
+      <path d="M32 38 C32 24 22 18 18 16 C22 26 26 32 32 38 Z" fill="#16a34a"/>
+      <path d="M32 38 C32 20 44 14 46 12 C40 22 36 30 32 38 Z" fill="#22c55e"/>
+      <text x="32" y="52" fill="#1e293b" font-size="7.5" font-family="sans-serif" font-weight="bold" text-anchor="middle">ORGANIC</text>
     </svg>`,
   },
 ];

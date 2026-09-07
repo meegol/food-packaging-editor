@@ -70,7 +70,7 @@ export function generateDielineSvg(
         const fontSizeMm = ((g.fontSize || 16) * 0.264583).toFixed(2);
         const textAnchor = g.textAlign === 'center' ? 'middle' : g.textAlign === 'right' ? 'end' : 'start';
         parts.push(
-          `      <text x="0" y="0" font-family="${g.fontFamily || 'Inter, sans-serif'}" font-size="${fontSizeMm}" font-weight="${g.fontWeight || 'normal'}" fill="${fill}" text-anchor="${textAnchor}" dominant-baseline="middle">${escapeXml(g.text)}</text>`
+          `      <text x="0" y="0" font-family="${g.fontFamily || 'Inter, sans-serif'}" font-size="${fontSizeMm}" font-weight="${g.fontWeight || 'normal'}" font-style="${g.fontStyle || 'normal'}" fill="${fill}" text-anchor="${textAnchor}" dominant-baseline="middle">${escapeXml(g.text)}</text>`
         );
       } else if (g.src) {
         const nw = g.naturalWidth || 100;

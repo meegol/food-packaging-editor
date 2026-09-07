@@ -822,19 +822,44 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                     return (
                       <g key={g.id} transform={g.transformMatrix}>
                         {g.type === 'text' && (
-                          <text
-                            x={0}
-                            y={0}
-                            fill={g.fill}
-                            fontSize={g.fontSize}
-                            fontFamily={g.fontFamily}
-                            fontWeight={g.fontWeight}
-                            textAnchor={g.textAlign === 'center' ? 'middle' : g.textAlign === 'right' ? 'end' : 'start'}
-                            dominantBaseline="central"
-                            style={{ userSelect: 'none' }}
-                          >
-                            {g.text}
-                          </text>
+                          g.isCurved ? (
+                            <g>
+                              <defs>
+                                <path
+                                  id={`arc-${g.id}`}
+                                  d={`M ${-(g.width || 60) * 0.6} 10 A ${(g.width || 60) * 0.75} ${(g.width || 60) * 0.75} 0 0 1 ${(g.width || 60) * 0.6} 10`}
+                                  fill="none"
+                                />
+                              </defs>
+                              <text
+                                fill={g.fill}
+                                fontSize={g.fontSize}
+                                fontFamily={g.fontFamily}
+                                fontWeight={g.fontWeight}
+                                fontStyle={g.fontStyle || 'normal'}
+                                style={{ userSelect: 'none' }}
+                              >
+                                <textPath href={`#arc-${g.id}`} startOffset="50%" textAnchor="middle">
+                                  {g.text}
+                                </textPath>
+                              </text>
+                            </g>
+                          ) : (
+                            <text
+                              x={0}
+                              y={0}
+                              fill={g.fill}
+                              fontSize={g.fontSize}
+                              fontFamily={g.fontFamily}
+                              fontWeight={g.fontWeight}
+                              fontStyle={g.fontStyle || 'normal'}
+                              textAnchor={g.textAlign === 'center' ? 'middle' : g.textAlign === 'right' ? 'end' : 'start'}
+                              dominantBaseline="central"
+                              style={{ userSelect: 'none' }}
+                            >
+                              {g.text}
+                            </text>
+                          )
                         )}
 
                         {g.type === 'image' && g.src && (
@@ -913,6 +938,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                             fontSize={g.fontSize}
                             fontFamily={g.fontFamily}
                             fontWeight={g.fontWeight}
+                            fontStyle={g.fontStyle || 'normal'}
                             textAnchor={g.textAlign === 'center' ? 'middle' : g.textAlign === 'right' ? 'end' : 'start'}
                             dominantBaseline="central"
                             style={{ userSelect: 'none' }}
@@ -1089,6 +1115,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                                 fontSize={g.fontSize || 14}
                                 fontFamily={g.fontFamily}
                                 fontWeight={g.fontWeight}
+                                fontStyle={g.fontStyle || 'normal'}
                                 textAnchor={g.textAlign === 'center' ? 'middle' : g.textAlign === 'right' ? 'end' : 'start'}
                                 dominantBaseline="central"
                               >

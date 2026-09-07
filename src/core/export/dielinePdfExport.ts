@@ -109,7 +109,10 @@ export async function generateDielinePdf(
 
       if (g.type === 'text' && g.text) {
         doc.setTextColor(g.fill || '#1e293b');
-        doc.setFont('helvetica', g.fontWeight === 'bold' ? 'bold' : 'normal');
+        const isBold = g.fontWeight === 'bold' || g.fontWeight === '700' || g.fontWeight === 700;
+        const isItalic = g.fontStyle === 'italic';
+        const pdfStyle = isBold && isItalic ? 'bolditalic' : isBold ? 'bold' : isItalic ? 'italic' : 'normal';
+        doc.setFont('helvetica', pdfStyle);
         const fontSizePt = (g.fontSize || 16) * scale * 0.75;
         doc.setFontSize(Math.max(fontSizePt, 4));
         doc.text(g.text, targetX, targetY, {

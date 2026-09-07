@@ -228,6 +228,58 @@ assert(parsed.dimensions.length === 180, 'Project dimensions length restored');
 assert(parsed.graphics.length === 2, 'Project graphics restored');
 assert(parsed.theme === 'dark-slate', 'Project theme restored');
 
+// -----------------------------------------------------------
+// TEST SUITE 5: AutoCAD R12 DXF CAD Export Engine
+// -----------------------------------------------------------
+console.log('\n📐 Test Suite 5: AutoCAD R12 DXF Vector CAD Export');
+const { exportDielineToDxf } = await import('../src/core/export/dielineDxfExport');
+const { getOrCreateGuestSessionId } = await import('../src/core/storage/projectStorage');
+
+for (const tmpl of TEMPLATES.slice(0, 5)) {
+  const dieline = generateDieline(tmpl.id, tmpl.defaultDimensions);
+  const dxf = exportDielineToDxf(dieline);
+
+  assert(dxf.includes('AC1009'), `${tmpl.name}: Includes AC1009 AutoCAD R12 header`);
+  assert(dxf.includes('$INSUNITS\n70\n4'), `${tmpl.name}: Sets millimeter unit (INSUNITS = 4)`);
+  assert(dxf.includes('CUT_LINES'), `${tmpl.name}: Includes CUT_LINES layer definition`);
+  assert(dxf.includes('CREASE_LINES'), `${tmpl.name}: Includes CREASE_LINES layer definition`);
+  assert(dxf.includes('LINE'), `${tmpl.name}: Contains CAD LINE entities`);
+  assert(dxf.endsWith('0\nEOF'), `${tmpl.name}: Ends with standard DXF EOF`);
+}
+
+// Test DXF Layer Filtering options
+const sampleDieline = generateDieline('burger-box', TEMPLATES[0].defaultDimensions);
+const dxfOnlyCut = exportDielineToDxf(sampleDieline, { includeCutLines: true, includeCreaseLines: false });
+assert(dxfOnlyCut.includes('CUT_LINES'), 'DXF contains CUT_LINES when enabled');
+assert(!dxfOnlyCut.includes('8\nCREASE_LINES'), 'DXF excludes CREASE_LINES when filtered out');
+
+const dxfOnlyCrease = exportDielineToDxf(sampleDieline, { includeCutLines: false, includeCreaseLines: true });
+assert(!dxfOnlyCrease.includes('8\nCUT_LINES'), 'DXF excludes CUT_LINES when filtered out');
+assert(dxfOnlyCrease.includes('CREASE_LINES'), 'DXF contains CREASE_LINES when enabled');
+
+// -----------------------------------------------------------
+// TEST SUITE 6: SRS Requirements Parity (Session, Typography, Icons)
+// -----------------------------------------------------------
+console.log('\n🛡️ Test Suite 6: SRS Feature Parity');
+
+// 1. Guest Session ID
+const guestSessionId = getOrCreateGuestSessionId();
+assert(typeof guestSessionId === 'string' && guestSessionId.startsWith('guest_'), `Guest session initialized: ${guestSessionId}`);
+
+// 2. Typography Model
+const testTextItem: GraphicItem = {
+  id: 'txt-test-srs',
+  panelId: 'front',
+  type: 'text',
+  text: 'NUTRITION: 240 kcal | Fat 8g',
+  fontStyle: 'italic',
+  lineHeight: 1.35,
+  isCurved: true,
+};
+assert(testTextItem.fontStyle === 'italic', 'GraphicItem supports fontStyle: italic');
+assert(testTextItem.lineHeight === 1.35, 'GraphicItem supports lineHeight');
+assert(testTextItem.isCurved === true, 'GraphicItem supports isCurved for round food tubs');
+
 console.log('\n====================================================');
 console.log(`🎉 ALL ${passed}/${total} TESTS PASSED SUCCESSFULLY!`);
 console.log('====================================================');

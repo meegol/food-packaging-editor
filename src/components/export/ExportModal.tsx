@@ -24,6 +24,7 @@ import {
 import { downloadDielinePdf } from '../../core/export/dielinePdfExport';
 import { downloadDielineSvg } from '../../core/export/dielineSvgExport';
 import { downloadDielineRaster } from '../../core/export/dielineRasterExport';
+import { downloadDielineDxf, DxfExportOptions } from '../../core/export/dielineDxfExport';
 import { calculatePackagingSpecSheet } from '../../core/export/specSheetCalculator';
 import { exportProjectFile } from '../../core/storage/projectStorage';
 
@@ -35,7 +36,7 @@ export interface ExportModalProps {
   themeId: string;
 }
 
-type TabType = 'pdf' | 'svg' | 'raster' | 'spec' | 'json';
+type TabType = 'pdf' | 'svg' | 'dxf' | 'raster' | 'spec' | 'json';
 
 export const ExportModal: React.FC<ExportModalProps> = ({
   isOpen,
@@ -47,6 +48,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [activeTab, setActiveTab] = useState<TabType>('pdf');
   const [isExporting, setIsExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
+
+  // DXF Export Settings
+  const [dxfOptions, setDxfOptions] = useState<DxfExportOptions>({
+    includeCutLines: true,
+    includeCreaseLines: true,
+  });
 
   // PDF Export Settings
   const [pdfOptions, setPdfOptions] = useState<PdfExportOptions>({
@@ -118,6 +125,22 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     }
   };
 
+  const handleDownloadDxf = () => {
+    try {
+      setIsExporting(true);
+      setExportMessage('Generating AutoCAD R12 DXF vector CAD dieline...');
+      downloadDielineDxf(dieline, dxfOptions);
+      setExportMessage('DXF file successfully downloaded!');
+      setTimeout(() => setExportMessage(null), 2500);
+    } catch (err) {
+      console.error('DXF export failed:', err);
+      setExportMessage('DXF export failed.');
+      setTimeout(() => setExportMessage(null), 2500);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleDownloadRaster = async () => {
     try {
       setIsExporting(true);
@@ -180,6 +203,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           >
             <Layers size={15} />
             <span>Layered CAD SVG</span>
+          </button>
+          <button
+            className={`export-tab-btn ${activeTab === 'dxf' ? 'active' : ''}`}
+            onClick={() => setActiveTab('dxf')}
+          >
+            <Cpu size={15} />
+            <span>AutoCAD DXF</span>
           </button>
           <button
             className={`export-tab-btn ${activeTab === 'raster' ? 'active' : ''}`}
@@ -539,6 +569,101 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 >
                   <Download size={15} />
                   <span>{isExporting ? 'Generating SVG...' : 'Download Layered SVG'}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: AUTOCAD DXF CAD/CAM */}
+          {activeTab === 'dxf' && (
+            <div className="export-tab-pane">
+              <div className="export-pane-banner">
+                <div className="banner-icon">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <strong>AutoCAD R12 ASCII DXF (CNC Knife & Laser Sample Cutters)</strong>
+                  <p>
+                    Standard vector CAD dieline formatted for digital flatbed cutting tables (Zünd, Kongsberg)
+                    and steel-rule die tooling software (Esko ArtiosCAD, AutoCAD, Illustrator CAD tools).
+                  </p>
+                </div>
+              </div>
+
+              <div className="export-settings-grid">
+                <div className="export-setting-group">
+                  <label className="export-group-label">CAD Layer Output Selection</label>
+                  <div className="export-checkbox-grid">
+                    <button
+                      type="button"
+                      className="export-toggle-item"
+                      onClick={() =>
+                        setDxfOptions((o) => ({ ...o, includeCutLines: !o.includeCutLines }))
+                      }
+                    >
+                      {dxfOptions.includeCutLines ? (
+                        <CheckSquare size={16} className="text-red" />
+                      ) : (
+                        <Square size={16} />
+                      )}
+                      <span>CUT_LINES Layer (Color 1 - Red, Steel Knife Rule)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="export-toggle-item"
+                      onClick={() =>
+                        setDxfOptions((o) => ({ ...o, includeCreaseLines: !o.includeCreaseLines }))
+                      }
+                    >
+                      {dxfOptions.includeCreaseLines ? (
+                        <CheckSquare size={16} className="text-green" />
+                      ) : (
+                        <Square size={16} />
+                      )}
+                      <span>CREASE_LINES Layer (Color 3 - Green, Score Crease)</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="export-setting-group">
+                  <label className="export-group-label">File Specifications & Bounding Geometry</label>
+                  <div style={{
+                    padding: '10px 12px',
+                    backgroundColor: 'var(--bg-app)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-subtle)',
+                    fontSize: '11px',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '8px',
+                    color: 'var(--text-secondary)',
+                  }}>
+                    <div>Format: <strong style={{ color: 'var(--text-primary)' }}>AutoCAD R12 (AC1009 ASCII)</strong></div>
+                    <div>Measurement Unit: <strong style={{ color: 'var(--text-primary)' }}>Millimeters (mm)</strong></div>
+                    <div>CAD Extents: <strong style={{ color: 'var(--text-primary)' }}>{dieline.totalBounds.width.toFixed(1)} × {dieline.totalBounds.height.toFixed(1)} mm</strong></div>
+                    <div>Total Geometry: <strong style={{ color: 'var(--text-primary)' }}>{dieline.lines.length} Line Segments</strong></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="export-action-bar">
+                <div className="export-spec-summary">
+                  <span>
+                    Format: <strong>AutoCAD R12 DXF</strong>
+                  </span>
+                  <span>•</span>
+                  <span>
+                    Target: <strong>Zünd / Kongsberg / Die-Maker</strong>
+                  </span>
+                </div>
+                <button
+                  className="export-primary-btn"
+                  onClick={handleDownloadDxf}
+                  disabled={isExporting}
+                >
+                  <Download size={15} />
+                  <span>{isExporting ? 'Generating DXF...' : 'Download CAD DXF (.dxf)'}</span>
                 </button>
               </div>
             </div>

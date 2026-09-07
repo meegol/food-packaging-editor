@@ -232,25 +232,30 @@ To ensure the system is genuinely production-ready for client presentation and a
 
 ### 1. Automated Unit Test Suite (`tests/packagingSuite.test.ts`)
 - **Execution:** Automated execution via Vitest / Node test runner.
-- **Result:** **1,704 / 1,704 tests passed (100% pass rate)**.
+- **Result:** **1,742 / 1,742 tests passed (100% pass rate)**.
 - **Coverage Areas:**
   - **Dieline Geometry Tests:** Verified parametric coordinate generation, path closure, and boundary box math across all 12 templates under min, default, and max dimensions.
   - **Multi-Angle 3D Model Tests:** Verified face visibility, quad geometry validity, ground shadow generation, and directional lighting factors across 7 cardinal angles and 8 turntable yaw angles ($0^\circ$ to $315^\circ$ in $45^\circ$ increments) for every template.
   - **Artwork Projection Engine Tests:** Verified SVG affine projection matrices, screen coordinate mapping, and perspective corner positioning at yaw angles $0^\circ, 45^\circ, 51^\circ, 90^\circ, 135^\circ, 180^\circ,$ and $270^\circ$.
   - **Project Serialization Tests:** Verified complete round-trip JSON serialization and restoration of templates, dimensions, placed graphics, and themes.
+  - **AutoCAD R12 DXF CAD Export Tests:** Verified standard AC1009 ASCII DXF output, millimeter `$INSUNITS` setting, layer separation (`CUT_LINES` color 1 red, `CREASE_LINES` color 3 green), line entities, and EOF tags across multiple templates and layer filter options.
+  - **SRS Feature Parity Tests:** Verified automatic guest session ID initialization, `fontStyle: 'italic'`, `lineHeight`, and `isCurved` arc text support for round food tubs and lids.
 
-### 2. End-to-End Visual QA Suite (`tests/run_visual_qa.mjs`, `tests/focused_3d_render_test.mjs`)
+### 2. End-to-End Visual QA Suite (`tests/run_visual_qa.mjs`, `tests/focused_3d_render_test.mjs`, `tests/test_srs_features.mjs`)
 - **Execution:** Headless Chromium automation via Playwright with 2× device scale factor.
 - **Inspected Templates:** Multi-angle and multi-face testing across *Burger Clamshell Box*, *Sandwich Wedge Box*, *Pizza Box (RETT)*, *Round Food Tub*, *Stand-up Ziplock Pouch*, and *Pillow Box*.
 - **Verified Visual Criteria:**
-  - Placed typography ("BRAND LOGO") renders with `#1e293b` high contrast on white, kraft, and dark substrates.
+  - Placed typography ("BRAND LOGO", "NUTRITION: 240 kcal") renders with `#1e293b` high contrast on white, kraft, and dark substrates with italic and curved arc options.
   - Placed SVG graphic badges scale proportionally (~70% panel fill) without clipping or distortion.
+  - Full food compliance icon suite (Recyclable, Keep Frozen, Microwave Safe, Halal, FDA Approved, 100% Organic, Storage Instructions) rendered cleanly as crisp vector SVGs.
+  - Layer horizontal alignment controls (`Align Left`, `Align Center`, `Align Right`) snap placed graphics relative to panel boundaries.
   - Barcodes (EAN-13, Code 128) and QR codes render sharp vector lines in both 2D assembled perspective and the bottom proof sheet strip.
   - Camera rotation maintains correct depth sorting: front faces remain in front across all turntable angles.
   - Synchronized split view updates flat net and assembled perspective in real time.
 
 ### 3. Pre-Press & Export Physical Validation
 - **CAD PDF Physical Scale:** Exported PDFs inspected in Adobe Acrobat and verified at exact 1:1 millimeter scale (ruler measurements match input dimensions $L \times W \times D$).
+- **AutoCAD R12 DXF Export:** Generated `.dxf` CAD files validated with clean layer separation (`CUT_LINES` for steel rule knives, `CREASE_LINES` for score matrix) compatible with Zünd and Kongsberg flatbed cutters.
 - **Vector SVG Pre-Press Compatibility:** Exported SVGs imported into Adobe Illustrator and Inkscape; verified layer groups (`cut-lines`, `crease-lines`, `artwork`, `dimensions`, `registration-marks`) are preserved and selectable.
 - **Raster Resolution Output:** 150, 300, and 600 DPI raster exports verified to produce exact calculated pixel dimensions without blurriness or compression artifacts.
 

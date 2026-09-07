@@ -14,6 +14,9 @@ export interface ProjectedGraphic {
   fontWeight?: string | number;
   fill?: string;
   textAlign?: 'left' | 'center' | 'right';
+  fontStyle?: 'normal' | 'italic';
+  lineHeight?: number;
+  isCurved?: boolean;
   
   // Transform in face coordinate system (normalized 0..1 or localized mm)
   x: number;

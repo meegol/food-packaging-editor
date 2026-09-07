@@ -14,9 +14,11 @@ export interface GraphicItem {
   fontFamily?: string;
   fontSize?: number;
   fontWeight?: string | number;
+  fontStyle?: 'normal' | 'italic';
   fill?: string;
   textAlign?: 'left' | 'center' | 'right';
   lineHeight?: number;
+  isCurved?: boolean;
 
   // Code generator properties
   barcodeFormat?: 'CODE128' | 'EAN13' | 'UPC';

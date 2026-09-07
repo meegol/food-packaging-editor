@@ -36,3 +36,4 @@ lerna-debug.log*
 !.vscode/settings.json
 .idea/
 .vercel
+tests/screenshots/

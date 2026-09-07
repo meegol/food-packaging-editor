@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, PlusCircle, Sparkles } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, PlusCircle, Sparkles, Italic } from 'lucide-react';
 import { PanelFace } from '../../core/dieline/types';
 import { GraphicItem } from '../../core/graphics/types';
 
@@ -24,6 +24,8 @@ const QUICK_TEMPLATES = [
   { title: 'Net Weight', text: 'NET WT. 350g (12.3 OZ)', size: 12, weight: '600', align: 'center' },
   { title: 'Ingredients', text: 'Ingredients: Wheat flour, filtered water, sea salt, yeast, organic olive oil.', size: 10, weight: '400', align: 'left' },
   { title: 'Storage Note', text: 'STORE IN A COOL, DRY PLACE AWAY FROM DIRECT SUNLIGHT', size: 9, weight: '600', align: 'center' },
+  { title: 'Nutrition Facts', text: 'NUTRITION: 240 kcal | Fat 8g | Protein 6g | Carbs 32g', size: 10, weight: '600', align: 'left' },
+  { title: 'Expiration Date', text: 'BEST BEFORE: DD/MM/YYYY • BATCH #2026-A', size: 9, weight: '700', align: 'center' },
 ];
 
 const COLOR_PRESETS = [
@@ -45,10 +47,13 @@ export const TextControls: React.FC<TextControlsProps> = ({
   const [fontFamily, setFontFamily] = useState('Inter, sans-serif');
   const [fontSize, setFontSize] = useState<number>(18);
   const [fontWeight, setFontWeight] = useState<'400' | '600' | '700'>('700');
+  const [fontStyle, setFontStyle] = useState<'normal' | 'italic'>('normal');
+  const [lineHeight, setLineHeight] = useState<number>(1.25);
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center');
   const [fill, setFill] = useState('#1e293b');
   const [clipToPanel, setClipToPanel] = useState(true);
   const [angle, setAngle] = useState<number>(0);
+  const [isCurved, setIsCurved] = useState<boolean>(false);
 
   const effectivePanelId = activePanelId || (panels[0]?.id ?? '');
 
@@ -71,10 +76,13 @@ export const TextControls: React.FC<TextControlsProps> = ({
       fontFamily,
       fontSize,
       fontWeight,
+      fontStyle,
+      lineHeight,
       textAlign,
       fill,
       clipToPanel,
       angle,
+      isCurved,
       x: targetPanel?.center.x,
       y: targetPanel?.center.y,
     };
@@ -228,28 +236,49 @@ export const TextControls: React.FC<TextControlsProps> = ({
         </div>
       </div>
 
-      {/* Formatting: Weight, Alignment, Color */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-        {/* Weight Selector */}
-        <div style={{ display: 'flex', borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--border-medium)' }}>
-          {(['400', '600', '700'] as const).map((w) => (
-            <button
-              key={w}
-              type="button"
-              onClick={() => setFontWeight(w)}
-              style={{
-                padding: '4px 8px',
-                fontSize: '11px',
-                fontWeight: w,
-                backgroundColor: fontWeight === w ? 'var(--accent-primary)' : 'var(--bg-surface)',
-                color: fontWeight === w ? '#ffffff' : 'var(--text-secondary)',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              {w === '400' ? 'Reg' : w === '600' ? 'Med' : 'Bold'}
-            </button>
-          ))}
+      {/* Formatting: Weight, Italic, Alignment, Color */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', flexWrap: 'wrap' }}>
+        {/* Weight Selector + Italic */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ display: 'flex', borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--border-medium)' }}>
+            {(['400', '600', '700'] as const).map((w) => (
+              <button
+                key={w}
+                type="button"
+                onClick={() => setFontWeight(w)}
+                style={{
+                  padding: '4px 7px',
+                  fontSize: '11px',
+                  fontWeight: w,
+                  backgroundColor: fontWeight === w ? 'var(--accent-primary)' : 'var(--bg-surface)',
+                  color: fontWeight === w ? '#ffffff' : 'var(--text-secondary)',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                {w === '400' ? 'Reg' : w === '600' ? 'Med' : 'Bold'}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setFontStyle(f => f === 'italic' ? 'normal' : 'italic')}
+            style={{
+              padding: '4px 6px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border-medium)',
+              backgroundColor: fontStyle === 'italic' ? 'var(--accent-primary)' : 'var(--bg-surface)',
+              color: fontStyle === 'italic' ? '#ffffff' : 'var(--text-secondary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            title="Toggle Italic"
+          >
+            <Italic size={12} />
+          </button>
         </div>
 
         {/* Alignment */}
@@ -258,7 +287,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
             type="button"
             onClick={() => setTextAlign('left')}
             style={{
-              padding: '4px 8px',
+              padding: '4px 7px',
               backgroundColor: textAlign === 'left' ? 'var(--accent-primary)' : 'var(--bg-surface)',
               color: textAlign === 'left' ? '#ffffff' : 'var(--text-secondary)',
               border: 'none',
@@ -272,7 +301,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
             type="button"
             onClick={() => setTextAlign('center')}
             style={{
-              padding: '4px 8px',
+              padding: '4px 7px',
               backgroundColor: textAlign === 'center' ? 'var(--accent-primary)' : 'var(--bg-surface)',
               color: textAlign === 'center' ? '#ffffff' : 'var(--text-secondary)',
               border: 'none',
@@ -286,7 +315,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
             type="button"
             onClick={() => setTextAlign('right')}
             style={{
-              padding: '4px 8px',
+              padding: '4px 7px',
               backgroundColor: textAlign === 'right' ? 'var(--accent-primary)' : 'var(--bg-surface)',
               color: textAlign === 'right' ? '#ffffff' : 'var(--text-secondary)',
               border: 'none',
@@ -318,6 +347,29 @@ export const TextControls: React.FC<TextControlsProps> = ({
             />
           ))}
         </div>
+      </div>
+
+      {/* Line Height Control */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '6px 10px',
+        backgroundColor: 'var(--bg-app)',
+        borderRadius: 'var(--radius-sm)',
+        border: '1px solid var(--border-subtle)',
+        fontSize: '11px',
+      }}>
+        <span style={{ color: 'var(--text-secondary)' }}>Line Height: {lineHeight.toFixed(2)}</span>
+        <input
+          type="range"
+          min={0.9}
+          max={2.0}
+          step={0.05}
+          value={lineHeight}
+          onChange={(e) => setLineHeight(parseFloat(e.target.value))}
+          style={{ width: '120px', accentColor: 'var(--accent-primary)', cursor: 'pointer' }}
+        />
       </div>
 
       {/* Text Orientation / Rotation */}
@@ -353,6 +405,29 @@ export const TextControls: React.FC<TextControlsProps> = ({
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Curved Text Option for Round Food Tubs / Bowls */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '6px 10px',
+        backgroundColor: 'var(--bg-app)',
+        borderRadius: 'var(--radius-sm)',
+        border: '1px solid var(--border-subtle)',
+        fontSize: '11px',
+      }}>
+        <div>
+          <div style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Curved Arc Text</div>
+          <div style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>Option for round food tubs, bowls & lids</div>
+        </div>
+        <input
+          type="checkbox"
+          checked={isCurved}
+          onChange={(e) => setIsCurved(e.target.checked)}
+          style={{ accentColor: 'var(--accent-primary)', cursor: 'pointer', width: '14px', height: '14px' }}
+        />
       </div>
 
       {/* Auto-Clip Toggle */}

@@ -102,6 +102,24 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
     });
   };
 
+  const handleAlignItem = (item: GraphicItem, alignment: 'left' | 'center' | 'right') => {
+    const targetPanel = panels.find(p => p.id === item.panelId);
+    if (!targetPanel || !onUpdateGraphic) return;
+
+    let targetX = targetPanel.center.x;
+    if (alignment === 'left') {
+      targetX = targetPanel.center.x - targetPanel.bounds.width * 0.28;
+    } else if (alignment === 'right') {
+      targetX = targetPanel.center.x + targetPanel.bounds.width * 0.28;
+    }
+
+    onUpdateGraphic({
+      ...item,
+      textAlign: item.type === 'text' ? alignment : item.textAlign,
+      x: targetX,
+    });
+  };
+
   const activeFaceCount = graphics.filter(g => g.panelId === effectivePanelId).length;
   const displayedGraphics = sideFilter === 'active'
     ? graphics.filter(g => g.panelId === effectivePanelId)
@@ -608,6 +626,67 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                         {deg}°
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                {/* Horizontal Alignment Row (Align Left, Center, Right) */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingTop: '3px',
+                  fontSize: '10px',
+                }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Align:</span>
+                  <div style={{ display: 'flex', gap: '2px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleAlignItem(item, 'left')}
+                      title="Align Left within panel face"
+                      style={{
+                        padding: '1px 5px',
+                        fontSize: '9px',
+                        borderRadius: '2px',
+                        border: '1px solid var(--border-subtle)',
+                        backgroundColor: 'var(--bg-app)',
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Left
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAlignItem(item, 'center')}
+                      title="Align Center within panel face"
+                      style={{
+                        padding: '1px 5px',
+                        fontSize: '9px',
+                        borderRadius: '2px',
+                        border: '1px solid var(--border-subtle)',
+                        backgroundColor: 'var(--bg-app)',
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Center
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAlignItem(item, 'right')}
+                      title="Align Right within panel face"
+                      style={{
+                        padding: '1px 5px',
+                        fontSize: '9px',
+                        borderRadius: '2px',
+                        border: '1px solid var(--border-subtle)',
+                        backgroundColor: 'var(--bg-app)',
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Right
+                    </button>
                   </div>
                 </div>
               </div>

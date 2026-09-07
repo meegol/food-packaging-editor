@@ -9,6 +9,25 @@ export interface ProjectMetadata {
   version: string;
   createdAt: number;
   updatedAt: number;
+  sessionId?: string;
+}
+
+export const STORAGE_KEY_SESSION = 'thesis_guest_session_id';
+
+/**
+ * Initialize or retrieve a temporary guest session ID for the no-registration model
+ */
+export function getOrCreateGuestSessionId(): string {
+  try {
+    let sess = sessionStorage.getItem(STORAGE_KEY_SESSION);
+    if (!sess) {
+      sess = `guest_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
+      sessionStorage.setItem(STORAGE_KEY_SESSION, sess);
+    }
+    return sess;
+  } catch {
+    return `guest_${Date.now().toString(36)}`;
+  }
 }
 
 export interface PackagingProjectData {
@@ -66,6 +85,7 @@ export function saveDraft(
       version: CURRENT_SCHEMA_VERSION,
       createdAt: existing?.metadata.createdAt || Date.now(),
       updatedAt: Date.now(),
+      sessionId: existing?.metadata.sessionId || getOrCreateGuestSessionId(),
     },
     templateId,
     dimensions,
