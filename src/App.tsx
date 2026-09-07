@@ -6,6 +6,7 @@ import { DraftRecoveryBanner } from './components/layout/DraftRecoveryBanner';
 import { getTemplateById, generateDieline, PackagingDimensions } from './core/dieline';
 import { GraphicItem } from './core/graphics/types';
 import { ExportModal } from './components/export/ExportModal';
+import { Sliders, Box as BoxIcon } from 'lucide-react';
 import {
   getThemePreference,
   saveThemePreference,
@@ -20,6 +21,9 @@ import {
 export const App: React.FC = () => {
   // Theme state initialized from persisted preference
   const [themeId, setThemeId] = useState<string>(() => getThemePreference());
+
+  // Mobile layout active tab ('tools' | 'canvas')
+  const [mobileTab, setMobileTab] = useState<'tools' | 'canvas'>('canvas');
 
   // Template & Geometry state
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('burger-box');
@@ -138,10 +142,12 @@ export const App: React.FC = () => {
   const handleSelectPanel = (panelId: string) => {
     setActivePanelId(panelId);
     setFocusedPanelId(panelId);
+    setMobileTab('canvas');
   };
 
   const handleAddGraphic = (item: GraphicItem) => {
     setGraphics(prev => [...prev, item]);
+    setMobileTab('canvas');
   };
 
   const handleRemoveGraphic = (id: string) => {
@@ -190,7 +196,7 @@ export const App: React.FC = () => {
         onOpenExportModal={handleOpenExportModal}
         onImportProject={handleImportProject}
       />
-      <main className="app-workspace">
+      <main className={`app-workspace mobile-active-${mobileTab}`}>
         {detectedDraft && (
           <DraftRecoveryBanner
             draft={detectedDraft}
@@ -225,6 +231,26 @@ export const App: React.FC = () => {
           themeId={themeId}
         />
       </main>
+
+      {/* Mobile Bottom Navigation Bar (rendered on <= 768px viewports) */}
+      <nav className="mobile-bottom-nav" aria-label="Mobile Navigation">
+        <button
+          type="button"
+          className={`mobile-nav-item ${mobileTab === 'tools' ? 'active' : ''}`}
+          onClick={() => setMobileTab('tools')}
+        >
+          <Sliders size={18} />
+          <span>Studio Tools</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-nav-item ${mobileTab === 'canvas' ? 'active' : ''}`}
+          onClick={() => setMobileTab('canvas')}
+        >
+          <BoxIcon size={18} />
+          <span>Canvas & 3D</span>
+        </button>
+      </nav>
 
       <ExportModal
         isOpen={isExportModalOpen}

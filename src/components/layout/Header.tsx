@@ -51,29 +51,17 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
         <div className="app-title-group">
           <h1>Food Packaging Editor</h1>
-          <p>2D Dieline & Layout Tool</p>
+          <p className="app-subtitle">2D Dieline & Layout Tool</p>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="header-actions-group">
         {/* Template & Dimensions Badge */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            backgroundColor: 'var(--bg-app)',
-            padding: '4px 10px',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--border-subtle)',
-            fontSize: '12px',
-            fontFamily: 'JetBrains Mono, monospace',
-          }}
-        >
-          <span style={{ color: 'var(--text-muted)' }}>Template:</span>
-          <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{templateName}</span>
-          <span style={{ color: 'var(--border-medium)', margin: '0 2px' }}>|</span>
-          <span style={{ color: 'var(--text-secondary)' }}>
+        <div className="header-template-badge">
+          <span className="badge-prefix">Template:</span>
+          <span className="badge-name">{templateName}</span>
+          <span className="badge-divider">|</span>
+          <span className="badge-dims">
             {dimensions.length} × {dimensions.width} × {dimensions.depth} {dimensions.unit} (t={dimensions.thickness}mm)
           </span>
         </div>
@@ -81,11 +69,11 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Autosave Status Indicator */}
         <div className="autosave-status-pill" title="Automatic local session draft backup">
           <span className={`autosave-dot ${autosaveStatus === 'saving' ? 'saving' : ''}`} />
-          <span>{autosaveStatus === 'saving' ? 'Saving...' : 'Saved'}</span>
+          <span className="autosave-label">{autosaveStatus === 'saving' ? 'Saving...' : 'Saved'}</span>
         </div>
 
         {/* Project JSON File I/O Actions & Production Export */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div className="header-btn-group">
           <input
             type="file"
             ref={fileInputRef}
@@ -99,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => fileInputRef.current?.click()}
           >
             <FolderOpen size={14} />
-            <span>Open Project</span>
+            <span className="header-btn-label">Open Project</span>
           </button>
           <button
             className="header-action-btn"
@@ -107,20 +95,15 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onSaveProject}
           >
             <Download size={14} />
-            <span>Save Project</span>
+            <span className="header-btn-label">Save Project</span>
           </button>
           <button
             className="header-action-btn primary"
             title="Open Production Export Suite (1:1 CAD PDF, SVG, AutoCAD DXF, 300 DPI Proof)"
             onClick={onOpenExportModal}
-            style={{
-              backgroundColor: 'var(--accent-primary)',
-              color: '#ffffff',
-              borderColor: 'var(--accent-primary)',
-            }}
           >
             <Printer size={14} />
-            <span>Export</span>
+            <span className="header-btn-label">Export</span>
           </button>
         </div>
 

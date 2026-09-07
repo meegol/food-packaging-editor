@@ -277,9 +277,8 @@ code, pre, .font-mono {
 /* Canvas Toolbar */
 .canvas-floating-toolbar {
   position: absolute;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 20px;
+  right: 20px;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -556,7 +555,50 @@ select option {
   50% { opacity: 0.3; }
 }
 
-/* Header Project Actions */
+/* Header Project Actions & Badges */
+.header-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-template-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--bg-app);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+.badge-prefix {
+  color: var(--text-muted);
+}
+
+.badge-name {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.badge-divider {
+  color: var(--border-medium);
+  margin: 0 2px;
+}
+
+.badge-dims {
+  color: var(--text-secondary);
+}
+
+.header-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .header-action-btn {
   display: flex;
   align-items: center;
@@ -1866,4 +1908,312 @@ select option {
   pointer-events: none;
   animation: fadeIn 0.2s ease;
   z-index: 100;
+}
+
+/* ==========================================================================
+   Mobile & Tablet Responsive System (<= 768px)
+   ========================================================================== */
+
+/* Mobile Bottom Navigation Bar (hidden on Desktop) */
+.mobile-bottom-nav {
+  display: none;
+}
+
+/* Tablet Landscape & Medium Desktop (769px - 1200px) */
+@media (max-width: 1200px) {
+  .app-subtitle {
+    display: none;
+  }
+}
+
+@media (max-width: 1050px) {
+  .badge-dims,
+  .badge-divider {
+    display: none;
+  }
+  .header-actions-group {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Header adjustments */
+  .app-header {
+    height: 52px;
+    padding: 0 10px;
+    gap: 8px;
+  }
+
+  .app-brand {
+    gap: 8px;
+  }
+
+  .app-brand-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .app-title-group h1 {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .app-subtitle {
+    display: none;
+  }
+
+  .header-actions-group {
+    gap: 6px;
+  }
+
+  /* Hide the wide template badge on mobile to preserve button space */
+  .header-template-badge {
+    display: none;
+  }
+
+  /* Compact autosave indicator to just the pulsing dot */
+  .autosave-status-pill {
+    padding: 6px 8px;
+  }
+
+  .autosave-label {
+    display: none;
+  }
+
+  .header-btn-group {
+    gap: 4px;
+  }
+
+  .header-action-btn {
+    padding: 6px 8px;
+    font-size: 11.5px;
+    gap: 4px;
+  }
+
+  /* Compact Theme Picker on Mobile */
+  .theme-picker-name {
+    display: none;
+  }
+
+  .theme-picker-btn {
+    padding: 6px 8px;
+    gap: 4px;
+  }
+
+  .theme-picker-popover {
+    width: 290px !important;
+    right: 0;
+  }
+
+  /* Mobile Bottom Navigation Bar */
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 54px;
+    background-color: var(--bg-sidebar);
+    border-top: 1px solid var(--border-subtle);
+    z-index: 50;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  .mobile-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-nav-item.active {
+    color: var(--accent-primary);
+    font-weight: 600;
+    background-color: rgba(99, 102, 241, 0.08);
+  }
+
+  /* Main Workspace on Mobile */
+  .app-workspace {
+    height: calc(100vh - 52px - 54px);
+    width: 100vw;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Mode 1: Studio Tools Active */
+  .app-workspace.mobile-active-tools .app-sidebar {
+    display: flex !important;
+    width: 100vw !important;
+    height: 100% !important;
+    border-right: none;
+  }
+
+  .app-workspace.mobile-active-tools .canvas-viewport-container {
+    display: none !important;
+  }
+
+  /* Mode 2: Canvas & 3D Active */
+  .app-workspace.mobile-active-canvas .app-sidebar {
+    display: none !important;
+  }
+
+  .app-workspace.mobile-active-canvas .canvas-viewport-container {
+    display: flex !important;
+    width: 100vw !important;
+    height: 100% !important;
+  }
+
+  /* Sidebar Tabs on Mobile */
+  .sidebar-tabs {
+    padding: 6px;
+    gap: 4px;
+    overflow-x: auto;
+  }
+
+  .sidebar-tab-btn {
+    padding: 8px 10px;
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+
+  /* Viewport mode switcher at top */
+  .viewport-view-mode-tabs {
+    top: 8px;
+    padding: 2px;
+    gap: 2px;
+  }
+
+  .view-mode-tab {
+    padding: 5px 8px;
+    font-size: 10.5px;
+    gap: 4px;
+  }
+
+  /* Hide split view on mobile phones to present two pristine full-screen views */
+  .split-view-tab {
+    display: none !important;
+  }
+
+  /* 2D Assembled Preview Controls on Mobile */
+  .preview-toolbar {
+    top: 46px;
+    max-width: 95vw;
+    overflow-x: auto;
+    white-space: nowrap;
+    justify-content: flex-start;
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .preview-turntable-bar {
+    top: 86px;
+    max-width: 94vw;
+    padding: 3px 8px;
+    gap: 6px;
+  }
+
+  .turntable-slider {
+    width: 90px;
+  }
+
+  .preview-openness-bar {
+    top: 122px;
+    padding: 3px 10px;
+  }
+
+  .openness-slider {
+    width: 80px;
+  }
+
+  /* Canvas Floating Zoom Toolbar on Mobile */
+  .canvas-floating-toolbar {
+    bottom: 10px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    padding: 3px 6px;
+    gap: 3px;
+    max-width: 95vw;
+    background-color: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(8px);
+  }
+
+  .toolbar-btn {
+    padding: 5px;
+  }
+
+  /* Hide canvas dieline legend on mobile to keep view clean */
+  .dieline-legend {
+    display: none;
+  }
+
+  /* Active Face Action Bar on Mobile */
+  .active-face-action-bar {
+    top: 50px;
+    width: calc(100vw - 20px);
+    max-width: 370px;
+    padding: 6px 8px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .active-face-buttons {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .active-face-btn {
+    padding: 4px 6px;
+    font-size: 10.5px;
+  }
+
+  /* Export Modal on Mobile */
+  .export-modal-dialog {
+    width: 96vw;
+    max-height: 92vh;
+  }
+
+  .export-modal-header {
+    padding: 12px 14px;
+  }
+
+  .export-modal-body {
+    padding: 12px 14px;
+  }
+
+  .export-action-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .export-primary-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 440px) {
+  /* On very narrow phones (< 440px), keep icons and compact button text */
+  .header-btn-label {
+    display: none;
+  }
+
+  .header-action-btn {
+    padding: 6px 7px;
+  }
 }

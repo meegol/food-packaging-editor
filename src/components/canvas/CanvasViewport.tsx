@@ -326,7 +326,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
         </button>
         <button
           type="button"
-          className={`view-mode-tab ${viewMode === 'split' ? 'active' : ''}`}
+          className={`view-mode-tab split-view-tab ${viewMode === 'split' ? 'active' : ''}`}
           onClick={() => setViewMode('split')}
           title="Side-by-Side Split View (Flat Net + Live Assembled Mockup)"
         >

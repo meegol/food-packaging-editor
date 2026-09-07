@@ -83,7 +83,7 @@ export const ThemePicker: React.FC<ThemePickerProps> = ({
         ) : (
           <Sun size={14} color="var(--status-warning)" />
         )}
-        <span>{currentTheme.name}</span>
+        <span className="theme-picker-name">{currentTheme.name}</span>
         <div className="theme-swatches" style={{ marginLeft: '4px' }}>
           <div
             className="theme-swatch-dot"
