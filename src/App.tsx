@@ -14,6 +14,7 @@ import {
   parseProjectFile,
   PackagingProjectData,
   getOrCreateGuestSessionId,
+  exportProjectFile,
 } from './core/storage/projectStorage';
 
 export const App: React.FC = () => {
@@ -95,7 +96,11 @@ export const App: React.FC = () => {
     setDetectedDraft(null);
   };
 
-  const handleExportProject = () => {
+  const handleSaveProject = () => {
+    exportProjectFile(selectedTemplateId, dimensions, graphics, themeId);
+  };
+
+  const handleOpenExportModal = () => {
     setIsExportModalOpen(true);
   };
 
@@ -181,7 +186,8 @@ export const App: React.FC = () => {
         activeThemeId={themeId}
         onSelectTheme={handleSelectTheme}
         autosaveStatus={autosaveStatus}
-        onExportProject={handleExportProject}
+        onSaveProject={handleSaveProject}
+        onOpenExportModal={handleOpenExportModal}
         onImportProject={handleImportProject}
       />
       <main className="app-workspace">

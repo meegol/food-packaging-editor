@@ -283,8 +283,10 @@ To ensure the system is genuinely production-ready for client presentation and a
 | 16 | All-Sides Proof Sheet strip displays synchronized thumbnails and supports drops | Visual QA | Verified |
 | 17 | Responsive layout functions across desktop, tablet, and mobile viewports | Viewport tests | Verified |
 | 18 | Zero blocking runtime exceptions in browser console across clean sessions | Console monitor | Verified |
+| 19 | AutoCAD R12 DXF CAD/CAM vector export validates AC1009 header, units, and CUT/CREASE layers | DXF verification | Verified |
+| 20 | Tablet and mobile touch gestures (1-finger pan and 2-finger pinch-to-zoom) operate smoothly without errors | Touch emulation | Verified |
 
-**Sign-off:** The system has passed all 18 production acceptance gates and is therefore designated **Release-Ready** for thesis evaluation and production deployment.
+**Sign-off:** The system has passed all 20 production acceptance gates and is therefore designated **Release-Ready** for thesis evaluation and production deployment.
 
 ---
 

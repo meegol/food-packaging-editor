@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Box, Download, FolderOpen } from 'lucide-react';
+import { Box, Download, FolderOpen, Printer } from 'lucide-react';
 import { PackagingDimensions } from '../../core/dieline/types';
 import { ThemePicker } from './ThemePicker';
 
@@ -9,7 +9,8 @@ interface HeaderProps {
   activeThemeId: string;
   onSelectTheme: (themeId: string) => void;
   autosaveStatus: 'saved' | 'saving' | 'idle';
-  onExportProject: () => void;
+  onSaveProject: () => void;
+  onOpenExportModal: () => void;
   onImportProject: (fileContent: string) => void;
 }
 
@@ -19,7 +20,8 @@ export const Header: React.FC<HeaderProps> = ({
   activeThemeId,
   onSelectTheme,
   autosaveStatus,
-  onExportProject,
+  onSaveProject,
+  onOpenExportModal,
   onImportProject,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,7 +84,7 @@ export const Header: React.FC<HeaderProps> = ({
           <span>{autosaveStatus === 'saving' ? 'Saving...' : 'Saved'}</span>
         </div>
 
-        {/* Project JSON File I/O Actions */}
+        {/* Project JSON File I/O Actions & Production Export */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <input
             type="file"
@@ -97,14 +99,27 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => fileInputRef.current?.click()}
           >
             <FolderOpen size={14} />
-            <span>Open</span>
+            <span>Open Project</span>
           </button>
           <button
             className="header-action-btn"
-            title="Export project configuration to portable JSON"
-            onClick={onExportProject}
+            title="Save and download packaging project JSON file directly"
+            onClick={onSaveProject}
           >
             <Download size={14} />
+            <span>Save Project</span>
+          </button>
+          <button
+            className="header-action-btn primary"
+            title="Open Production Export Suite (1:1 CAD PDF, SVG, AutoCAD DXF, 300 DPI Proof)"
+            onClick={onOpenExportModal}
+            style={{
+              backgroundColor: 'var(--accent-primary)',
+              color: '#ffffff',
+              borderColor: 'var(--accent-primary)',
+            }}
+          >
+            <Printer size={14} />
             <span>Export</span>
           </button>
         </div>

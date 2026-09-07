@@ -25,6 +25,7 @@ export class FabricDielineCanvas {
     showLabels: true,
     showBleed: true,
   };
+  private touchCleanup?: () => void;
 
   private onSelectPanelCallback?: (panelId: string | null) => void;
   private onHoverPanelCallback?: (panelId: string | null) => void;
@@ -156,6 +157,84 @@ export class FabricDielineCanvas {
       this.isDragging = false;
       this.canvas.setViewportTransform(this.canvas.viewportTransform);
     });
+
+    // Tablet & Mobile touch panning and 2-finger pinch-to-zoom
+    const upperCanvas = this.canvas.upperCanvasEl;
+    if (upperCanvas) {
+      let initialTouchDistance = 0;
+      let initialTouchZoom = 1;
+      let isTouchPanning = false;
+      let lastTouchX = 0;
+      let lastTouchY = 0;
+
+      const handleTouchStart = (e: TouchEvent) => {
+        if (e.touches.length === 2) {
+          isTouchPanning = false;
+          const t1 = e.touches[0];
+          const t2 = e.touches[1];
+          initialTouchDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+          initialTouchZoom = this.canvas.getZoom();
+          if (e.cancelable) e.preventDefault();
+        } else if (e.touches.length === 1) {
+          const activeObj = this.canvas.getActiveObject();
+          if (!activeObj) {
+            isTouchPanning = true;
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+          }
+        }
+      };
+
+      const handleTouchMove = (e: TouchEvent) => {
+        if (e.touches.length === 2 && initialTouchDistance > 0) {
+          const t1 = e.touches[0];
+          const t2 = e.touches[1];
+          const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+          const factor = currentDist / initialTouchDistance;
+          let newZoom = initialTouchZoom * factor;
+          if (newZoom > 5) newZoom = 5;
+          if (newZoom < 0.1) newZoom = 0.1;
+
+          const rect = upperCanvas.getBoundingClientRect();
+          const midX = (t1.clientX + t2.clientX) / 2 - rect.left;
+          const midY = (t1.clientY + t2.clientY) / 2 - rect.top;
+          this.canvas.zoomToPoint(new FabricPoint(midX, midY), newZoom);
+
+          if (this.onZoomChangeCallback) {
+            this.onZoomChangeCallback(Math.round(newZoom * 100));
+          }
+          if (e.cancelable) e.preventDefault();
+        } else if (e.touches.length === 1 && isTouchPanning) {
+          const t = e.touches[0];
+          const vpt = this.canvas.viewportTransform;
+          if (vpt) {
+            vpt[4] += t.clientX - lastTouchX;
+            vpt[5] += t.clientY - lastTouchY;
+            this.canvas.requestRenderAll();
+            lastTouchX = t.clientX;
+            lastTouchY = t.clientY;
+          }
+          if (e.cancelable) e.preventDefault();
+        }
+      };
+
+      const handleTouchEnd = () => {
+        isTouchPanning = false;
+        initialTouchDistance = 0;
+      };
+
+      upperCanvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+      upperCanvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+      upperCanvas.addEventListener('touchend', handleTouchEnd);
+      upperCanvas.addEventListener('touchcancel', handleTouchEnd);
+
+      this.touchCleanup = () => {
+        upperCanvas.removeEventListener('touchstart', handleTouchStart);
+        upperCanvas.removeEventListener('touchmove', handleTouchMove);
+        upperCanvas.removeEventListener('touchend', handleTouchEnd);
+        upperCanvas.removeEventListener('touchcancel', handleTouchEnd);
+      };
+    }
   }
 
   private async renderGraphics() {
@@ -629,6 +708,9 @@ export class FabricDielineCanvas {
   }
 
   public destroy() {
+    if (this.touchCleanup) {
+      this.touchCleanup();
+    }
     this.canvas.dispose();
   }
 }

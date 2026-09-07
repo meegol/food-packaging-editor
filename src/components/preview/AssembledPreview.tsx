@@ -891,7 +891,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                             y={-imgH / 2}
                             width={imgW}
                             height={imgH}
-                            preserveAspectRatio="contain"
+                            preserveAspectRatio="xMidYMid meet"
                           />
                         )}
 
@@ -1152,7 +1152,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                                 y={-imgH / 2}
                                 width={imgW}
                                 height={imgH}
-                                preserveAspectRatio="contain"
+                                preserveAspectRatio="xMidYMid meet"
                               />
                             )}
 
