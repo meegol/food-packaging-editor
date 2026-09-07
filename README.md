@@ -55,9 +55,9 @@ npm run build
   - Mathematical net generation for all 12 packaging templates.
   - Dimension controls with real-time recalculation and mm/inch conversion.
   - Interactive canvas with viewport panning, mouse-wheel zoom, layer toggling, and panel focus.
-  - 360° photorealistic 3D assembled preview with turntable rotation and all-sides proof cards.
+  - 2D Assembled packaging preview with multi-angle turntable rotation and all-sides proof cards.
 - **Sprint 2: Graphic & Branding Editor** *(Completed)*
-  - Drag-and-drop image uploads directly onto 2D net, 3D faces, or proof cards with strict polygon clipping.
+  - Drag-and-drop image uploads directly onto 2D net, assembled preview faces, or proof cards with strict polygon clipping.
   - Typography engine with font selection, formatting controls, and quick food label presets.
   - Standard food compliance and recycling vector icon library (12 presets).
   - Dynamic 1D Barcode (EAN-13, UPC-A, Code 128) and 2D QR code generator.

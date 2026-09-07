@@ -13,7 +13,7 @@
 
 Small food enterprises, independent bakeries, artisan roasters, and cloud kitchens frequently face steep cost and technical barriers when designing custom packaging. Traditional workflows require either complex industrial packaging CAD software (e.g., ArtiosCAD, Impact) or costly subscription suites, followed by manual, error-prone pre-press preparation by external prepress technicians.
 
-This thesis project delivers a zero-friction, browser-based packaging CAD dieline generator and branding layout editor. It operates entirely on the client side with zero account registration requirements, enabling food vendors to generate mathematically accurate packaging nets, position branding and regulatory assets across individual packaging faces with real-time 2D assembled perspective preview, and export print-ready vector CAD files.
+This thesis project delivers a zero-friction, browser-based packaging CAD dieline generator and branding layout editor. It operates entirely on the client side with zero account registration requirements, enabling food vendors to generate mathematically accurate packaging nets, position branding and regulatory assets across individual packaging faces with real-time 2D assembled perspective preview, and export production-oriented pre-press CAD vector files.
 
 All four planned engineering sprints are **100% completed**, verified, and deployed:
 1. **Sprint 1: Parametric Dieline Geometry Engine & Interactive Canvas (100% Completed)**
@@ -140,7 +140,7 @@ All four planned engineering sprints are **100% completed**, verified, and deplo
 
 ### Sprint 4: Print & Vector Production Exports
 - **Status:** Completed (100%)
-- **Objective:** Convert the digital canvas layout into standard print-ready formats required by commercial printing, packaging die-makers, and prepress houses.
+- **Objective:** Convert the digital canvas layout into production-oriented pre-press export formats required by commercial printing, packaging die-makers, and prepress houses.
 
 #### Key Deliverables Implemented:
 1. **1:1 Scale Vector CAD PDF Export (`dielinePdfExport.ts`):**
@@ -185,8 +185,8 @@ All four planned engineering sprints are **100% completed**, verified, and deplo
 | **Sprint 1** | Dimensional Controls | $L, W, D, t$ sliders, inputs, mm/in toggle | 100% | Completed |
 | **Sprint 1** | Interactive Canvas | Fabric.js viewport, pan/zoom, layer toggles | 100% | Completed |
 | **Sprint 1** | Assembled Preview | Multi-angle perspective view, substrate materials, proof cards | 100% | Completed |
-| **Sprint 2** | Media Uploads | Drag-and-drop logos onto 2D, 3D, and proof cards | 100% | Completed |
-| **Sprint 2** | Panel Clipping | Strict face boundary clipping on 2D, 3D, & proof cards | 100% | Completed |
+| **Sprint 2** | Media Uploads | Drag-and-drop logos onto 2D net, assembled preview, & proof cards | 100% | Completed |
+| **Sprint 2** | Panel Clipping | Strict face boundary clipping on 2D net, assembled preview, & proof cards | 100% | Completed |
 | **Sprint 2** | Text Engine | Custom typography, fonts, alignment, high-contrast defaults | 100% | Completed |
 | **Sprint 2** | Asset Presets | Food packaging symbols & certification badges | 100% | Completed |
 | **Sprint 2** | Code Generator | Dynamic vector Barcode (EAN-13, Code 128) & QR codes | 100% | Completed |
@@ -279,7 +279,7 @@ To ensure the system is genuinely production-ready for client presentation and a
 | 17 | Responsive layout functions across desktop, tablet, and mobile viewports | Viewport tests | Verified |
 | 18 | Zero blocking runtime exceptions in browser console across clean sessions | Console monitor | Verified |
 
-**Sign-off:** The system has passed all 18 production acceptance gates and is certified **Release-Ready**.
+**Sign-off:** The system has passed all 18 production acceptance gates and is therefore designated **Release-Ready** for thesis evaluation and production deployment.
 
 ---
 
