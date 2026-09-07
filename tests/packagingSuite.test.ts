@@ -1,6 +1,7 @@
 import { TEMPLATES, getTemplateById, generateDieline } from '../src/core/dieline';
 import { generateAssembledModel } from '../src/core/preview/assembledBoxModels';
-import { getQuadAffineMatrix, mapPanelGraphicsToFace } from '../src/core/preview/graphicProjection';
+import { getQuadAffineMatrix, mapPanelGraphicsToFace, projectPanelGraphicsToFace3D } from '../src/core/preview/graphicProjection';
+import { Camera3D, Face3DDefinition } from '../src/core/preview/engine3d';
 import { parseProjectFile } from '../src/core/storage/projectStorage';
 import { GraphicItem } from '../src/core/graphics/types';
 import { ViewAngle } from '../src/core/preview/previewTypes';
@@ -152,6 +153,55 @@ const p2 = { x: 280, y: 250 };
 const p3 = { x: 80, y: 230 };
 const matrix = getQuadAffineMatrix(p0, p1, p2, p3, 200, 150);
 assert(matrix.startsWith('matrix('), `Calculated valid SVG affine matrix: ${matrix}`);
+
+// True 3D Planar Projection & Zero-Drift Verification
+const testFace3D: Face3DDefinition = {
+  id: 'burger-base-left',
+  name: 'Base Left Wall',
+  panelId: 'base-left',
+  vertices: [
+    { x: -60, y: 35, z: -60 },
+    { x: -60, y: 35, z: 60 },
+    { x: -57, y: -35, z: 57 },
+    { x: -57, y: -35, z: -57 },
+  ],
+};
+
+const baseLeftPanel = burgerDieline.panels.find(p => p.id === 'base-left')!;
+assert(!!baseLeftPanel, 'Found base-left panel for 3D planar testing');
+
+const sideGraphic: GraphicItem = {
+  id: 'side-logo-1',
+  panelId: 'base-left',
+  type: 'image',
+  src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  x: baseLeftPanel.center.x,
+  y: baseLeftPanel.center.y,
+  width: 40,
+  height: 40,
+  scaleX: 1,
+  scaleY: 1,
+};
+
+// Test across turntable yaw angles: 0, 45, 51 (user angle), 90
+const anglesToTest = [0, 45, 51, 90, 135, 180, 270];
+for (const yawAngle of anglesToTest) {
+  const cam: Camera3D = {
+    cx: 400,
+    cy: 340,
+    distance: 850,
+    yawDeg: yawAngle,
+    pitchDeg: 24,
+    zoom: 1,
+  };
+
+  const projected3D = projectPanelGraphicsToFace3D(baseLeftPanel, [sideGraphic], testFace3D, cam);
+  assert(projected3D.length === 1, `Projected graphic onto 3D face at yaw ${yawAngle}°`);
+  const g = projected3D[0];
+  assert(!!g.transformMatrix && g.transformMatrix.startsWith('matrix('), `Generated valid 3D affine matrix at ${yawAngle}°: ${g.transformMatrix}`);
+  assert(!!g.screenCenter && typeof g.screenCenter.x === 'number' && typeof g.screenCenter.y === 'number', `Generated valid screen center at ${yawAngle}°`);
+  assert(!!g.screenCorners && g.screenCorners.length === 4, `Generated 4 perspective screen corners at ${yawAngle}°`);
+}
 
 // -----------------------------------------------------------
 // TEST SUITE 4: Project Serialization & Recovery
