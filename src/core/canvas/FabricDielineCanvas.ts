@@ -1,6 +1,7 @@
-import { Canvas, Line, Polygon, FabricText, FabricImage, Textbox, FabricObject, Point as FabricPoint } from 'fabric';
+import { Canvas, Line, Polygon, FabricText, Textbox, FabricObject, Point as FabricPoint } from 'fabric';
 import { DielineResult, PanelFace, Point } from '../dieline/types';
 import { GraphicItem } from '../graphics/types';
+import { createGraphicObject } from './graphicObjects';
 
 export interface CanvasOptions {
   showCutLines: boolean;
@@ -246,145 +247,32 @@ export class FabricDielineCanvas {
       if (!targetPanel) continue;
 
       try {
-        if (item.type === 'text') {
-          const initialLeft = item.x ?? targetPanel.center.x;
-          const initialTop = item.y ?? targetPanel.center.y;
-          const panelWidth = targetPanel.bounds.width;
-          const maxW = Math.max(Math.min(panelWidth * 0.85, 280), 80);
+        const obj = await createGraphicObject(item, targetPanel);
+        if (!obj) continue;
 
-          const textObj = new Textbox(item.text || 'Food Packaging Label', {
-            left: initialLeft,
-            top: initialTop,
-            width: maxW,
-            fontSize: item.fontSize || 15,
-            fontFamily: item.fontFamily || 'Inter, sans-serif',
-            fontWeight: (item.fontWeight || '600') as string,
-            fontStyle: (item.fontStyle || 'normal') as string,
-            fill: item.fill || '#1e293b',
-            textAlign: item.textAlign || 'center',
-            lineHeight: item.lineHeight || 1.25,
-            scaleX: item.scaleX ?? 1,
-            scaleY: item.scaleY ?? 1,
-            angle: item.angle ?? 0,
-            originX: 'center',
-            originY: 'center',
-            cornerColor: '#6366f1',
-            cornerStrokeColor: '#ffffff',
-            borderColor: '#818cf8',
-            cornerSize: 8,
-            transparentCorners: false,
-            cornerStyle: 'circle',
-            selectable: true,
-            evented: true,
-          });
+        (obj as unknown as { graphicId: string }).graphicId = item.id;
+        this.graphicObjects.set(item.id, obj);
 
-          if (item.clipToPanel) {
-            const clipPoly = new Polygon(
-              targetPanel.polygon.map(p => ({ x: p.x, y: p.y })),
-              { absolutePositioned: true }
-            );
-            textObj.clipPath = clipPoly;
+        obj.on('modified', () => {
+          item.x = obj.left;
+          item.y = obj.top;
+          item.scaleX = obj.scaleX;
+          item.scaleY = obj.scaleY;
+          item.angle = obj.angle;
+          if (item.type === 'text') {
+            item.text = (obj as Textbox).text;
           } else {
-            textObj.clipPath = undefined;
+            item.naturalWidth = obj.width;
+            item.naturalHeight = obj.height;
+            item.width = (obj.width || 100) * (obj.scaleX || 1);
+            item.height = (obj.height || 100) * (obj.scaleY || 1);
           }
-
-          (textObj as unknown as { graphicId: string }).graphicId = item.id;
-          this.graphicObjects.set(item.id, textObj);
-
-          textObj.on('modified', () => {
-            item.x = textObj.left;
-            item.y = textObj.top;
-            item.scaleX = textObj.scaleX;
-            item.scaleY = textObj.scaleY;
-            item.angle = textObj.angle;
-            item.text = textObj.text;
-            if (this.onGraphicChangeCallback) {
-              this.onGraphicChangeCallback([...this.graphicItems]);
-            }
-          });
-
-          this.canvas.add(textObj);
-        } else {
-          // Images, vector SVG icons, barcodes, and QR codes
-          if (!item.src) continue;
-
-          const fabricImg = await FabricImage.fromURL(item.src, {
-            crossOrigin: 'anonymous',
-          });
-
-          const initialLeft = item.x ?? targetPanel.center.x;
-          const initialTop = item.y ?? targetPanel.center.y;
-
-          let sX = item.scaleX ?? 1;
-          let sY = item.scaleY ?? 1;
-          if (item.scaleX === undefined) {
-            let fitRatio = 0.75;
-            if (item.type === 'icon') fitRatio = 0.35;
-            if (item.type === 'barcode') fitRatio = 0.65;
-            if (item.type === 'qrcode') fitRatio = 0.40;
-
-            const maxW = targetPanel.bounds.width * fitRatio;
-            const maxH = targetPanel.bounds.height * fitRatio;
-            const scaleFit = Math.min(maxW / (fabricImg.width || 1), maxH / (fabricImg.height || 1));
-            sX = scaleFit;
-            sY = scaleFit;
-            item.scaleX = sX;
-            item.scaleY = sY;
+          if (this.onGraphicChangeCallback) {
+            this.onGraphicChangeCallback([...this.graphicItems]);
           }
+        });
 
-          item.naturalWidth = fabricImg.width;
-          item.naturalHeight = fabricImg.height;
-          item.width = (fabricImg.width || 100) * (item.scaleX ?? 1);
-          item.height = (fabricImg.height || 100) * (item.scaleY ?? 1);
-
-          fabricImg.set({
-            left: initialLeft,
-            top: initialTop,
-            scaleX: sX,
-            scaleY: sY,
-            angle: item.angle ?? 0,
-            originX: 'center',
-            originY: 'center',
-            cornerColor: '#6366f1',
-            cornerStrokeColor: '#ffffff',
-            borderColor: '#818cf8',
-            cornerSize: 8,
-            transparentCorners: false,
-            cornerStyle: 'circle',
-            selectable: true,
-            evented: true,
-          });
-
-          if (item.clipToPanel) {
-            const clipPoly = new Polygon(
-              targetPanel.polygon.map(p => ({ x: p.x, y: p.y })),
-              { absolutePositioned: true }
-            );
-            fabricImg.clipPath = clipPoly;
-          } else {
-            fabricImg.clipPath = undefined;
-          }
-
-          (fabricImg as unknown as { graphicId: string }).graphicId = item.id;
-          this.graphicObjects.set(item.id, fabricImg);
-
-          fabricImg.on('modified', () => {
-            item.x = fabricImg.left;
-            item.y = fabricImg.top;
-            item.scaleX = fabricImg.scaleX;
-            item.scaleY = fabricImg.scaleY;
-            item.angle = fabricImg.angle;
-            item.naturalWidth = fabricImg.width;
-            item.naturalHeight = fabricImg.height;
-            item.width = (fabricImg.width || 100) * (fabricImg.scaleX || 1);
-            item.height = (fabricImg.height || 100) * (fabricImg.scaleY || 1);
-            if (this.onGraphicChangeCallback) {
-              this.onGraphicChangeCallback([...this.graphicItems]);
-            }
-          });
-
-          this.canvas.add(fabricImg);
-        }
+        this.canvas.add(obj);
       } catch (err) {
         console.error('Failed to load graphic on canvas:', err);
       }

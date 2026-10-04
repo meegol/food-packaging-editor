@@ -56,8 +56,9 @@ async function runTests() {
     await page.waitForTimeout(600);
 
     await page.waitForSelector('.assembled-preview-container', { state: 'visible', timeout: 5000 });
-    await page.waitForSelector('.assembled-svg-viewport', { state: 'visible', timeout: 5000 });
-    console.log('   ✓ 2D Assembled Preview container and SVG rendered');
+    await page.waitForSelector('.package-3d-view canvas', { state: 'visible', timeout: 5000 });
+    await page.waitForSelector('.package-3d-loading', { state: 'detached', timeout: 20000 });
+    console.log('   ✓ 2D Assembled Preview container and 3D package rendered');
 
     // 2a. Screenshot Initial 3/4 Hero View
     const heroPath = path.join(SCREENSHOT_DIR, '01_assembled_burger_34_hero.png');

@@ -124,15 +124,8 @@ async function run() {
       const dt = new DataTransfer();
       dt.items.add(file);
 
-      // Find top lid face or front face group in 3D SVG
-      const faceGroups = document.querySelectorAll('.assembled-face-group');
-      if (!faceGroups || faceGroups.length === 0) throw new Error('No 3D face groups found');
-
-      // The top lid face is usually one of the visible faces
-      const targetFace = Array.from(faceGroups).find(g => {
-        const text = g.textContent || '';
-        return true;
-      }) || faceGroups[0];
+      const targetFace = document.querySelector('.package-3d-view canvas');
+      if (!targetFace) throw new Error('3D package view not found');
 
       const rect = targetFace.getBoundingClientRect();
       const clientX = rect.left + rect.width / 2;

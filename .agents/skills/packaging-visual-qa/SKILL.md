@@ -266,7 +266,7 @@ async function simulateDropOnElement(page, selector, dataUrl, fileName = 'graphi
 
 #### Where You Can Drop:
 1. **2D Flat Net Canvas**: Drop onto `.flat-canvas-pane`. The app resolves the face under `(clientX, clientY)`.
-2. **3D Assembled Model Faces**: Drop onto any `.assembled-face-group`. Projects directly into the 3D surface!
+2. **3D Assembled Model**: Drop onto `.package-3d-view canvas` (WebGL). The face under `(clientX, clientY)` receives the image. Wait for `.package-3d-loading` to detach first.
 3. **Proof Sheet Strip Cards**: Drop onto any `.preview-side-card`. Instantly maps to that exact panel face!
 
 ---
@@ -513,9 +513,10 @@ const snap = async (page, name) => {
       }
       await snap(page, `${prefix}_03_3d_hero_isometric`);
 
-      // Test drag-and-drop onto the first visible 3D face in SVG
+      // Test drag-and-drop onto the 3D model
       console.log('   -> Dragging & dropping test graphic onto 3D face...');
-      await dropDataUrl(page, '.assembled-face-group', testGraphics.artisanLogo, 'artisan_seal.svg');
+      await page.locator('.package-3d-loading').waitFor({ state: 'detached', timeout: 20000 }).catch(() => {});
+      await dropDataUrl(page, '.package-3d-view canvas', testGraphics.artisanLogo, 'artisan_seal.svg');
       await page.waitForTimeout(800);
       await snap(page, `${prefix}_04_3d_hero_with_dropped_graphic`);
 

@@ -143,9 +143,9 @@ const snap = async (page, name) => {
       }
       await snap(page, `${prefix}_03_3d_hero_isometric`);
 
-      // Test drag-and-drop onto the first visible 3D face in SVG
       console.log('   -> Dragging & dropping test graphic onto 3D face...');
-      await dropDataUrl(page, '.assembled-face-group', testGraphics.artisanLogo, 'artisan_seal.svg');
+      await page.locator('.package-3d-loading').waitFor({ state: 'detached', timeout: 20000 }).catch(() => {});
+      await dropDataUrl(page, '.package-3d-view canvas', testGraphics.artisanLogo, 'artisan_seal.svg');
       await page.waitForTimeout(800);
       await snap(page, `${prefix}_04_3d_hero_with_dropped_graphic`);
 

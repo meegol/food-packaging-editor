@@ -16,15 +16,81 @@ import {
 } from 'lucide-react';
 import { DielineResult, PanelFace } from '../../core/dieline/types';
 import { GraphicItem } from '../../core/graphics/types';
-import { 
-  ViewAngle, 
-  MaterialFinish, 
-  StudioLighting, 
-  PreviewSettings,
-  AssembledFaceData
-} from '../../core/preview/previewTypes';
-import { generateAssembledModel } from '../../core/preview/assembledBoxModels';
-import { getQuadAffineMatrix } from '../../core/preview/graphicProjection';
+import { ViewAngle, MaterialFinish, StudioLighting } from '../../core/preview/previewTypes';
+import { textWrapWidth } from '../../core/canvas/graphicObjects';
+import { BOARD_COLORS, Package3DView, Package3DViewHandle } from './Package3DView';
+
+let measureCtx: CanvasRenderingContext2D | null | undefined;
+
+function wrapLines(text: string, font: string, fontSize: number, wrapWidth?: number): string[] {
+  const paragraphs = text.split('\n');
+  if (!wrapWidth) return paragraphs;
+  if (measureCtx === undefined) {
+    measureCtx = typeof document !== 'undefined' ? document.createElement('canvas').getContext('2d') : null;
+  }
+  const ctx = measureCtx;
+  const measure = (s: string) => {
+    if (!ctx) return s.length * fontSize * 0.55;
+    ctx.font = font;
+    return ctx.measureText(s).width;
+  };
+  const lines: string[] = [];
+  for (const paragraph of paragraphs) {
+    let line = '';
+    for (const word of paragraph.split(/\s+/)) {
+      const candidate = line ? `${line} ${word}` : word;
+      if (line && measure(candidate) > wrapWidth) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = candidate;
+      }
+    }
+    lines.push(line);
+  }
+  return lines;
+}
+
+interface SvgTextBlockProps {
+  text: string;
+  fill?: string;
+  fontSize: number;
+  fontFamily?: string;
+  fontWeight?: string | number;
+  fontStyle?: string;
+  textAlign?: 'left' | 'center' | 'right';
+  lineHeight?: number;
+  wrapWidth?: number;
+}
+
+const SvgTextBlock: React.FC<SvgTextBlockProps> = ({
+  text, fill, fontSize, fontFamily, fontWeight, fontStyle, textAlign, lineHeight, wrapWidth,
+}) => {
+  const family = fontFamily || 'Inter, sans-serif';
+  const lines = wrapLines(text, `${fontStyle || 'normal'} ${fontWeight || 'normal'} ${fontSize}px ${family}`, fontSize, wrapWidth);
+  const step = fontSize * (lineHeight || 1.25);
+  const anchor = textAlign === 'center' ? 'middle' : textAlign === 'right' ? 'end' : 'start';
+  return (
+    <text
+      x={0}
+      y={0}
+      fill={fill}
+      fontSize={fontSize}
+      fontFamily={family}
+      fontWeight={fontWeight}
+      fontStyle={fontStyle || 'normal'}
+      textAnchor={anchor}
+      dominantBaseline="central"
+      style={{ userSelect: 'none' }}
+    >
+      {lines.map((line, i) => (
+        <tspan key={i} x={0} dy={i === 0 ? -((lines.length - 1) / 2) * step : step}>
+          {line}
+        </tspan>
+      ))}
+    </text>
+  );
+};
 
 interface AssembledPreviewProps {
   dieline: DielineResult;
@@ -42,7 +108,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
   onSelectPanel,
   activePanelId,
 }) => {
-  const svgRef = useRef<SVGSVGElement>(null);
+  const viewRef = useRef<Package3DViewHandle>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // 3D Turntable angles (yaw: 0-360 deg, pitch: -65 to +65 deg)
@@ -56,7 +122,6 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
 
   // Drag-and-drop image states onto 3D faces or proof sheet cards
   const [isDragOverPreview, setIsDragOverPreview] = useState<boolean>(false);
-  const [dragTargetFace, setDragTargetFace] = useState<AssembledFaceData | null>(null);
   const [dragTargetPanelId, setDragTargetPanelId] = useState<string | null>(null);
 
   const processImageDrop = (file: File, targetPanelId: string) => {
@@ -105,19 +170,16 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const handlePreviewDrop = (e: React.DragEvent, faceOverride?: AssembledFaceData) => {
+  const handlePreviewDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOverPreview(false);
-    const chosenFace = faceOverride || dragTargetFace;
-    setDragTargetFace(null);
     setDragTargetPanelId(null);
 
     if (!e.dataTransfer.files || !e.dataTransfer.files[0]) return;
     const file = e.dataTransfer.files[0];
 
-    // Determine target panel
-    let targetPanelId = chosenFace?.panelId;
+    let targetPanelId = viewRef.current?.pickPanel(e.clientX, e.clientY) ?? null;
     if (!targetPanelId && activePanelId) {
       targetPanelId = activePanelId;
     }
@@ -135,7 +197,6 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
     e.stopPropagation();
     setIsDragOverPreview(false);
     setDragTargetPanelId(null);
-    setDragTargetFace(null);
 
     if (!e.dataTransfer.files || !e.dataTransfer.files[0]) return;
     const file = e.dataTransfer.files[0];
@@ -256,8 +317,16 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
     lastMousePos.current = { x: e.clientX, y: e.clientY };
   };
 
+  const panelNameAt = (clientX: number, clientY: number) => {
+    const id = viewRef.current?.pickPanel(clientX, clientY);
+    return id ? dieline.panels.find(p => p.id === id)?.name ?? null : null;
+  };
+
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
+    if (!isDragging) {
+      setHoveredFaceName(panelNameAt(e.clientX, e.clientY));
+      return;
+    }
     const dx = e.clientX - lastMousePos.current.x;
     const dy = e.clientY - lastMousePos.current.y;
     lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -281,70 +350,14 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
     return () => window.removeEventListener('mouseup', onGlobalMouseUp);
   }, []);
 
-  const settings: PreviewSettings = useMemo(() => ({
-    viewAngle: viewAnglePreset,
-    material,
-    lighting,
-    openness,
-    showShadow: true,
-    zoom: 1,
-    yaw,
-    pitch,
-  }), [viewAnglePreset, material, lighting, openness, yaw, pitch]);
-
-  // Generate 3D assembled model geometry
-  const model = useMemo(() => {
-    return generateAssembledModel(
-      dieline.templateId,
-      dieline.dimensions,
-      dieline.panels,
-      graphics,
-      settings
-    );
-  }, [dieline, graphics, settings]);
-
-  // Material color palettes
-  // Material color palettes with distinct fold-line creases
   const materialStyles = useMemo(() => {
-    switch (material) {
-      case 'kraft':
-        return {
-          base: '#bfa074',
-          stroke: '#6d4c26', // Crisp dark scored crease
-          highlight: '#e0c7a5',
-          shadow: '#785328',
-          innerFill: '#8c6030',
-          name: 'Kraft Cardboard',
-        };
-      case 'dark':
-        return {
-          base: '#1e293b',
-          stroke: '#64748b', // Clear slate edge crease
-          highlight: '#384860',
-          shadow: '#0f172a',
-          innerFill: '#0b1120',
-          name: 'Midnight Dark',
-        };
-      case 'cream':
-        return {
-          base: '#fef3c7',
-          stroke: '#b47820', // Warm golden fold line
-          highlight: '#fffbeb',
-          shadow: '#d99b35',
-          innerFill: '#eed886',
-          name: 'Bakery Cream',
-        };
-      case 'white':
-      default:
-        return {
-          base: '#f1f5f9',
-          stroke: '#475569', // Crisp slate crease line (NEVER matching fill!)
-          highlight: '#ffffff',
-          shadow: '#94a3b8',
-          innerFill: '#cbd5e1',
-          name: 'Clay-Coated White',
-        };
-    }
+    const styles: Record<MaterialFinish, { stroke: string; name: string }> = {
+      kraft: { stroke: '#6d4c26', name: 'Kraft Cardboard' },
+      dark: { stroke: '#64748b', name: 'Midnight Dark' },
+      cream: { stroke: '#b47820', name: 'Bakery Cream' },
+      white: { stroke: '#475569', name: 'Clay-Coated White' },
+    };
+    return { base: BOARD_COLORS[material], ...(styles[material] ?? styles.white) };
   }, [material]);
 
   // Background style
@@ -360,84 +373,27 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
     };
   }, [lighting]);
 
-  // Calculate dynamic continuous fill for a face based on its lighting angle
-  const getFaceFill = (lightingFactor: number) => {
-    // Normal lighting factor ranges between 0.40 and 1.28
-    const t = Math.max(0, Math.min(1, (lightingFactor - 0.40) / 0.88));
-
-    if (material === 'kraft') {
-      // Deep shadow kraft: rgb(130, 95, 55) -> Highlight kraft: rgb(225, 195, 155)
-      const r = Math.round(130 + t * 95);
-      const g = Math.round(95 + t * 100);
-      const b = Math.round(55 + t * 100);
-      return `rgb(${r}, ${g}, ${b})`;
-    }
-    if (material === 'dark') {
-      // Deep midnight: rgb(15, 23, 42) -> Illuminated slate: rgb(55, 75, 105)
-      const r = Math.round(15 + t * 40);
-      const g = Math.round(23 + t * 52);
-      const b = Math.round(42 + t * 63);
-      return `rgb(${r}, ${g}, ${b})`;
-    }
-    if (material === 'cream') {
-      // Warm bakery shadow: rgb(235, 210, 145) -> Ivory highlight: rgb(255, 253, 245)
-      const r = Math.round(235 + t * 20);
-      const g = Math.round(210 + t * 43);
-      const b = Math.round(145 + t * 100);
-      return `rgb(${r}, ${g}, ${b})`;
-    }
-    // White: Crisp shadow: rgb(180, 195, 215) -> Crisp bright highlight: rgb(255, 255, 255)
-    const r = Math.round(180 + t * 75);
-    const g = Math.round(195 + t * 60);
-    const b = Math.round(215 + t * 40);
-    return `rgb(${r}, ${g}, ${b})`;
-  };
-
-  // High-res Mockup PNG Export
-  const handleExportPNG = () => {
-    if (!svgRef.current) return;
-    const svgElement = svgRef.current;
-    const svgData = new XMLSerializer().serializeToString(svgElement);
-    const canvas = document.createElement('canvas');
-    canvas.width = 2400;
-    canvas.height = 1800;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const img = new Image();
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
-
-    img.onload = () => {
-      if (lighting === 'light') {
-        ctx.fillStyle = '#f8fafc';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      } else if (lighting === 'dark') {
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-
-      const a = document.createElement('a');
-      a.download = `${dieline.templateId}-360-mockup-${Math.round(yaw)}deg.png`;
-      a.href = canvas.toDataURL('image/png');
-      a.click();
-    };
-    img.src = url;
-  };
-
-  // SVG Download
-  const handleExportSVG = () => {
-    if (!svgRef.current) return;
-    const svgData = new XMLSerializer().serializeToString(svgRef.current);
-    const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
+  const downloadDataUrl = (url: string | null | undefined, name: string) => {
+    if (!url) return;
     const a = document.createElement('a');
-    a.download = `${dieline.templateId}-360-mockup.svg`;
+    a.download = name;
     a.href = url;
     a.click();
-    URL.revokeObjectURL(url);
+  };
+
+  const handleExportPNG = () => {
+    const background = lighting === 'light' ? '#f8fafc' : lighting === 'dark' ? '#0f172a' : null;
+    downloadDataUrl(
+      viewRef.current?.snapshot(background, 3),
+      `${dieline.templateId}-360-mockup-${Math.round(yaw)}deg.png`,
+    );
+  };
+
+  const handleExportTransparent = () => {
+    downloadDataUrl(
+      viewRef.current?.snapshot(null, 3),
+      `${dieline.templateId}-360-mockup-transparent.png`,
+    );
   };
 
   // Interactive openness/extension feature
@@ -465,6 +421,8 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
       onDragOver={(e) => {
         e.preventDefault();
         setIsDragOverPreview(true);
+        const id = viewRef.current?.pickPanel(e.clientX, e.clientY) ?? null;
+        if (id !== dragTargetPanelId) setDragTargetPanelId(id);
       }}
       onDragLeave={(e) => {
         const rect = containerRef.current?.getBoundingClientRect();
@@ -476,7 +434,6 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
             e.clientY >= rect.bottom
           ) {
             setIsDragOverPreview(false);
-            setDragTargetFace(null);
             setDragTargetPanelId(null);
           }
         }
@@ -489,9 +446,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
           <div className="preview-drag-indicator">
             <UploadCloud size={32} color="var(--accent-secondary, #38bdf8)" />
             <div style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff' }}>
-              {dragTargetFace
-                ? `Drop image onto face: ${dragTargetFace.name}`
-                : dragTargetPanelId
+              {dragTargetPanelId
                 ? `Drop image onto panel: ${dieline.panels.find(p => p.id === dragTargetPanelId)?.name}`
                 : 'Drop image onto 3D packaging model'}
             </div>
@@ -647,8 +602,8 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
           <button
             type="button"
             className="preview-action-btn"
-            onClick={handleExportSVG}
-            title="Download Scalable Vector Mockup SVG"
+            onClick={handleExportTransparent}
+            title="Download Transparent Mockup PNG"
           >
             <Download size={13} />
           </button>
@@ -717,280 +672,18 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
         </div>
       )}
 
-      {/* 4. Main 3D Assembled SVG Viewport */}
-      <svg
-        ref={svgRef}
-        viewBox="0 0 800 700"
-        className="assembled-svg-viewport"
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragOverPreview(true);
-        }}
-        onDrop={(e) => handlePreviewDrop(e)}
-      >
-        <defs>
-          {/* Ground Contact Shadow Filter */}
-          <radialGradient id="ground-shadow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#000000" stopOpacity="0.55" />
-            <stop offset="45%" stopColor="#000000" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#000000" stopOpacity="0" />
-          </radialGradient>
-
-          {/* Define Face Clipping Paths */}
-          {model.faces.map((face) => {
-            if (face.pathD) {
-              return (
-                <clipPath key={`clip-${face.id}`} id={`clip-${face.id}`}>
-                  <path d={face.pathD} />
-                </clipPath>
-              );
-            }
-            return (
-              <clipPath key={`clip-${face.id}`} id={`clip-${face.id}`}>
-                <polygon points={face.points.map(p => `${p.x},${p.y}`).join(' ')} />
-              </clipPath>
-            );
-          })}
-        </defs>
-
-        {/* Ground Ambient Contact Shadow */}
-        {settings.showShadow && (
-          <ellipse
-            cx={model.shadow.cx}
-            cy={model.shadow.cy}
-            rx={model.shadow.rx}
-            ry={model.shadow.ry}
-            fill="url(#ground-shadow)"
-          />
-        )}
-
-        {/* 3D Depth-Sorted Packaging Faces */}
-        {model.faces.map((face) => {
-          const fill = getFaceFill(face.lighting);
-          const isHovered = hoveredFaceName === face.name;
-          const isDropTarget = dragTargetFace?.id === face.id;
-          const stroke = isDropTarget
-            ? 'var(--accent-secondary, #38bdf8)'
-            : isHovered
-            ? 'var(--accent-primary, #06b6d4)'
-            : materialStyles.stroke;
-          const strokeW = isDropTarget ? 3.5 : isHovered ? 2.4 : 1.4;
-
-          return (
-            <g
-              key={face.id}
-              className={`assembled-face-group ${isDropTarget ? 'drop-target-face' : ''}`}
-              onMouseEnter={() => setHoveredFaceName(face.name)}
-              onMouseLeave={() => setHoveredFaceName(null)}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDragOverPreview(true);
-                setDragTargetFace(face);
-              }}
-              onDrop={(e) => handlePreviewDrop(e, face)}
-              style={{ cursor: 'pointer' }}
-            >
-              {/* Base Geometry with Crisp Creases */}
-              {face.pathD ? (
-                <path
-                  d={face.pathD}
-                  fill={fill}
-                  stroke={stroke}
-                  strokeWidth={strokeW}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                />
-              ) : (
-                <polygon
-                  points={face.points.map(p => `${p.x},${p.y}`).join(' ')}
-                  fill={fill}
-                  stroke={stroke}
-                  strokeWidth={strokeW}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                />
-              )}
-
-              {/* Projected User Graphics on Face (Anchored to 3D Planar Space) */}
-              <g clipPath={`url(#clip-${face.id})`}>
-                {face.graphics.map((g) => {
-                  if (g.transformMatrix) {
-                    const imgW = g.width || 60;
-                    const imgH = g.height || 60;
-                    return (
-                      <g key={g.id} transform={g.transformMatrix}>
-                        {g.type === 'text' && (
-                          g.isCurved ? (
-                            <g>
-                              <defs>
-                                <path
-                                  id={`arc-${g.id}`}
-                                  d={`M ${-(g.width || 60) * 0.6} 10 A ${(g.width || 60) * 0.75} ${(g.width || 60) * 0.75} 0 0 1 ${(g.width || 60) * 0.6} 10`}
-                                  fill="none"
-                                />
-                              </defs>
-                              <text
-                                fill={g.fill}
-                                fontSize={g.fontSize}
-                                fontFamily={g.fontFamily}
-                                fontWeight={g.fontWeight}
-                                fontStyle={g.fontStyle || 'normal'}
-                                style={{ userSelect: 'none' }}
-                              >
-                                <textPath href={`#arc-${g.id}`} startOffset="50%" textAnchor="middle">
-                                  {g.text}
-                                </textPath>
-                              </text>
-                            </g>
-                          ) : (
-                            <text
-                              x={0}
-                              y={0}
-                              fill={g.fill}
-                              fontSize={g.fontSize}
-                              fontFamily={g.fontFamily}
-                              fontWeight={g.fontWeight}
-                              fontStyle={g.fontStyle || 'normal'}
-                              textAnchor={g.textAlign === 'center' ? 'middle' : g.textAlign === 'right' ? 'end' : 'start'}
-                              dominantBaseline="central"
-                              style={{ userSelect: 'none' }}
-                            >
-                              {g.text}
-                            </text>
-                          )
-                        )}
-
-                        {g.type === 'image' && g.src && (
-                          <image
-                            href={g.src}
-                            x={-imgW / 2}
-                            y={-imgH / 2}
-                            width={imgW}
-                            height={imgH}
-                            preserveAspectRatio="none"
-                          />
-                        )}
-
-                        {g.type === 'icon' && g.src && (
-                          <image
-                            href={g.src}
-                            x={-imgW / 2}
-                            y={-imgH / 2}
-                            width={imgW}
-                            height={imgH}
-                            preserveAspectRatio="xMidYMid meet"
-                          />
-                        )}
-
-                        {(g.type === 'barcode' || g.type === 'qrcode') && g.src && (
-                          <image
-                            href={g.src}
-                            x={-imgW / 2}
-                            y={-imgH / 2}
-                            width={imgW}
-                            height={imgH}
-                            preserveAspectRatio="xMidYMid meet"
-                          />
-                        )}
-
-                        {g.type === 'barcode' && !g.src && (
-                          <g transform={`scale(${imgW / 90}, ${imgH / 44})`}>
-                            <rect x={-45} y={-22} width={90} height={44} fill="#ffffff" stroke="#cbd5e1" strokeWidth={0.5} />
-                            <line x1={-38} y1={-16} x2={-38} y2={12} stroke="#0f172a" strokeWidth={3} />
-                            <line x1={-32} y1={-16} x2={-32} y2={12} stroke="#0f172a" strokeWidth={1.5} />
-                            <line x1={-26} y1={-16} x2={-26} y2={12} stroke="#0f172a" strokeWidth={4} />
-                            <line x1={-18} y1={-16} x2={-18} y2={12} stroke="#0f172a" strokeWidth={2} />
-                            <line x1={-12} y1={-16} x2={-12} y2={12} stroke="#0f172a" strokeWidth={3} />
-                            <line x1={-4} y1={-16} x2={-4} y2={12} stroke="#0f172a" strokeWidth={1.5} />
-                            <line x1={2} y1={-16} x2={2} y2={12} stroke="#0f172a" strokeWidth={4} />
-                            <line x1={10} y1={-16} x2={10} y2={12} stroke="#0f172a" strokeWidth={2} />
-                            <line x1={18} y1={-16} x2={18} y2={12} stroke="#0f172a" strokeWidth={3.5} />
-                            <line x1={26} y1={-16} x2={26} y2={12} stroke="#0f172a" strokeWidth={1.5} />
-                            <line x1={34} y1={-16} x2={34} y2={12} stroke="#0f172a" strokeWidth={3} />
-                            <text x={0} y={18} fontSize={5} fontFamily="monospace" textAnchor="middle" fill="#0f172a">9 780201 379624</text>
-                          </g>
-                        )}
-                      </g>
-                    );
-                  }
-
-                  // Fallback for legacy 2D matrix
-                  const p0 = face.points[0];
-                  const p1 = face.points[1];
-                  const p2 = face.points[2];
-                  const p3 = face.points.length >= 4 ? face.points[3] : face.points[2];
-                  const targetW = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 100;
-                  const targetH = Math.hypot(p3.x - p0.x, p3.y - p0.y) || 100;
-                  const transformMatrix = getQuadAffineMatrix(p0, p1, p2, p3, targetW, targetH);
-                  const imgW = g.width || 60;
-                  const imgH = g.height || 60;
-
-                  return (
-                    <g key={g.id} transform={transformMatrix}>
-                      <g transform={`translate(${g.x}, ${g.y}) rotate(${g.rotation})`}>
-                        {g.type === 'text' && (
-                          <text
-                            x={0}
-                            y={0}
-                            fill={g.fill}
-                            fontSize={g.fontSize}
-                            fontFamily={g.fontFamily}
-                            fontWeight={g.fontWeight}
-                            fontStyle={g.fontStyle || 'normal'}
-                            textAnchor={g.textAlign === 'center' ? 'middle' : g.textAlign === 'right' ? 'end' : 'start'}
-                            dominantBaseline="central"
-                            style={{ userSelect: 'none' }}
-                          >
-                            {g.text}
-                          </text>
-                        )}
-                        {g.type === 'image' && g.src && (
-                          <image
-                            href={g.src}
-                            x={-imgW / 2}
-                            y={-imgH / 2}
-                            width={imgW}
-                            height={imgH}
-                            preserveAspectRatio="none"
-                          />
-                        )}
-                        {g.type === 'icon' && g.src && (
-                          <image
-                            href={g.src}
-                            x={-imgW / 2}
-                            y={-imgH / 2}
-                            width={imgW}
-                            height={imgH}
-                            preserveAspectRatio="xMidYMid meet"
-                          />
-                        )}
-                        {g.type === 'barcode' && (
-                          <g>
-                            <rect x={-30} y={-14} width={60} height={28} fill="#ffffff" />
-                            <rect x={-28} y={-12} width={56} height={24} fill="#000000" opacity={0.88} />
-                          </g>
-                        )}
-                      </g>
-                    </g>
-                  );
-                })}
-              </g>
-
-              {/* Subtle face border highlight */}
-              {face.points.length >= 3 && !face.pathD && (
-                <polygon
-                  points={face.points.map(p => `${p.x},${p.y}`).join(' ')}
-                  fill="none"
-                  stroke={isHovered ? 'var(--accent-primary, #06b6d4)' : 'rgba(255, 255, 255, 0.15)'}
-                  strokeWidth={0.8}
-                />
-              )}
-            </g>
-          );
-        })}
-      </svg>
+      <Package3DView
+        ref={viewRef}
+        dieline={dieline}
+        graphics={graphics}
+        material={material}
+        yaw={yaw}
+        pitch={pitch}
+        openness={openness}
+        cursor={isDragging ? 'grabbing' : 'grab'}
+        insetTop={hasOpennessControl ? 180 : 140}
+        insetBottom={showSidesStrip ? 175 : 70}
+      />
 
       {/* Hover Face Pill */}
       {hoveredFaceName && (
@@ -1108,19 +801,17 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                               transform={`translate(${gx}, ${gy}) rotate(${g.angle || 0})`}
                             >
                             {g.type === 'text' && (
-                              <text
-                                x={0}
-                                y={0}
+                              <SvgTextBlock
+                                text={g.text || ''}
                                 fill={(!g.fill || g.fill === '#f8fafc' || g.fill === '#ffffff') && material !== 'dark' ? '#1e293b' : g.fill || '#1e293b'}
                                 fontSize={g.fontSize || 14}
                                 fontFamily={g.fontFamily}
                                 fontWeight={g.fontWeight}
-                                fontStyle={g.fontStyle || 'normal'}
-                                textAnchor={g.textAlign === 'center' ? 'middle' : g.textAlign === 'right' ? 'end' : 'start'}
-                                dominantBaseline="central"
-                              >
-                                {g.text}
-                              </text>
+                                fontStyle={g.fontStyle}
+                                textAlign={g.textAlign}
+                                lineHeight={g.lineHeight}
+                                wrapWidth={textWrapWidth(g, panel.bounds.width)}
+                              />
                             )}
 
                             {g.type === 'image' && g.src && (
@@ -1130,18 +821,18 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                                 y={-imgH / 2}
                                 width={imgW}
                                 height={imgH}
-                                preserveAspectRatio="xMidYMid meet"
+                                preserveAspectRatio="none"
                               />
                             )}
 
                             {g.type === 'icon' && g.src && (
                               <image
                                 href={g.src}
-                                x={-15}
-                                y={-15}
-                                width={30}
-                                height={30}
-                                preserveAspectRatio="xMidYMid meet"
+                                x={-imgW / 2}
+                                y={-imgH / 2}
+                                width={imgW}
+                                height={imgH}
+                                preserveAspectRatio="none"
                               />
                             )}
 

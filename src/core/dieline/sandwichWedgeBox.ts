@@ -87,31 +87,28 @@ export function generateSandwichWedgeBoxDieline(dimensions: PackagingDimensions)
   });
 
   // 4. Left Triangular Sidewall
-  // Right triangle attached to left side of base (startX, baseY)
   panels.push({
     id: 'sandwich-left-side',
     name: 'Left Triangular Side',
     polygon: [
       { x: startX, y: baseY },
       { x: startX, y: baseY + l },
-      { x: startX - h, y: baseY + l },
+      { x: startX - h, y: baseY },
     ],
     bounds: { x: startX - h, y: baseY, width: h, height: l },
-    center: { x: startX - h / 3, y: baseY + (2 * l) / 3 },
+    center: { x: startX - h / 3, y: baseY + l / 3 },
   });
 
-  // 5. Right Triangular Sidewall
-  // Right triangle attached to right side of base (startX + w, baseY)
   panels.push({
     id: 'sandwich-right-side',
     name: 'Right Triangular Side',
     polygon: [
       { x: startX + w, y: baseY },
-      { x: startX + w + h, y: baseY + l },
+      { x: startX + w + h, y: baseY },
       { x: startX + w, y: baseY + l },
     ],
     bounds: { x: startX + w, y: baseY, width: h, height: l },
-    center: { x: startX + w + h / 3, y: baseY + (2 * l) / 3 },
+    center: { x: startX + w + h / 3, y: baseY + l / 3 },
   });
 
   // 6. Top Closure Tuck Flap
@@ -142,9 +139,8 @@ export function generateSandwichWedgeBoxDieline(dimensions: PackagingDimensions)
   // Crease between Front Face and Tuck Flap
   addLine(startX, flapY, startX + w, flapY, 'crease');
 
-  // Side dust flap creases on triangles
-  addLine(startX, baseY, startX - h, baseY + l, 'crease');
-  addLine(startX + w, baseY, startX + w + h, baseY + l, 'crease');
+  addLine(startX - h, baseY, startX, baseY + l, 'crease');
+  addLine(startX + w + h, baseY, startX + w, baseY + l, 'crease');
 
   // --- CUT LINES (Perimeter - Red Solid) ---
   // Back Wall Top & Sides
@@ -152,19 +148,16 @@ export function generateSandwichWedgeBoxDieline(dimensions: PackagingDimensions)
   addLine(startX, backY, startX, baseY, 'cut');
   addLine(startX + w, backY, startX + w, baseY, 'cut');
 
-  // Left Triangle Bottom cut
-  addLine(startX, baseY + l, startX - h, baseY + l, 'cut');
-  // Left dust flap outer cuts
-  addLine(startX, baseY, startX - dustFlapW, baseY + 10 * scale, 'cut');
-  addLine(startX - dustFlapW, baseY + 10 * scale, startX - h - dustFlapW * 0.5, baseY + l - 10 * scale, 'cut');
-  addLine(startX - h - dustFlapW * 0.5, baseY + l - 10 * scale, startX - h, baseY + l, 'cut');
+  addLine(startX, baseY, startX - h, baseY, 'cut');
+  addLine(startX, baseY + l, startX - dustFlapW, baseY + l - 10 * scale, 'cut');
+  addLine(startX - dustFlapW, baseY + l - 10 * scale, startX - h - dustFlapW * 0.5, baseY + 10 * scale, 'cut');
+  addLine(startX - h - dustFlapW * 0.5, baseY + 10 * scale, startX - h, baseY, 'cut');
 
-  // Right Triangle Bottom cut
-  addLine(startX + w, baseY + l, startX + w + h, baseY + l, 'cut');
+  addLine(startX + w, baseY, startX + w + h, baseY, 'cut');
   // Right dust flap outer cuts
-  addLine(startX + w, baseY, startX + w + dustFlapW, baseY + 10 * scale, 'cut');
-  addLine(startX + w + dustFlapW, baseY + 10 * scale, startX + w + h + dustFlapW * 0.5, baseY + l - 10 * scale, 'cut');
-  addLine(startX + w + h + dustFlapW * 0.5, baseY + l - 10 * scale, startX + w + h, baseY + l, 'cut');
+  addLine(startX + w, baseY + l, startX + w + dustFlapW, baseY + l - 10 * scale, 'cut');
+  addLine(startX + w + dustFlapW, baseY + l - 10 * scale, startX + w + h + dustFlapW * 0.5, baseY + 10 * scale, 'cut');
+  addLine(startX + w + h + dustFlapW * 0.5, baseY + 10 * scale, startX + w + h, baseY, 'cut');
 
   // Front Slanted Face Sides
   addLine(startX, frontY, startX, flapY, 'cut');
