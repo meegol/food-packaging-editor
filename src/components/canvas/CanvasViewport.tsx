@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { cache as fabricCache } from 'fabric';
 import { FabricDielineCanvas } from '../../core/canvas/FabricDielineCanvas';
+import { fontSpecs } from '../../core/canvas/graphicObjects';
 import { DielineResult } from '../../core/dieline/types';
 import { GraphicItem } from '../../core/graphics/types';
 import { AssembledPreview } from '../preview/AssembledPreview';
@@ -49,6 +50,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
   const engineRef = useRef<FabricDielineCanvas | null>(null);
   const canvasFileInputRef = useRef<HTMLInputElement>(null);
   const loadedFontsRef = useRef<Set<string>>(new Set());
+  const lastDielineRef = useRef<DielineResult | null>(null);
 
   const [viewMode, setViewMode] = useState<ViewportMode>('flat');
   const [zoomPercent, setZoomPercent] = useState<number>(100);
@@ -112,20 +114,15 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!engineRef.current) return;
-    engineRef.current.renderDieline(dieline);
-    engineRef.current.fitToScreen();
-  }, [dieline]);
+    const engine = engineRef.current;
+    if (!engine) return;
+    engine.update(dieline, graphics);
+    if (lastDielineRef.current !== dieline) {
+      lastDielineRef.current = dieline;
+      engine.fitToScreen();
+    }
 
-  useEffect(() => {
-    if (!engineRef.current) return;
-    engineRef.current.setGraphics(graphics);
-
-    const pending = [...new Set(
-      graphics
-        .filter(g => g.type === 'text' && g.fontFamily)
-        .map(g => `${g.fontStyle === 'italic' ? 'italic ' : ''}${g.fontWeight || '600'} 16px ${g.fontFamily}`)
-    )].filter(spec => !loadedFontsRef.current.has(spec));
+    const pending = fontSpecs(graphics).filter(spec => !loadedFontsRef.current.has(spec));
     if (pending.length === 0 || !document.fonts) return;
 
     let cancelled = false;
@@ -138,7 +135,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [graphics]);
+  }, [dieline, graphics]);
 
   useEffect(() => {
     if (!engineRef.current) return;

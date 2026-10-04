@@ -34,7 +34,9 @@ export const App: React.FC = () => {
   const [dimensions, setDimensions] = useState<PackagingDimensions>(template.defaultDimensions);
   const [activePanelId, setActivePanelId] = useState<string | null>(null);
   const [focusedPanelId, setFocusedPanelId] = useState<string | null>(null);
-  const [graphics, setGraphics] = useState<GraphicItem[]>([]);
+  const [graphics, setGraphics] = useState<GraphicItem[]>(
+    () => buildStarterDesign(DEFAULT_DESIGN_ID, generateDieline(template.id, template.defaultDimensions))
+  );
 
   const [designId, setDesignId] = useState<string>(DEFAULT_DESIGN_ID);
   const [isStarterPristine, setIsStarterPristine] = useState(true);
@@ -136,14 +138,20 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleSelectTemplate = (templateId: string) => {
+  const handleSelectTemplate = (templateId: string): boolean => {
+    if (!isStarterPristine && graphics.length > 0) {
+      const ok = window.confirm('Switch package template? Your edits on this package will be lost.');
+      if (!ok) return false;
+    }
     setSelectedTemplateId(templateId);
     const next = getTemplateById(templateId);
     setDimensions(next.defaultDimensions);
+    setGraphics(buildStarterDesign(designId, generateDieline(templateId, next.defaultDimensions)));
     setActivePanelId(null);
     setFocusedPanelId(null);
     setIsStarterPristine(true);
     setHasUserChanges(true);
+    return true;
   };
 
   const handleSelectDesign = (nextDesignId: string) => {
@@ -152,6 +160,7 @@ export const App: React.FC = () => {
       if (!ok) return;
     }
     setDesignId(nextDesignId);
+    setGraphics(buildStarterDesign(nextDesignId, dieline));
     setIsStarterPristine(true);
     setHasUserChanges(true);
   };
@@ -162,8 +171,10 @@ export const App: React.FC = () => {
   };
 
   const handleChangeDimensions = (dims: PackagingDimensions) => {
-    if (!isStarterPristine) {
-      const next = generateDieline(selectedTemplateId, dims);
+    const next = generateDieline(selectedTemplateId, dims);
+    if (isStarterPristine) {
+      setGraphics(buildStarterDesign(designId, next));
+    } else {
       setGraphics(prev => remapGraphicsToDieline(prev, dieline, next));
     }
     setDimensions(dims);
@@ -228,11 +239,6 @@ export const App: React.FC = () => {
   const dieline = useMemo(() => {
     return generateDieline(selectedTemplateId, dimensions);
   }, [selectedTemplateId, dimensions]);
-
-  useEffect(() => {
-    if (!isStarterPristine) return;
-    setGraphics(buildStarterDesign(designId, dieline));
-  }, [dieline, designId, isStarterPristine]);
 
   return (
     <div className="app-container">

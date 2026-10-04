@@ -159,6 +159,10 @@ export const Package3DView = forwardRef<Package3DViewHandle, Package3DViewProps>
     return () => {
       observer.disconnect();
       three.current?.model?.dispose();
+      const shadowMaterial = shadow.material as THREE.MeshBasicMaterial;
+      shadowMaterial.map?.dispose();
+      shadowMaterial.dispose();
+      shadow.geometry.dispose();
       renderer.dispose();
       host.removeChild(renderer.domElement);
       three.current = null;

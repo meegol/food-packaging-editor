@@ -13,6 +13,14 @@ const SELECTION_STYLE = {
   evented: true,
 };
 
+export function fontSpecs(graphics: GraphicItem[]): string[] {
+  return [...new Set(
+    graphics
+      .filter(g => g.type === 'text' && g.fontFamily)
+      .map(g => `${g.fontStyle === 'italic' ? 'italic ' : ''}${g.fontWeight || '600'} 16px ${g.fontFamily}`),
+  )];
+}
+
 export function textWrapWidth(item: GraphicItem, panelWidth: number): number | undefined {
   if (item.type !== 'text') return undefined;
   return item.width ?? Math.max(Math.min(panelWidth * 0.85, 280), 80);

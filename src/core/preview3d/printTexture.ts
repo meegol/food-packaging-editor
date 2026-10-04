@@ -1,7 +1,7 @@
 import { Polygon, StaticCanvas } from 'fabric';
 import { DielineResult } from '../dieline/types';
 import { GraphicItem } from '../graphics/types';
-import { createGraphicObject } from '../canvas/graphicObjects';
+import { createGraphicObject, fontSpecs } from '../canvas/graphicObjects';
 
 export interface PrintSheet {
   canvas: HTMLCanvasElement | null;
@@ -27,12 +27,7 @@ export async function renderPrintSheet(
   const scale = Math.min(maxPixels / width, maxPixels / height, 8);
 
   if (typeof document !== 'undefined' && document.fonts) {
-    const specs = new Set(
-      graphics
-        .filter(g => g.type === 'text' && g.fontFamily)
-        .map(g => `${g.fontStyle === 'italic' ? 'italic ' : ''}${g.fontWeight || '600'} 16px ${g.fontFamily}`),
-    );
-    await Promise.all([...specs].map(s => document.fonts.load(s).catch(() => [])));
+    await Promise.all(fontSpecs(graphics).map(s => document.fonts.load(s).catch(() => [])));
   }
 
   const el = document.createElement('canvas');

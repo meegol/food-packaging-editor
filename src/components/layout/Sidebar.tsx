@@ -13,7 +13,7 @@ interface SidebarProps {
   panels: PanelFace[];
   activePanelId: string | null;
   graphics: GraphicItem[];
-  onSelectTemplate: (id: string) => void;
+  onSelectTemplate: (id: string) => boolean;
   designId: string;
   onSelectDesign: (designId: string) => void;
   onChangeDimensions: (dims: PackagingDimensions) => void;
@@ -84,8 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <TemplateSelector
             selectedTemplateId={template.id}
             onSelectTemplate={(id) => {
-              onSelectTemplate(id);
-              setActiveTab('dimensions');
+              if (onSelectTemplate(id)) setActiveTab('dimensions');
             }}
             designId={designId}
             onSelectDesign={onSelectDesign}

@@ -170,6 +170,11 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
     reader.readAsDataURL(file);
   };
 
+  const pickModelPanel = (e: React.MouseEvent | React.DragEvent): string | null => {
+    const overModel = (e.target as HTMLElement).closest?.('.package-3d-view');
+    return overModel ? viewRef.current?.pickPanel(e.clientX, e.clientY) ?? null : null;
+  };
+
   const handlePreviewDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -179,7 +184,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
     if (!e.dataTransfer.files || !e.dataTransfer.files[0]) return;
     const file = e.dataTransfer.files[0];
 
-    let targetPanelId = viewRef.current?.pickPanel(e.clientX, e.clientY) ?? null;
+    let targetPanelId = pickModelPanel(e);
     if (!targetPanelId && activePanelId) {
       targetPanelId = activePanelId;
     }
@@ -317,14 +322,10 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
     lastMousePos.current = { x: e.clientX, y: e.clientY };
   };
 
-  const panelNameAt = (clientX: number, clientY: number) => {
-    const id = viewRef.current?.pickPanel(clientX, clientY);
-    return id ? dieline.panels.find(p => p.id === id)?.name ?? null : null;
-  };
-
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) {
-      setHoveredFaceName(panelNameAt(e.clientX, e.clientY));
+      const id = pickModelPanel(e);
+      setHoveredFaceName(id ? dieline.panels.find(p => p.id === id)?.name ?? null : null);
       return;
     }
     const dx = e.clientX - lastMousePos.current.x;
@@ -421,7 +422,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
       onDragOver={(e) => {
         e.preventDefault();
         setIsDragOverPreview(true);
-        const id = viewRef.current?.pickPanel(e.clientX, e.clientY) ?? null;
+        const id = pickModelPanel(e);
         if (id !== dragTargetPanelId) setDragTargetPanelId(id);
       }}
       onDragLeave={(e) => {

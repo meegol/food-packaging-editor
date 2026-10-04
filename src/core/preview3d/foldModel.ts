@@ -203,7 +203,12 @@ class MeshFactory {
   readonly printMaterial: THREE.MeshStandardMaterial;
   readonly boardMaterial: THREE.MeshStandardMaterial;
 
-  constructor(private readonly sheet: PrintSheet, texture: THREE.Texture, boardColor: string) {
+  constructor(
+    private readonly sheet: PrintSheet,
+    texture: THREE.Texture,
+    boardColor: string,
+    private readonly framesOnly = false,
+  ) {
     this.printMaterial = new THREE.MeshStandardMaterial({
       map: texture, side: THREE.FrontSide, roughness: 0.82, metalness: 0,
     });
@@ -216,7 +221,14 @@ class MeshFactory {
     return [(x - this.sheet.minX) / this.sheet.width, 1 - (y - this.sheet.minY) / this.sheet.height];
   }
 
+  private marker(panelId: string): THREE.Group {
+    const group = new THREE.Group();
+    group.userData.panelId = panelId;
+    return group;
+  }
+
   puffedPanel(panel: PanelFace, origin: THREE.Vector3, bulge: number): THREE.Group {
+    if (this.framesOnly) return this.marker(panel.id);
     const { x, y, width, height } = panel.bounds;
     const geometry = new THREE.PlaneGeometry(width, height, 32, 32);
     const pos = geometry.getAttribute('position');
@@ -236,6 +248,7 @@ class MeshFactory {
   }
 
   panel(panel: PanelFace, origin: THREE.Vector3): THREE.Group {
+    if (this.framesOnly) return this.marker(panel.id);
     const shape = new THREE.Shape(panel.polygon.map(p => new THREE.Vector2(p.x - origin.x, -p.y - origin.y)));
     const geometry = new THREE.ShapeGeometry(shape);
     const pos = geometry.getAttribute('position');
@@ -469,7 +482,7 @@ export interface PanelFrame {
 export function computePanelFrames(dieline: DielineResult): Map<string, PanelFrame> {
   const b = dieline.totalBounds;
   const sheet: PrintSheet = { canvas: null, minX: b.minX, minY: b.minY, width: b.width || 1, height: b.height || 1 };
-  const model = buildFoldedModel(dieline, sheet, '#ffffff');
+  const model = buildFoldedModel(dieline, sheet, '#ffffff', true);
   model.root.updateMatrixWorld(true);
   const frames = new Map<string, PanelFrame>();
   model.root.traverse(obj => {
@@ -510,12 +523,12 @@ export function panelUprightAngles(dieline: DielineResult): Map<string, number> 
   return result;
 }
 
-export function buildFoldedModel(dieline: DielineResult, sheet: PrintSheet, boardColor: string): FoldedModel {
+export function buildFoldedModel(dieline: DielineResult, sheet: PrintSheet, boardColor: string, framesOnly = false): FoldedModel {
   const panels = new Map(dieline.panels.map(p => [p.id, p]));
   const texture = sheet.canvas ? new THREE.CanvasTexture(sheet.canvas) : new THREE.Texture();
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 8;
-  const factory = new MeshFactory(sheet, texture, boardColor);
+  const factory = new MeshFactory(sheet, texture, boardColor, framesOnly);
   const pivots = new Map<string, { pivot: THREE.Object3D; axis: THREE.Vector3; angle: number }>();
 
   const root = new THREE.Group();

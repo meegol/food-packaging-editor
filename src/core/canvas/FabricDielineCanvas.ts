@@ -385,6 +385,11 @@ export class FabricDielineCanvas {
     this.canvas.requestRenderAll();
   }
 
+  public async update(dieline: DielineResult, items: GraphicItem[]): Promise<void> {
+    this.graphicItems = [...items];
+    await this.renderDieline(dieline);
+  }
+
   public async setGraphics(items: GraphicItem[]): Promise<void> {
     this.graphicItems = [...items];
     if (this.currentDieline) {
