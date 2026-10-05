@@ -1,11 +1,10 @@
 import { TEMPLATES, getTemplateById, generateDieline } from '../src/core/dieline';
-import { generateAssembledModel } from '../src/core/preview/assembledBoxModels';
-import { getQuadAffineMatrix, mapPanelGraphicsToFace, projectPanelGraphicsToFace3D } from '../src/core/preview/graphicProjection';
-import { Camera3D, Face3DDefinition } from '../src/core/preview/engine3d';
+import { buildFoldedModel, computePanelFrames, panelUprightAngles } from '../src/core/preview3d/foldModel';
+import { PrintSheet } from '../src/core/preview3d/printTexture';
+import { remapGraphicsToDieline } from '../src/core/graphics/remapGraphics';
 import { parseProjectFile } from '../src/core/storage/projectStorage';
 import { GraphicItem } from '../src/core/graphics/types';
-import { ViewAngle } from '../src/core/preview/previewTypes';
-import { PanelFace } from '../src/core/dieline/types';
+import { buildStarterDesign, STARTER_STYLES, BLANK_DESIGN_ID } from '../src/core/designs/starterDesigns';
 
 let passed = 0;
 let total = 0;
@@ -47,166 +46,86 @@ for (const tmpl of TEMPLATES) {
 }
 
 // -----------------------------------------------------------
-// TEST SUITE 2: 2D Assembled Models for All 12 Templates
+// TEST SUITE 2: 3D Assembly Folded From the Dieline
 // -----------------------------------------------------------
-console.log('\n📦 Test Suite 2: 3D Assembled Perspective Models & 360° Turntable Rotation');
-const viewAngles: ViewAngle[] = ['isometric', 'front', 'side', 'back', 'left', 'top', 'bottom'];
-const turntableYaws = [0, 45, 90, 135, 180, 225, 270, 315];
+console.log('\n📦 Test Suite 2: 3D Assembly Folded From the Dieline');
+
+const geometrySheet = (d: ReturnType<typeof generateDieline>): PrintSheet => ({
+  canvas: null,
+  minX: d.totalBounds.minX,
+  minY: d.totalBounds.minY,
+  width: d.totalBounds.width || 1,
+  height: d.totalBounds.height || 1,
+});
+
+const warnings: string[] = [];
+const originalWarn = console.warn;
+console.warn = (...args: unknown[]) => { warnings.push(args.join(' ')); };
 
 for (const tmpl of TEMPLATES) {
   const dieline = generateDieline(tmpl.id, tmpl.defaultDimensions);
+  const before = warnings.length;
+  const model = buildFoldedModel(dieline, geometrySheet(dieline), '#ffffff');
 
-  // 1. Test across all cardinal angles
-  for (const angle of viewAngles) {
-    const model = generateAssembledModel(
-      tmpl.id,
-      tmpl.defaultDimensions,
-      dieline.panels,
-      [],
-      {
-        viewAngle: angle,
-        material: 'kraft',
-        lighting: 'dark',
-        openness: 0.35,
-        showShadow: true,
-        zoom: 1,
-      }
-    );
+  const placed = new Set<string>();
+  let finite = true;
+  model.root.updateMatrixWorld(true);
+  model.root.traverse(obj => {
+    if (obj.userData.panelId) placed.add(obj.userData.panelId as string);
+    const e = obj.matrixWorld.elements;
+    if (e.some(v => !Number.isFinite(v))) finite = false;
+  });
 
-    assert(model.faces.length > 0, `${tmpl.name} [Cardinal Angle: ${angle}]: Model produced ${model.faces.length} visible faces`);
-    assert(model.shadow.rx > 0 && model.shadow.ry > 0, `${tmpl.name} [Cardinal Angle: ${angle}]: Ground shadow valid`);
+  const expected = dieline.panels.filter(p => !/seam/.test(p.id)).map(p => p.id);
+  const missing = expected.filter(id => !placed.has(id));
+  assert(missing.length === 0, `${tmpl.name}: all ${expected.length} panels folded into the 3D package${missing.length ? ` (missing ${missing.join(', ')})` : ''}`);
+  assert(warnings.length === before, `${tmpl.name}: every fold found its shared crease`);
+  assert(finite && model.radius > 0 && !model.bounds.isEmpty(), `${tmpl.name}: assembled geometry is finite (radius ${model.radius.toFixed(0)})`);
 
-    for (const face of model.faces) {
-      assert(face.points.length >= 3 || face.pathD !== undefined, `${tmpl.name} -> Face "${face.name}": Has valid geometry`);
-      assert(face.lighting > 0, `${tmpl.name} -> Face "${face.name}": Has valid lighting factor (${face.lighting.toFixed(2)})`);
-    }
-  }
-
-  // 2. Test continuous 360° turntable rotation steps
-  for (const yaw of turntableYaws) {
-    const model = generateAssembledModel(
-      tmpl.id,
-      tmpl.defaultDimensions,
-      dieline.panels,
-      [],
-      {
-        viewAngle: 'custom',
-        material: 'white',
-        lighting: 'light',
-        openness: 0,
-        showShadow: true,
-        zoom: 1,
-        yaw,
-        pitch: 15,
-      }
-    );
-    assert(model.faces.length > 0, `${tmpl.name} [360° Yaw ${yaw}°]: Model has ${model.faces.length} visible faces`);
-  }
+  model.setOpenness(1);
+  model.setOpenness(0);
+  model.dispose();
 }
+console.warn = originalWarn;
 
-// -----------------------------------------------------------
-// TEST SUITE 3: Graphic Projection onto Assembled Faces
-// -----------------------------------------------------------
-console.log('\n🎨 Test Suite 3: Artwork & Typography Projection Engine');
+const near = (v: { x: number; y: number; z: number }, x: number, y: number, z: number) =>
+  Math.abs(v.x - x) < 0.05 && Math.abs(v.y - y) < 0.05 && Math.abs(v.z - z) < 0.05;
+const frameOf = (id: string) => {
+  const d = generateDieline(id, getTemplateById(id).defaultDimensions);
+  return computePanelFrames(d);
+};
+
+const burgerFrames = frameOf('burger-box');
+assert(near(burgerFrames.get('lid-top')!.normal, 0, 1, 0), 'Burger box: printed lid faces up');
+assert(near(burgerFrames.get('base-bottom')!.normal, 0, -1, 0), 'Burger box: base faces down');
+assert(near(burgerFrames.get('base-front')!.normal, 0, 0, 1), 'Burger box: front wall faces the viewer');
+assert(near(burgerFrames.get('lid-front')!.normal, 0, 0, 1), 'Burger box: lid closure flap covers the front wall');
+
+const sandwichFrames = frameOf('sandwich-wedge-box');
+const sandwichFront = sandwichFrames.get('sandwich-front')!.normal;
+assert(sandwichFront.y > 0.3 && sandwichFront.z > 0.3, 'Sandwich wedge: window face slants up toward the viewer');
+assert(Math.abs(sandwichFrames.get('sandwich-left-side')!.normal.x) > 0.95, 'Sandwich wedge: triangle sides close the ends');
+
+const pizzaFrames = frameOf('pizza-box');
+assert(near(pizzaFrames.get('pizza-lid')!.normal, 0, 1, 0), 'Pizza box: printed lid faces up');
+
+const sandwichDieline = generateDieline('sandwich-wedge-box', getTemplateById('sandwich-wedge-box').defaultDimensions);
+const uprights = panelUprightAngles(sandwichDieline);
+const sideText = buildStarterDesign('kraft', sandwichDieline).find(i => i.panelId === 'sandwich-left-side' && i.type === 'text')!;
+assert(sideText.angle === uprights.get('sandwich-left-side'), `Sandwich side wordmark is turned to read upright when folded (${sideText.angle}°)`);
 const burgerDieline = generateDieline('burger-box', getTemplateById('burger-box').defaultDimensions);
-const topLidPanel = burgerDieline.panels.find((p: PanelFace) => p.id === 'lid-top' || p.id === 'top-lid' || p.isLid)!;
-assert(topLidPanel !== undefined, 'Burger box has lid panel');
-
-const testGraphics: GraphicItem[] = [
-  {
-    id: 'test-text-1',
-    panelId: topLidPanel.id,
-    type: 'text',
-    text: 'GOURMET BURGER',
-    fontSize: 20,
-    fill: '#ffffff',
-    textAlign: 'center',
-    clipToPanel: true,
-    x: topLidPanel.center.x,
-    y: topLidPanel.center.y,
-    angle: 0,
-  },
-  {
-    id: 'test-img-1',
-    panelId: topLidPanel.id,
-    type: 'image',
-    src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-    clipToPanel: true,
-    x: topLidPanel.center.x + 10,
-    y: topLidPanel.center.y - 10,
-    scaleX: 1.5,
-    scaleY: 1.5,
-    angle: 90,
-  },
-];
-
-const projected = mapPanelGraphicsToFace(topLidPanel, testGraphics, 200, 200);
-assert(projected.length === 2, `Mapped 2 graphics onto top-lid face (found ${projected.length})`);
-assert(projected[0].text === 'GOURMET BURGER', 'Text graphic retained text content');
-assert(projected[1].type === 'image', 'Image graphic retained image type and source');
-assert(projected[1].rotation === 90, 'Image rotation preserved at 90 degrees');
-
-// Affine Transform Calculation Check
-const p0 = { x: 100, y: 100 };
-const p1 = { x: 300, y: 120 };
-const p2 = { x: 280, y: 250 };
-const p3 = { x: 80, y: 230 };
-const matrix = getQuadAffineMatrix(p0, p1, p2, p3, 200, 150);
-assert(matrix.startsWith('matrix('), `Calculated valid SVG affine matrix: ${matrix}`);
-
-// True 3D Planar Projection & Zero-Drift Verification
-const testFace3D: Face3DDefinition = {
-  id: 'burger-base-left',
-  name: 'Base Left Wall',
-  panelId: 'base-left',
-  vertices: [
-    { x: -60, y: 35, z: -60 },
-    { x: -60, y: 35, z: 60 },
-    { x: -57, y: -35, z: 57 },
-    { x: -57, y: -35, z: -57 },
-  ],
-};
-
-const baseLeftPanel = burgerDieline.panels.find(p => p.id === 'base-left')!;
-assert(!!baseLeftPanel, 'Found base-left panel for 3D planar testing');
-
-const sideGraphic: GraphicItem = {
-  id: 'side-logo-1',
-  panelId: 'base-left',
-  type: 'image',
-  src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-  x: baseLeftPanel.center.x,
-  y: baseLeftPanel.center.y,
-  width: 40,
-  height: 40,
-  scaleX: 1,
-  scaleY: 1,
-};
-
-// Test across turntable yaw angles: 0, 45, 51 (user angle), 90
-const anglesToTest = [0, 45, 51, 90, 135, 180, 270];
-for (const yawAngle of anglesToTest) {
-  const cam: Camera3D = {
-    cx: 400,
-    cy: 340,
-    distance: 850,
-    yawDeg: yawAngle,
-    pitchDeg: 24,
-    zoom: 1,
-  };
-
-  const projected3D = projectPanelGraphicsToFace3D(baseLeftPanel, [sideGraphic], testFace3D, cam);
-  assert(projected3D.length === 1, `Projected graphic onto 3D face at yaw ${yawAngle}°`);
-  const g = projected3D[0];
-  assert(!!g.transformMatrix && g.transformMatrix.startsWith('matrix('), `Generated valid 3D affine matrix at ${yawAngle}°: ${g.transformMatrix}`);
-  assert(!!g.screenCenter && typeof g.screenCenter.x === 'number' && typeof g.screenCenter.y === 'number', `Generated valid screen center at ${yawAngle}°`);
-  assert(!!g.screenCorners && g.screenCorners.length === 4, `Generated 4 perspective screen corners at ${yawAngle}°`);
-}
+const rearItems = buildStarterDesign('kraft', burgerDieline).filter(i => i.panelId === 'rear-hinge' && i.type === 'text');
+assert(panelUprightAngles(burgerDieline).get('rear-hinge') === 180 && rearItems.every(i => i.angle === 180),
+  'Burger rear wall (printed upside down on the net) has its back-of-pack text rotated to read upright');
 
 // -----------------------------------------------------------
 // TEST SUITE 4: Project Serialization & Recovery
 // -----------------------------------------------------------
 console.log('\n💾 Test Suite 4: Project Storage & Parsing');
+const testGraphics: GraphicItem[] = [
+  { id: 'test-text-1', panelId: 'sleeve-top', type: 'text', text: 'GOURMET BURGER', fontSize: 18, clipToPanel: true },
+  { id: 'test-img-1', panelId: 'sleeve-top', type: 'image', src: 'data:image/png;base64,AAAA', clipToPanel: true },
+];
 const sampleProjectJson = JSON.stringify({
   version: '1.0.0',
   templateId: 'dessert-sleeve-box',
@@ -279,6 +198,70 @@ const testTextItem: GraphicItem = {
 assert(testTextItem.fontStyle === 'italic', 'GraphicItem supports fontStyle: italic');
 assert(testTextItem.lineHeight === 1.35, 'GraphicItem supports lineHeight');
 assert(testTextItem.isCurved === true, 'GraphicItem supports isCurved for round food tubs');
+
+// -----------------------------------------------------------
+// TEST SUITE 7: Starter Brand Designs
+// -----------------------------------------------------------
+console.log('\n🎨 Test Suite 7: Starter Brand Designs');
+
+const insidePolygon = (p: { x: number; y: number }, poly: { x: number; y: number }[]) => {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i];
+    const b = poly[j];
+    if ((a.y > p.y) !== (b.y > p.y) && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+  }
+  return inside;
+};
+
+assert(STARTER_STYLES.length >= 4, `Ships ${STARTER_STYLES.length} starter brand styles`);
+assert(buildStarterDesign(BLANK_DESIGN_ID, generateDieline('burger-box', getTemplateById('burger-box').defaultDimensions)).length === 0, 'Blank design produces an empty net');
+
+for (const tmpl of TEMPLATES) {
+  const dieline = generateDieline(tmpl.id, tmpl.defaultDimensions);
+  for (const style of STARTER_STYLES) {
+    const items = buildStarterDesign(style.id, dieline);
+    const label = `${tmpl.id} × ${style.id}`;
+    const panelsById = new Map(dieline.panels.map(p => [p.id, p]));
+
+    const texts = items.filter(i => i.type === 'text');
+    const photos = items.filter(i => i.type === 'image' && i.fileName?.startsWith('Product photo'));
+    const ids = new Set(items.map(i => i.id));
+
+    const badAnchor = items.find(i => {
+      const panel = panelsById.get(i.panelId);
+      return !panel || !insidePolygon({ x: i.x!, y: i.y! }, panel.polygon);
+    });
+    const badImage = items.find(i => i.type === 'image' && !(i.src?.startsWith('data:image/svg+xml') && i.naturalWidth && i.scaleX && i.scaleY));
+
+    assert(
+      texts.some(t => t.text?.replace(/\s+/g, ' ').toUpperCase().includes(style.brand.toUpperCase())) && photos.length === 1 && ids.size === items.length && !badAnchor && !badImage,
+      `${label}: ${items.length} layers (${texts.length} text, 1 hero photo), unique ids, anchors inside their faces${badAnchor ? ` — bad anchor ${badAnchor.id}` : ''}${badImage ? ` — bad image ${badImage.id}` : ''}`,
+    );
+  }
+}
+
+const bigBurger = generateDieline('burger-box', { ...getTemplateById('burger-box').defaultDimensions, length: 200, width: 200 });
+const bigHeroPhoto = buildStarterDesign('kraft', bigBurger).find(i => i.fileName?.startsWith('Product photo'))!;
+const lidPanel = bigBurger.panels.find(p => p.id === 'lid-top')!;
+const smallBurger = generateDieline('burger-box', getTemplateById('burger-box').defaultDimensions);
+const edited = buildStarterDesign('kraft', smallBurger);
+const remapped = remapGraphicsToDieline(edited, smallBurger, bigBurger);
+const lidBefore = smallBurger.panels.find(p => p.id === 'lid-top')!.bounds;
+const lidAfter = bigBurger.panels.find(p => p.id === 'lid-top')!.bounds;
+const bgAfter = remapped.find(i => i.panelId === 'lid-top' && i.fileName?.endsWith('background'))!;
+const photoAfter = remapped.find(i => i.fileName?.startsWith('Product photo'))!;
+const photoBefore = edited.find(i => i.fileName?.startsWith('Product photo'))!;
+assert(
+  Math.abs(bgAfter.naturalWidth! * bgAfter.scaleX! - lidAfter.width) < 1 && Math.abs(bgAfter.naturalHeight! * bgAfter.scaleY! - lidAfter.height) < 1,
+  'Resizing keeps a panel background covering the whole resized panel',
+);
+assert(
+  Math.abs((photoAfter.x! - lidAfter.x) / lidAfter.width - (photoBefore.x! - lidBefore.x) / lidBefore.width) < 1e-6
+    && photoAfter.scaleX === photoBefore.scaleX,
+  'Resizing keeps other artwork at the same relative spot and size on its panel',
+);
+assert(bigHeroPhoto.panelId === 'lid-top' && insidePolygon({ x: bigHeroPhoto.x!, y: bigHeroPhoto.y! }, lidPanel.polygon), 'Starter hero photo re-flows onto the resized lid');
 
 console.log('\n====================================================');
 console.log(`🎉 ALL ${passed}/${total} TESTS PASSED SUCCESSFULLY!`);

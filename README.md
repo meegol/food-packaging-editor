@@ -8,6 +8,7 @@ The project allows users (such as food entrepreneurs, small bakeries, and cloud 
 
 - **Framework:** React 18 with TypeScript and Vite
 - **2D Canvas Renderer:** Fabric.js (HTML5 Canvas)
+- **3D Preview:** three.js
 - **Barcodes & QR Codes:** JsBarcode, QRCode
 - **Icons:** Lucide React
 - **Styling:** CSS Custom Properties (Theme tokens)
@@ -26,6 +27,7 @@ src/
 │   └── sidebar/         # Template picker, dimensions, typography, compliance icons, barcode/QR generator
 ├── core/
 │   ├── canvas/          # Fabric.js dieline canvas wrapper and multi-type graphic clipping engine
+│   ├── designs/         # Starter designs and their SVG artwork
 │   ├── dieline/         # 12 parametric dieline math generators
 │   ├── export/          # 1:1 CAD PDF, grouped SVG, 300 DPI raster proof, and spec sheet BOM calculators
 │   ├── graphics/        # Graphic element data models and typing
@@ -47,7 +49,14 @@ npm run dev
 
 # Type check and build production bundle
 npm run build
+
+# Run tests
+npm test
 ```
+
+## Starter Designs
+
+Every template opens with a sample design (Kraft, Street Food, Fresh, Midnight, or a blank net) that can be picked under **Templates**. All of it is normal text and image layers, so it can be edited or replaced like anything else.
 
 ## Roadmap & Sprints
 

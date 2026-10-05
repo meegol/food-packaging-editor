@@ -190,6 +190,99 @@ code, pre, .font-mono {
   align-items: center;
   justify-content: center;
   color: var(--accent-secondary);
+  flex-shrink: 0;
+}
+
+.template-thumb {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.starter-design-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+}
+
+.starter-design-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-primary);
+  font: inherit;
+  transition: all 0.15s ease;
+}
+
+.starter-design-card:hover {
+  background-color: var(--bg-surface-hover);
+  border-color: var(--border-medium);
+}
+
+.starter-design-card.active {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 1px var(--border-focus);
+}
+
+.starter-design-thumb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 78px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.starter-design-thumb img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  margin-top: 14px;
+}
+
+.starter-design-thumb-blank {
+  background-color: var(--bg-app);
+  color: var(--text-muted);
+  border: 1px dashed var(--border-medium);
+}
+
+.starter-design-wordmark {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.starter-design-name {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 2px;
+}
+
+.starter-design-swatches {
+  display: flex;
+  gap: 3px;
+  min-height: 8px;
+  padding: 0 2px 2px;
+}
+
+.starter-design-swatches span {
+  width: 14px;
+  height: 8px;
+  border-radius: 2px;
+  border: 1px solid var(--border-subtle);
 }
 
 .template-info h4 {
@@ -980,22 +1073,22 @@ select option {
   justify-content: center;
 }
 
-.assembled-svg-viewport {
-  width: 100%;
-  height: 100%;
-  max-width: 900px;
-  max-height: 650px;
-  filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.35));
-  transition: transform 0.2s ease-out;
+.package-3d-view {
+  align-self: stretch;
 }
 
-.assembled-face-group {
-  cursor: pointer;
-  transition: filter 0.15s ease;
-}
-
-.assembled-face-group:hover {
-  filter: brightness(1.08);
+.package-3d-loading {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  pointer-events: none;
 }
 
 /* Preview Toolbar */

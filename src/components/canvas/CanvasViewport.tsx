@@ -15,6 +15,7 @@ import {
   Box,
   Columns
 } from 'lucide-react';
+import { cache as fabricCache } from 'fabric';
 import { FabricDielineCanvas } from '../../core/canvas/FabricDielineCanvas';
 import { DielineResult } from '../../core/dieline/types';
 import { GraphicItem } from '../../core/graphics/types';
@@ -47,6 +48,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<FabricDielineCanvas | null>(null);
   const canvasFileInputRef = useRef<HTMLInputElement>(null);
+  const loadedFontsRef = useRef<Set<string>>(new Set());
 
   const [viewMode, setViewMode] = useState<ViewportMode>('flat');
   const [zoomPercent, setZoomPercent] = useState<number>(100);
@@ -118,6 +120,24 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
   useEffect(() => {
     if (!engineRef.current) return;
     engineRef.current.setGraphics(graphics);
+
+    const pending = [...new Set(
+      graphics
+        .filter(g => g.type === 'text' && g.fontFamily)
+        .map(g => `${g.fontStyle === 'italic' ? 'italic ' : ''}${g.fontWeight || '600'} 16px ${g.fontFamily}`)
+    )].filter(spec => !loadedFontsRef.current.has(spec));
+    if (pending.length === 0 || !document.fonts) return;
+
+    let cancelled = false;
+    Promise.all(pending.map(spec => document.fonts.load(spec).catch(() => []))).then(() => {
+      pending.forEach(spec => loadedFontsRef.current.add(spec));
+      if (cancelled || !engineRef.current) return;
+      fabricCache.clearFontCache();
+      engineRef.current.setGraphics(graphics);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [graphics]);
 
   useEffect(() => {

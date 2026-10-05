@@ -14,6 +14,8 @@ interface SidebarProps {
   activePanelId: string | null;
   graphics: GraphicItem[];
   onSelectTemplate: (id: string) => void;
+  designId: string;
+  onSelectDesign: (designId: string) => void;
   onChangeDimensions: (dims: PackagingDimensions) => void;
   onResetDimensions: () => void;
   onSelectPanel: (panelId: string) => void;
@@ -31,6 +33,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activePanelId,
   graphics,
   onSelectTemplate,
+  designId,
+  onSelectDesign,
   onChangeDimensions,
   onResetDimensions,
   onSelectPanel,
@@ -40,7 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onUpdateGraphic,
   onReorderGraphic,
 }) => {
-  const [activeTab, setActiveTab] = useState<'templates' | 'dimensions' | 'faces' | 'branding'>('dimensions');
+  const [activeTab, setActiveTab] = useState<'templates' | 'dimensions' | 'faces' | 'branding'>('templates');
 
   return (
     <aside className="app-sidebar">
@@ -83,6 +87,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onSelectTemplate(id);
               setActiveTab('dimensions');
             }}
+            designId={designId}
+            onSelectDesign={onSelectDesign}
           />
         )}
 

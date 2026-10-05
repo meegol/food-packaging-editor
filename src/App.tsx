@@ -5,7 +5,9 @@ import { CanvasViewport } from './components/canvas/CanvasViewport';
 import { DraftRecoveryBanner } from './components/layout/DraftRecoveryBanner';
 import { getTemplateById, generateDieline, PackagingDimensions } from './core/dieline';
 import { GraphicItem } from './core/graphics/types';
+import { remapGraphicsToDieline } from './core/graphics/remapGraphics';
 import { ExportModal } from './components/export/ExportModal';
+import { buildStarterDesign, DEFAULT_DESIGN_ID } from './core/designs/starterDesigns';
 import { Sliders, Box as BoxIcon } from 'lucide-react';
 import {
   getThemePreference,
@@ -33,6 +35,10 @@ export const App: React.FC = () => {
   const [activePanelId, setActivePanelId] = useState<string | null>(null);
   const [focusedPanelId, setFocusedPanelId] = useState<string | null>(null);
   const [graphics, setGraphics] = useState<GraphicItem[]>([]);
+
+  const [designId, setDesignId] = useState<string>(DEFAULT_DESIGN_ID);
+  const [isStarterPristine, setIsStarterPristine] = useState(true);
+  const [hasUserChanges, setHasUserChanges] = useState(false);
 
   // Export modal state
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -69,7 +75,7 @@ export const App: React.FC = () => {
 
   // Debounced auto-save to browser storage on project modifications
   useEffect(() => {
-    if (!hasInitializedDraftCheck) return;
+    if (!hasInitializedDraftCheck || !hasUserChanges) return;
     saveDraftDebounced(
       selectedTemplateId,
       dimensions,
@@ -77,7 +83,7 @@ export const App: React.FC = () => {
       themeId,
       setAutosaveStatus
     );
-  }, [selectedTemplateId, dimensions, graphics, themeId, hasInitializedDraftCheck]);
+  }, [selectedTemplateId, dimensions, graphics, themeId, hasInitializedDraftCheck, hasUserChanges]);
 
   const handleSelectTheme = (newThemeId: string) => {
     document.documentElement.setAttribute('data-theme', newThemeId);
@@ -87,6 +93,8 @@ export const App: React.FC = () => {
 
   const handleRestoreDraft = () => {
     if (!detectedDraft) return;
+    setIsStarterPristine(false);
+    setHasUserChanges(true);
     setSelectedTemplateId(detectedDraft.templateId);
     setDimensions(detectedDraft.dimensions);
     setGraphics(detectedDraft.graphics);
@@ -111,6 +119,8 @@ export const App: React.FC = () => {
   const handleImportProject = (jsonContent: string) => {
     try {
       const imported = parseProjectFile(jsonContent);
+      setIsStarterPristine(false);
+      setHasUserChanges(true);
       setSelectedTemplateId(imported.templateId);
       setDimensions(imported.dimensions);
       setGraphics(imported.graphics);
@@ -132,11 +142,41 @@ export const App: React.FC = () => {
     setDimensions(next.defaultDimensions);
     setActivePanelId(null);
     setFocusedPanelId(null);
-    setGraphics([]);
+    setIsStarterPristine(true);
+    setHasUserChanges(true);
+  };
+
+  const handleSelectDesign = (nextDesignId: string) => {
+    if (!isStarterPristine && graphics.length > 0) {
+      const ok = window.confirm('Replace your current artwork with this starter design? Your edits on this package will be lost.');
+      if (!ok) return;
+    }
+    setDesignId(nextDesignId);
+    setIsStarterPristine(true);
+    setHasUserChanges(true);
+  };
+
+  const markEdited = () => {
+    setIsStarterPristine(false);
+    setHasUserChanges(true);
+  };
+
+  const handleChangeDimensions = (dims: PackagingDimensions) => {
+    if (!isStarterPristine) {
+      const next = generateDieline(selectedTemplateId, dims);
+      setGraphics(prev => remapGraphicsToDieline(prev, dieline, next));
+    }
+    setDimensions(dims);
+    setHasUserChanges(true);
+  };
+
+  const handleCanvasGraphicChange = (items: GraphicItem[]) => {
+    markEdited();
+    setGraphics(items);
   };
 
   const handleResetDimensions = () => {
-    setDimensions(template.defaultDimensions);
+    handleChangeDimensions(template.defaultDimensions);
   };
 
   const handleSelectPanel = (panelId: string) => {
@@ -146,23 +186,28 @@ export const App: React.FC = () => {
   };
 
   const handleAddGraphic = (item: GraphicItem) => {
+    markEdited();
     setGraphics(prev => [...prev, item]);
     setMobileTab('canvas');
   };
 
   const handleRemoveGraphic = (id: string) => {
+    markEdited();
     setGraphics(prev => prev.filter(g => g.id !== id));
   };
 
   const handleUpdateGraphic = (updated: GraphicItem) => {
+    markEdited();
     setGraphics(prev => prev.map(g => g.id === updated.id ? updated : g));
   };
 
   const handleToggleClip = (id: string) => {
+    markEdited();
     setGraphics(prev => prev.map(g => g.id === id ? { ...g, clipToPanel: !g.clipToPanel } : g));
   };
 
   const handleReorderGraphic = (id: string, direction: 'up' | 'down') => {
+    markEdited();
     setGraphics(prev => {
       const idx = prev.findIndex(g => g.id === id);
       if (idx === -1) return prev;
@@ -183,6 +228,11 @@ export const App: React.FC = () => {
   const dieline = useMemo(() => {
     return generateDieline(selectedTemplateId, dimensions);
   }, [selectedTemplateId, dimensions]);
+
+  useEffect(() => {
+    if (!isStarterPristine) return;
+    setGraphics(buildStarterDesign(designId, dieline));
+  }, [dieline, designId, isStarterPristine]);
 
   return (
     <div className="app-container">
@@ -211,7 +261,9 @@ export const App: React.FC = () => {
           activePanelId={activePanelId}
           graphics={graphics}
           onSelectTemplate={handleSelectTemplate}
-          onChangeDimensions={setDimensions}
+          designId={designId}
+          onSelectDesign={handleSelectDesign}
+          onChangeDimensions={handleChangeDimensions}
           onResetDimensions={handleResetDimensions}
           onSelectPanel={handleSelectPanel}
           onAddGraphic={handleAddGraphic}
@@ -226,7 +278,7 @@ export const App: React.FC = () => {
           onSelectPanel={setActivePanelId}
           focusedPanelId={focusedPanelId}
           graphics={graphics}
-          onGraphicChange={setGraphics}
+          onGraphicChange={handleCanvasGraphicChange}
           onAddGraphic={handleAddGraphic}
           themeId={themeId}
         />

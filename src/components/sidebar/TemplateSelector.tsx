@@ -1,15 +1,86 @@
 import React, { useState } from 'react';
-import { Package, Utensils, ShoppingBag, Cake, ScrollText } from 'lucide-react';
+import { Package, Utensils, ShoppingBag, Cake, ScrollText, Square } from 'lucide-react';
 import { TEMPLATES, TemplateCategory } from '../../core/dieline';
+import { STARTER_STYLES, BLANK_DESIGN_ID, getStarterThumbnail } from '../../core/designs/starterDesigns';
 
 interface TemplateSelectorProps {
   selectedTemplateId: string;
   onSelectTemplate: (templateId: string) => void;
+  designId: string;
+  onSelectDesign: (designId: string) => void;
 }
+
+const StarterDesignPicker: React.FC<{
+  templateId: string;
+  designId: string;
+  onSelectDesign: (designId: string) => void;
+}> = ({ templateId, designId, onSelectDesign }) => (
+  <div className="sidebar-section">
+    <div className="sidebar-section-title">
+      <span>Starter Brand Designs</span>
+      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{STARTER_STYLES.length} Styles</span>
+    </div>
+
+    <div className="starter-design-grid">
+      {STARTER_STYLES.map((style) => {
+        const thumb = getStarterThumbnail(templateId, style.id);
+        const isActive = style.id === designId;
+        return (
+          <button
+            key={style.id}
+            type="button"
+            className={`starter-design-card ${isActive ? 'active' : ''}`}
+            onClick={() => onSelectDesign(style.id)}
+            aria-pressed={isActive}
+            data-design-id={style.id}
+            title={style.description}
+          >
+            <span className="starter-design-thumb" style={{ backgroundColor: style.swatch[0] }}>
+              {thumb && <img src={thumb.src} alt="" draggable={false} />}
+              <span
+                className="starter-design-wordmark"
+                style={{
+                  color: style.badgeInk,
+                  backgroundColor: style.badgeFill,
+                  border: `1px solid ${style.badgeInk}`,
+                  fontFamily: style.displayFont,
+                }}
+              >
+                {style.uppercase ? style.brand.toUpperCase() : style.brand}
+              </span>
+            </span>
+            <span className="starter-design-name">{style.name}</span>
+            <span className="starter-design-swatches">
+              {style.swatch.map((c) => (
+                <span key={c} style={{ backgroundColor: c }} />
+              ))}
+            </span>
+          </button>
+        );
+      })}
+
+      <button
+        type="button"
+        className={`starter-design-card ${designId === BLANK_DESIGN_ID ? 'active' : ''}`}
+        onClick={() => onSelectDesign(BLANK_DESIGN_ID)}
+        aria-pressed={designId === BLANK_DESIGN_ID}
+        data-design-id={BLANK_DESIGN_ID}
+      >
+        <span className="starter-design-thumb starter-design-thumb-blank">
+          <Square size={28} />
+        </span>
+        <span className="starter-design-name">Blank Net</span>
+        <span className="starter-design-swatches" />
+      </button>
+    </div>
+  </div>
+);
 
 export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   selectedTemplateId,
   onSelectTemplate,
+  designId,
+  onSelectDesign,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
@@ -43,6 +114,8 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   ];
 
   return (
+    <>
+    <StarterDesignPicker templateId={selectedTemplateId} designId={designId} onSelectDesign={onSelectDesign} />
     <div className="sidebar-section">
       <div className="sidebar-section-title">
         <span>Packaging Model Library</span>
@@ -84,6 +157,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {filteredTemplates.map((tmpl) => {
           const isActive = tmpl.id === selectedTemplateId;
+          const thumb = getStarterThumbnail(tmpl.id, designId);
           return (
             <div
               key={tmpl.id}
@@ -91,7 +165,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               onClick={() => onSelectTemplate(tmpl.id)}
             >
               <div className="template-icon-wrapper">
-                {getIcon(tmpl.category)}
+                {thumb ? <img src={thumb.src} alt="" className="template-thumb" draggable={false} /> : getIcon(tmpl.category)}
               </div>
               <div className="template-info">
                 <h4>{tmpl.name}</h4>
@@ -102,5 +176,6 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         })}
       </div>
     </div>
+    </>
   );
 };

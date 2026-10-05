@@ -10,6 +10,7 @@ import {
   ChevronUp,
   ChevronDown,
   Barcode as BarcodeIcon,
+  RefreshCw,
 } from 'lucide-react';
 import { PanelFace } from '../../core/dieline/types';
 import { GraphicItem } from '../../core/graphics/types';
@@ -44,6 +45,8 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
 }) => {
   const [subTab, setSubTab] = useState<BrandingSubTab>('images');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
+  const replaceTargetRef = useRef<GraphicItem | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [clipOption, setClipOption] = useState<boolean>(true);
   const [sideFilter, setSideFilter] = useState<'all' | 'active'>('all');
@@ -71,6 +74,41 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
       };
 
       onAddGraphic(newItem);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleReplaceFile = (file: File) => {
+    const target = replaceTargetRef.current;
+    replaceTargetRef.current = null;
+    if (!target || !onUpdateGraphic || !file.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const src = e.target?.result as string;
+      if (!src) return;
+      const img = new Image();
+      img.onload = () => {
+        const nw = img.naturalWidth || 100;
+        const nh = img.naturalHeight || 100;
+        const oldW = (target.naturalWidth || nw) * (target.scaleX ?? 1);
+        const oldH = (target.naturalHeight || nh) * (target.scaleY ?? 1);
+        const panel = panels.find(p => p.id === target.panelId);
+        const coversPanel = !!panel && oldW >= panel.bounds.width * 0.98 && oldH >= panel.bounds.height * 0.98;
+        const scale = coversPanel ? Math.max(oldW / nw, oldH / nh) : Math.min(oldW / nw, oldH / nh);
+        onUpdateGraphic({
+          ...target,
+          src,
+          fileName: file.name,
+          naturalWidth: nw,
+          naturalHeight: nh,
+          scaleX: scale,
+          scaleY: scale,
+          width: nw * scale,
+          height: nh * scale,
+        });
+      };
+      img.src = src;
     };
     reader.readAsDataURL(file);
   };
@@ -143,6 +181,18 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
 
   return (
     <div className="sidebar-section">
+      <input
+        ref={replaceInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          if (e.target.files && e.target.files[0]) {
+            handleReplaceFile(e.target.files[0]);
+          }
+          e.target.value = '';
+        }}
+      />
       <div className="sidebar-section-title">
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <ImageIcon size={13} />
@@ -504,6 +554,26 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+                    {item.type === 'image' && onUpdateGraphic && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          replaceTargetRef.current = item;
+                          replaceInputRef.current?.click();
+                        }}
+                        title="Replace Image"
+                        aria-label={`Replace ${item.fileName || 'image'}`}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--accent-secondary)',
+                          cursor: 'pointer',
+                          padding: '2px',
+                        }}
+                      >
+                        <RefreshCw size={12} />
+                      </button>
+                    )}
                     {/* Layer Reorder */}
                     {onReorderGraphic && (
                       <>
