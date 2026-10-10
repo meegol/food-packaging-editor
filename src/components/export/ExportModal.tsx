@@ -20,6 +20,7 @@ import {
   SvgExportOptions,
   RasterExportOptions,
   PdfScaleMode,
+  toMmSpace,
 } from '../../core/export/exportTypes';
 import { downloadDielinePdf } from '../../core/export/dielinePdfExport';
 import { downloadDielineSvg } from '../../core/export/dielineSvgExport';
@@ -89,7 +90,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
   // Calculate real-time spec sheet metrics
   const specSheet = useMemo(
-    () => calculatePackagingSpecSheet(dieline, graphics),
+    () => calculatePackagingSpecSheet(toMmSpace(dieline, graphics).dieline, graphics),
     [dieline, graphics]
   );
 
@@ -99,7 +100,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     try {
       setIsExporting(true);
       setExportMessage('Generating 1:1 Vector CAD PDF and Spec Sheet...');
-      await downloadDielinePdf(dieline, graphics, pdfOptions);
+      const mm = toMmSpace(dieline, graphics);
+      await downloadDielinePdf(mm.dieline, mm.graphics, pdfOptions);
       setExportMessage('PDF successfully generated!');
       setTimeout(() => setExportMessage(null), 2500);
     } catch (err) {
@@ -114,7 +116,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     try {
       setIsExporting(true);
       setExportMessage('Generating layer-separated CAD SVG...');
-      downloadDielineSvg(dieline, graphics, svgOptions);
+      const mm = toMmSpace(dieline, graphics);
+      downloadDielineSvg(mm.dieline, mm.graphics, svgOptions);
       setExportMessage('SVG successfully downloaded!');
       setTimeout(() => setExportMessage(null), 2500);
     } catch (err) {
@@ -129,7 +132,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     try {
       setIsExporting(true);
       setExportMessage('Generating AutoCAD R12 DXF vector CAD dieline...');
-      downloadDielineDxf(dieline, dxfOptions);
+      downloadDielineDxf(toMmSpace(dieline, graphics).dieline, dxfOptions);
       setExportMessage('DXF file successfully downloaded!');
       setTimeout(() => setExportMessage(null), 2500);
     } catch (err) {
@@ -145,12 +148,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     try {
       setIsExporting(true);
       setExportMessage(`Rendering ${rasterOptions.dpi} DPI print proof...`);
-      await downloadDielineRaster(dieline, graphics, rasterOptions);
+      const mm = toMmSpace(dieline, graphics);
+      await downloadDielineRaster(mm.dieline, mm.graphics, rasterOptions);
       setExportMessage('Raster proof successfully rendered!');
       setTimeout(() => setExportMessage(null), 2500);
     } catch (err) {
       console.error('Raster export failed:', err);
-      setExportMessage('Export failed.');
+      setExportMessage(`Export failed. ${err instanceof Error ? err.message : ''}`);
     } finally {
       setIsExporting(false);
     }

@@ -64,21 +64,21 @@ export function generateDielineSvg(
       const angle = g.angle || 0;
       const clipAttr = g.clipToPanel ? `clip-path="url(#svg-clip-${g.panelId})"` : '';
 
-      parts.push(`    <g ${clipAttr} transform="translate(${gx.toFixed(2)}, ${gy.toFixed(2)}) rotate(${angle})">`);
+      // Clip on an outer untransformed group so the panel polygon stays in dieline space
+      parts.push(`    <g ${clipAttr}><g transform="translate(${gx.toFixed(2)}, ${gy.toFixed(2)}) rotate(${angle})">`);
       if (g.type === 'text' && g.text) {
         const fill = g.fill || '#0f172a';
-        const fontSizeMm = ((g.fontSize || 16) * 0.264583).toFixed(2);
-        const textAnchor = g.textAlign === 'center' ? 'middle' : g.textAlign === 'right' ? 'end' : 'start';
+        const fontSizeMm = (g.fontSize ?? 6).toFixed(2);
+        const textAnchor = g.textAlign === 'left' ? 'start' : g.textAlign === 'right' ? 'end' : 'middle'; // canvas default is center
         parts.push(
           `      <text x="0" y="0" font-family="${g.fontFamily || 'Inter, sans-serif'}" font-size="${fontSizeMm}" font-weight="${g.fontWeight || 'normal'}" font-style="${g.fontStyle || 'normal'}" fill="${fill}" text-anchor="${textAnchor}" dominant-baseline="middle">${escapeXml(g.text)}</text>`
         );
       } else if (g.src) {
         const nw = g.naturalWidth || 100;
         const nh = g.naturalHeight || 100;
-        const sX = g.scaleX !== undefined ? g.scaleX : 0.5;
-        const sY = g.scaleY !== undefined ? g.scaleY : 0.5;
-        const wMm = ((nw * sX) * 0.264583).toFixed(2);
-        const hMm = ((nh * sY) * 0.264583).toFixed(2);
+        // graphics arrive in mm space (toMmSpace): naturalWidth * scaleX = mm
+        const wMm = (nw * (g.scaleX ?? 1)).toFixed(2);
+        const hMm = (nh * (g.scaleY ?? 1)).toFixed(2);
         const xOffset = (-parseFloat(wMm) / 2).toFixed(2);
         const yOffset = (-parseFloat(hMm) / 2).toFixed(2);
 
@@ -86,7 +86,7 @@ export function generateDielineSvg(
           `      <image href="${g.src}" x="${xOffset}" y="${yOffset}" width="${wMm}" height="${hMm}" preserveAspectRatio="xMidYMid meet" />`
         );
       }
-      parts.push(`    </g>`);
+      parts.push(`    </g></g>`);
     });
     parts.push(`  </g>`);
   }

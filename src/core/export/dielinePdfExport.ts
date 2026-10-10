@@ -21,6 +21,21 @@ function drawRegistrationMark(doc: jsPDF, cx: number, cy: number, radius = 3) {
 }
 
 /**
+ * Rasterize any browser-renderable image (e.g. SVG data URL) to a PNG data URL at 300 DPI
+ */
+async function rasterizeToPng(src: string, wMm: number, hMm: number): Promise<string> {
+  const img = new Image();
+  img.src = src;
+  await img.decode();
+  const pxPerMm = 300 / 25.4;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(wMm * pxPerMm));
+  canvas.height = Math.max(1, Math.round(hMm * pxPerMm));
+  canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/png');
+}
+
+/**
  * Generate 1:1 scale or formatted CAD Vector PDF dieline
  */
 export async function generateDielinePdf(
@@ -113,24 +128,31 @@ export async function generateDielinePdf(
         const isItalic = g.fontStyle === 'italic';
         const pdfStyle = isBold && isItalic ? 'bolditalic' : isBold ? 'bold' : isItalic ? 'italic' : 'normal';
         doc.setFont('helvetica', pdfStyle);
-        const fontSizePt = (g.fontSize || 16) * scale * 0.75;
+        const fontSizePt = (g.fontSize ?? 6) * scale * (72 / 25.4); // mm -> pt
         doc.setFontSize(Math.max(fontSizePt, 4));
         doc.text(g.text, targetX, targetY, {
           align: (g.textAlign as 'center' | 'left' | 'right') || 'center',
-          angle: g.angle || 0,
+          angle: -(g.angle || 0), // Fabric rotates clockwise, jsPDF counter-clockwise
         });
       } else if (g.src) {
         try {
           const nw = g.naturalWidth || 100;
           const nh = g.naturalHeight || 100;
-          const imgScale = g.scaleX !== undefined ? g.scaleX : 0.5;
-          const imgW = (nw * imgScale * scale) / 3.78; // px to mm approx
-          const imgH = (nh * imgScale * scale) / 3.78;
+          // graphics arrive in mm space (toMmSpace): naturalWidth * scaleX = mm
+          const wMm = nw * (g.scaleX ?? 1);
+          const hMm = nh * (g.scaleY ?? 1);
+          const imgW = wMm * scale;
+          const imgH = hMm * scale;
+          const isJpeg = g.src.startsWith('data:image/jpeg');
+          // jsPDF only embeds PNG/JPEG; rasterize SVG icons, WebP, etc. at 300 DPI
+          const src = isJpeg || g.src.startsWith('data:image/png')
+            ? g.src
+            : await rasterizeToPng(g.src, wMm, hMm);
 
           // Place centered on target coordinate
           doc.addImage(
-            g.src,
-            'PNG',
+            src,
+            isJpeg ? 'JPEG' : 'PNG',
             targetX - imgW / 2,
             targetY - imgH / 2,
             imgW,
@@ -138,8 +160,8 @@ export async function generateDielinePdf(
             undefined,
             'FAST'
           );
-        } catch {
-          // Gracefully skip unrenderable data URLs
+        } catch (err) {
+          console.warn(`PDF export skipped unrenderable graphic ${g.id}:`, err);
         }
       }
     }

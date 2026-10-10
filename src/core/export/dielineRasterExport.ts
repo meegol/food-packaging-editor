@@ -74,10 +74,12 @@ export async function downloadDielineRaster(
   const mimeType = options.format === 'jpeg' ? 'image/jpeg' : 'image/png';
   const quality = options.format === 'jpeg' ? 0.95 : undefined;
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     canvas.toBlob(
       (imageBlob) => {
-        if (!imageBlob) return resolve();
+        if (!imageBlob) {
+          return reject(new Error(`Canvas ${canvasWidth}x${canvasHeight}px exceeds browser limits; try a lower DPI.`));
+        }
         const downloadUrl = URL.createObjectURL(imageBlob);
         const dateStr = new Date().toISOString().split('T')[0];
         const ext = options.format === 'jpeg' ? 'jpg' : 'png';
