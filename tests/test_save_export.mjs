@@ -9,6 +9,7 @@ import path from 'path';
 
 const URL_ = process.env.TEST_URL || 'http://localhost:4173';
 const OUT = process.env.OUT_DIR || fs.mkdtempSync(path.join(os.tmpdir(), 'fpe-'));
+fs.mkdirSync(OUT, { recursive: true });
 const PX_PER_MM = 2.5;
 const results = [];
 const check = (name, ok, info = '') => {
