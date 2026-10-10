@@ -77,9 +77,14 @@ export function toMmSpace(
   const k = 1 / CANVAS_UNITS_PER_MM;
   const pt = (p: { x: number; y: number }) => ({ x: p.x * k, y: p.y * k });
   const b = dieline.totalBounds;
+  // Exports label everything in mm; convert inch-mode dimensions to match
+  const u = dieline.dimensions.unit === 'in' ? 25.4 : 1;
+  const r = (n: number) => Math.round(n * u * 100) / 100;
+  const d = dieline.dimensions;
   return {
     dieline: {
       ...dieline,
+      dimensions: { length: r(d.length), width: r(d.width), depth: r(d.depth), thickness: r(d.thickness), unit: 'mm' },
       lines: dieline.lines.map((l) => ({ ...l, x1: l.x1 * k, y1: l.y1 * k, x2: l.x2 * k, y2: l.y2 * k })),
       panels: dieline.panels.map((p) => ({
         ...p,

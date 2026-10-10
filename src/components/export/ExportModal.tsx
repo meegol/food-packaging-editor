@@ -882,7 +882,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 <div className="bom-row">
                   <span className="bom-key">Dimensions</span>
                   <span className="bom-val">
-                    L {dieline.dimensions.length}mm × W {dieline.dimensions.width}mm × D {dieline.dimensions.depth}mm
+                    L {dieline.dimensions.length}{dieline.dimensions.unit} × W {dieline.dimensions.width}{dieline.dimensions.unit} × D {dieline.dimensions.depth}{dieline.dimensions.unit}
                   </span>
                 </div>
                 <div className="bom-row">
