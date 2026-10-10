@@ -140,11 +140,10 @@ export function generateSachetStickPackDieline(dimensions: PackagingDimensions):
   // Right cut (outer fin seal overlap tab)
   addLine(x4, startY, x4, startY + l, 'cut');
 
-  // Tear Notch cutouts on top seal
+  // Tear notches on top seal, straddling each side fold so both layers are notched once formed
   const notchY = startY + sealW * 0.5;
-  addLine(x0, notchY, x0 + tearNotchW, notchY, 'cut');
-  addLine(x1 - tearNotchW, notchY, x1, notchY, 'cut');
-  addLine(x2, notchY, x2 + tearNotchW, notchY, 'cut');
+  addLine(x1 - tearNotchW, notchY, x1 + tearNotchW, notchY, 'cut');
+  addLine(x2 - tearNotchW, notchY, x2 + tearNotchW, notchY, 'cut');
 
   const allPoints: Point[] = [];
   lines.forEach(l => {

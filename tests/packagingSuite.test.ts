@@ -46,6 +46,36 @@ for (const tmpl of TEMPLATES) {
   }
 }
 
+// Die-line integrity: closed cut outlines, no dangling creases, no cut/crease overlap.
+// Only short tear notches/slits (<= 8mm) may have a free end.
+type Seg = { x1: number; y1: number; x2: number; y2: number };
+const onSeg = (x: number, y: number, s: Seg) => {
+  const dx = s.x2 - s.x1, dy = s.y2 - s.y1, L2 = dx * dx + dy * dy || 1;
+  const t = ((x - s.x1) * dx + (y - s.y1) * dy) / L2;
+  return t >= -1e-3 && t <= 1 + 1e-3 && Math.hypot(s.x1 + t * dx - x, s.y1 + t * dy - y) < 0.05;
+};
+const touches = (x: number, y: number, self: Seg, pool: Seg[]) => pool.some((o) => o !== self && onSeg(x, y, o));
+for (const tmpl of TEMPLATES) {
+  for (const [label, dims] of [
+    ['default', tmpl.defaultDimensions],
+    ['min', { ...tmpl.defaultDimensions, ...tmpl.minDimensions }],
+    ['max', { ...tmpl.defaultDimensions, ...tmpl.maxDimensions }],
+  ] as const) {
+    const lines = generateDieline(tmpl.id, dims).lines;
+    const cut = lines.filter((l) => l.type === 'cut');
+    const crease = lines.filter((l) => l.type === 'crease');
+    const notchMax = 8 * 2.5 + 0.01;
+    const openCut = cut.filter((s) =>
+      !(touches(s.x1, s.y1, s, cut) && touches(s.x2, s.y2, s, cut)) && Math.hypot(s.x2 - s.x1, s.y2 - s.y1) > notchMax
+    );
+    assert(openCut.length === 0, `${tmpl.name} [${label}]: Cut outline closed${openCut.length ? ` (open: ${openCut.map((s) => `${s.x1},${s.y1}->${s.x2},${s.y2}`).join(' ')})` : ''}`);
+    const dangling = crease.filter((s) => [[s.x1, s.y1], [s.x2, s.y2]].some(([x, y]) => !touches(x, y, s, lines)));
+    assert(dangling.length === 0, `${tmpl.name} [${label}]: No dangling crease lines${dangling.length ? ` (${dangling.length})` : ''}`);
+    const overlap = crease.filter((c) => cut.some((s) => onSeg(c.x1, c.y1, s) && onSeg(c.x2, c.y2, s)));
+    assert(overlap.length === 0, `${tmpl.name} [${label}]: No crease drawn over a cut`);
+  }
+}
+
 // -----------------------------------------------------------
 // TEST SUITE 2: 2D Assembled Models for All 12 Templates
 // -----------------------------------------------------------

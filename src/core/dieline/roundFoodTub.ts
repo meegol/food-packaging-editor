@@ -136,9 +136,9 @@ export function generateRoundFoodTubDieline(dimensions: PackagingDimensions): Di
     addLine(outerArcPts[i].x, outerArcPts[i].y, outerArcPts[i + 1].x, outerArcPts[i + 1].y, 'cut');
   }
 
-  // Bottom inner arc (crease to curl tab)
+  // Bottom inner arc (cut; the base disc is a separate piece)
   for (let i = 0; i < innerArcPts.length - 1; i++) {
-    addLine(innerArcPts[i].x, innerArcPts[i].y, innerArcPts[i + 1].x, innerArcPts[i + 1].y, 'crease');
+    addLine(innerArcPts[i].x, innerArcPts[i].y, innerArcPts[i + 1].x, innerArcPts[i + 1].y, 'cut');
   }
 
   // Left straight radial edge (cut)

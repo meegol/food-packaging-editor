@@ -142,10 +142,10 @@ export function generateDessertSleeveBoxDieline(dimensions: PackagingDimensions)
   const winPadY = l * 0.18;
   const winW = w - 2 * winPadX;
   const winH = l - 2 * winPadY;
-  addLine(slX1 + winPadX, startY + winPadY, slX1 + winPadX + winW, startY + winPadY, 'crease');
-  addLine(slX1 + winPadX + winW, startY + winPadY, slX1 + winPadX + winW, startY + winPadY + winH, 'crease');
-  addLine(slX1 + winPadX + winW, startY + winPadY + winH, slX1 + winPadX, startY + winPadY + winH, 'crease');
-  addLine(slX1 + winPadX, startY + winPadY + winH, slX1 + winPadX, startY + winPadY, 'crease');
+  addLine(slX1 + winPadX, startY + winPadY, slX1 + winPadX + winW, startY + winPadY, 'cut');
+  addLine(slX1 + winPadX + winW, startY + winPadY, slX1 + winPadX + winW, startY + winPadY + winH, 'cut');
+  addLine(slX1 + winPadX + winW, startY + winPadY + winH, slX1 + winPadX, startY + winPadY + winH, 'cut');
+  addLine(slX1 + winPadX, startY + winPadY + winH, slX1 + winPadX, startY + winPadY, 'cut');
 
   // ==========================================
   // PART 2: INNER TRAY NET
@@ -233,11 +233,11 @@ export function generateDessertSleeveBoxDieline(dimensions: PackagingDimensions)
   addLine(trayBaseX, trayBaseY, trayBaseX, trayBaseY + l, 'crease');
   addLine(trayBaseX + w, trayBaseY, trayBaseX + w, trayBaseY + l, 'crease');
 
-  // Corner flap crease lines
-  addLine(trayBaseX, trayBaseY, trayBaseX - d, trayBaseY, 'crease');
-  addLine(trayBaseX, trayBaseY + l, trayBaseX - d, trayBaseY + l, 'crease');
-  addLine(trayBaseX + w, trayBaseY, trayBaseX + w + d, trayBaseY, 'crease');
-  addLine(trayBaseX + w, trayBaseY + l, trayBaseX + w + d, trayBaseY + l, 'crease');
+  // Side wall end edges (free edges of the cross-shaped net)
+  addLine(trayBaseX, trayBaseY, trayBaseX - d, trayBaseY, 'cut');
+  addLine(trayBaseX, trayBaseY + l, trayBaseX - d, trayBaseY + l, 'cut');
+  addLine(trayBaseX + w, trayBaseY, trayBaseX + w + d, trayBaseY, 'cut');
+  addLine(trayBaseX + w, trayBaseY + l, trayBaseX + w + d, trayBaseY + l, 'cut');
 
   // --- Tray Cuts ---
   // Outer perimeter cuts for the cross-shaped tray net
@@ -248,7 +248,7 @@ export function generateDessertSleeveBoxDieline(dimensions: PackagingDimensions)
   addLine(trayBaseX + w, trayBaseY + l + d, trayBaseX, trayBaseY + l + d, 'cut');
   addLine(trayBaseX, trayBaseY + l + d, trayBaseX, trayBaseY + l, 'cut');
   addLine(trayBaseX - d, trayBaseY + l, trayBaseX - d, trayBaseY, 'cut');
-  addLine(trayBaseX - d, trayBaseY, trayBaseX, trayBaseY, 'cut');
+  addLine(trayBaseX, trayBaseY, trayBaseX, trayBaseY - d, 'cut');
 
   const allPoints: Point[] = [];
   lines.forEach(l => {
