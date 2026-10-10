@@ -112,12 +112,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     }
   };
 
-  const handleDownloadSvg = () => {
+  const handleDownloadSvg = async () => {
     try {
       setIsExporting(true);
       setExportMessage('Generating layer-separated CAD SVG...');
       const mm = toMmSpace(dieline, graphics);
-      downloadDielineSvg(mm.dieline, mm.graphics, svgOptions);
+      await downloadDielineSvg(mm.dieline, mm.graphics, svgOptions);
       setExportMessage('SVG successfully downloaded!');
       setTimeout(() => setExportMessage(null), 2500);
     } catch (err) {

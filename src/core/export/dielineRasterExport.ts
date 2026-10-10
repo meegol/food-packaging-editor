@@ -2,6 +2,7 @@ import { DielineResult } from '../dieline/types';
 import { GraphicItem } from '../graphics/types';
 import { RasterExportOptions } from './exportTypes';
 import { generateDielineSvg } from './dielineSvgExport';
+import { svgFontFaceCss } from './exportText';
 
 /**
  * Render dieline to a high-DPI raster image (150, 300, or 600 DPI) and trigger download
@@ -32,6 +33,8 @@ export async function downloadDielineRaster(
     includeRegistrationMarks: true,
     includeFaceLabels: true,
     marginMm,
+    // SVG-as-image cannot reach page webfonts; embed them or text falls back
+    fontFaceCss: options.includeArtwork ? await svgFontFaceCss(graphics) : '',
   });
 
   const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
@@ -93,7 +96,7 @@ export async function downloadDielineRaster(
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(downloadUrl);
+        setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
         resolve();
       },
       mimeType,

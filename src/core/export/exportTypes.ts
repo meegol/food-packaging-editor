@@ -22,6 +22,8 @@ export interface SvgExportOptions {
   includeRegistrationMarks: boolean;
   includeFaceLabels: boolean;
   marginMm: number;
+  /** @font-face CSS (embedded woff2) so text renders in brand fonts anywhere */
+  fontFaceCss?: string;
 }
 
 export interface RasterExportOptions {
@@ -90,14 +92,25 @@ export function toMmSpace(
         width: b.width * k, height: b.height * k,
       },
     },
-    graphics: graphics.map((g) => ({
-      ...g,
-      x: g.x === undefined ? undefined : g.x * k,
-      y: g.y === undefined ? undefined : g.y * k,
-      // Fabric Textbox default is 15 canvas units
-      fontSize: (g.fontSize ?? 15) * (g.scaleY ?? 1) * k,
-      scaleX: (g.scaleX ?? 1) * k,
-      scaleY: (g.scaleY ?? 1) * k,
-    })),
+    graphics: graphics.map((g) => {
+      const panelW = dieline.panels.find((p) => p.id === g.panelId)?.bounds.width ?? 300;
+      return {
+        ...g,
+        x: g.x === undefined ? undefined : g.x * k,
+        y: g.y === undefined ? undefined : g.y * k,
+        // Text defaults mirror the Fabric Textbox in FabricDielineCanvas
+        fontSize: (g.fontSize ?? 15) * (g.scaleY ?? 1) * k,
+        fontFamily: g.fontFamily || 'Inter, sans-serif',
+        fontWeight: g.fontWeight || '600',
+        fill: g.fill || '#1e293b',
+        textAlign: g.textAlign || 'center',
+        lineHeight: g.lineHeight || 1.25,
+        width: g.type === 'text'
+          ? (g.width ?? Math.max(Math.min(panelW * 0.85, 280), 80)) * (g.scaleX ?? 1) * k
+          : g.width,
+        scaleX: (g.scaleX ?? 1) * k,
+        scaleY: (g.scaleY ?? 1) * k,
+      };
+    }),
   };
 }

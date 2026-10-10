@@ -3,6 +3,7 @@ import { DielineResult } from '../dieline/types';
 import { GraphicItem } from '../graphics/types';
 import { PdfExportOptions } from './exportTypes';
 import { calculatePackagingSpecSheet } from './specSheetCalculator';
+import { fetchFontsFor, layoutText } from './exportText';
 
 /**
  * Draw a standard packaging registration crosshair target
@@ -18,6 +19,37 @@ function drawRegistrationMark(doc: jsPDF, cx: number, cy: number, radius = 3) {
   // Cross lines
   doc.line(cx - radius - 1.5, cy, cx + radius + 1.5, cy);
   doc.line(cx, cy - radius - 1.5, cx, cy + radius + 1.5);
+}
+
+/**
+ * Embed the brand TTF for every text graphic; fall back to the closest PDF standard font.
+ */
+async function registerPdfFonts(
+  doc: jsPDF,
+  graphics: GraphicItem[]
+): Promise<Map<GraphicItem, { name: string; style: string }>> {
+  const files = await fetchFontsFor(graphics, 'ttf');
+  const out = new Map<GraphicItem, { name: string; style: string }>();
+  files.forEach((file, g) => {
+    if (file) {
+      const style = `w${file.weight}${file.italic ? 'i' : ''}`;
+      const vfsName = `${file.family}-${style}.ttf`;
+      if (!doc.existsFileInVFS(vfsName)) {
+        doc.addFileToVFS(vfsName, file.base64);
+        doc.addFont(vfsName, file.family, style);
+      }
+      out.set(g, { name: file.family, style });
+      return;
+    }
+    const css = (g.fontFamily || '').toLowerCase();
+    const bold = Number(g.fontWeight) >= 600 || g.fontWeight === 'bold';
+    const italic = g.fontStyle === 'italic';
+    out.set(g, {
+      name: css.includes('mono') ? 'courier' : css.includes('serif') && !css.includes('sans') ? 'times' : 'helvetica',
+      style: bold && italic ? 'bolditalic' : bold ? 'bold' : italic ? 'italic' : 'normal',
+    });
+  });
+  return out;
 }
 
 /**
@@ -114,6 +146,8 @@ export async function generateDielinePdf(
 
   // 3. Render Artwork Layer (Raster & Vector Graphics)
   if (options.includeArtwork && graphics.length > 0) {
+    const fonts = await registerPdfFonts(doc, graphics);
+
     for (const g of graphics) {
       const panel = panels.find((p) => p.id === g.panelId);
       const gx = g.x ?? (panel ? panel.center.x : totalBounds.width / 2);
@@ -121,21 +155,39 @@ export async function generateDielinePdf(
 
       const targetX = mapX(gx);
       const targetY = mapY(gy);
+      const angle = g.angle || 0;
+      const rad = (angle * Math.PI) / 180;
+      // Local (unrotated) page offset -> page point, rotated clockwise about the centre like Fabric
+      const at = (ox: number, oy: number): [number, number] => [
+        targetX + ox * Math.cos(rad) - oy * Math.sin(rad),
+        targetY + ox * Math.sin(rad) + oy * Math.cos(rad),
+      ];
 
-      if (g.type === 'text' && g.text) {
-        doc.setTextColor(g.fill || '#1e293b');
-        const isBold = g.fontWeight === 'bold' || g.fontWeight === '700' || g.fontWeight === 700;
-        const isItalic = g.fontStyle === 'italic';
-        const pdfStyle = isBold && isItalic ? 'bolditalic' : isBold ? 'bold' : isItalic ? 'italic' : 'normal';
-        doc.setFont('helvetica', pdfStyle);
-        const fontSizePt = (g.fontSize ?? 6) * scale * (72 / 25.4); // mm -> pt
-        doc.setFontSize(Math.max(fontSizePt, 4));
-        doc.text(g.text, targetX, targetY, {
-          align: (g.textAlign as 'center' | 'left' | 'right') || 'center',
-          angle: -(g.angle || 0), // Fabric rotates clockwise, jsPDF counter-clockwise
-        });
-      } else if (g.src) {
-        try {
+      doc.saveGraphicsState();
+      try {
+        if (g.clipToPanel && panel) {
+          panel.polygon.forEach((pt, i) =>
+            i === 0 ? doc.moveTo(mapX(pt.x), mapY(pt.y)) : doc.lineTo(mapX(pt.x), mapY(pt.y))
+          );
+          doc.close();
+          doc.clip();
+          doc.discardPath();
+        }
+
+        if (g.type === 'text' && g.text) {
+          const font = fonts.get(g)!;
+          doc.setFont(font.name, font.style);
+          doc.setTextColor(g.fill || '#1e293b');
+          doc.setFontSize((g.fontSize ?? 6) * scale * (72 / 25.4)); // mm -> pt
+          // Same wrapping/alignment/baselines as the canvas Textbox
+          const { lines: textLines, anchor } = layoutText(g);
+          for (const l of textLines) {
+            const w = doc.getTextWidth(l.text);
+            const startX = l.dx * scale - (anchor === 'middle' ? w / 2 : anchor === 'end' ? w : 0);
+            const [px, py] = at(startX, l.dy * scale);
+            doc.text(l.text, px, py, { angle: -angle }); // jsPDF rotates counter-clockwise
+          }
+        } else if (g.src) {
           const nw = g.naturalWidth || 100;
           const nh = g.naturalHeight || 100;
           // graphics arrive in mm space (toMmSpace): naturalWidth * scaleX = mm
@@ -149,20 +201,14 @@ export async function generateDielinePdf(
             ? g.src
             : await rasterizeToPng(g.src, wMm, hMm);
 
-          // Place centered on target coordinate
-          doc.addImage(
-            src,
-            isJpeg ? 'JPEG' : 'PNG',
-            targetX - imgW / 2,
-            targetY - imgH / 2,
-            imgW,
-            imgH,
-            undefined,
-            'FAST'
-          );
-        } catch (err) {
-          console.warn(`PDF export skipped unrenderable graphic ${g.id}:`, err);
+          // jsPDF rotates images about their bottom-left corner: place that corner so the centre stays put
+          const [blx, bly] = at(-imgW / 2, imgH / 2);
+          doc.addImage(src, isJpeg ? 'JPEG' : 'PNG', blx, bly - imgH, imgW, imgH, undefined, 'FAST', -angle);
         }
+      } catch (err) {
+        console.warn(`PDF export skipped unrenderable graphic ${g.id}:`, err);
+      } finally {
+        doc.restoreGraphicsState();
       }
     }
   }

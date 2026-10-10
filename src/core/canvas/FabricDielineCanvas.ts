@@ -251,11 +251,18 @@ export class FabricDielineCanvas {
           const initialTop = item.y ?? targetPanel.center.y;
           const panelWidth = targetPanel.bounds.width;
           const maxW = Math.max(Math.min(panelWidth * 0.85, 280), 80);
+          // Textbox width drives line wrapping; persist it so exports wrap identically
+          item.width = item.width ?? maxW;
+
+          // Measure with the real webfont, not a fallback (Fabric caches line widths)
+          await document.fonts
+            .load(`${item.fontStyle || 'normal'} ${item.fontWeight || '600'} 16px ${item.fontFamily || 'Inter, sans-serif'}`)
+            .catch(() => undefined);
 
           const textObj = new Textbox(item.text || 'Food Packaging Label', {
             left: initialLeft,
             top: initialTop,
-            width: maxW,
+            width: item.width,
             fontSize: item.fontSize || 15,
             fontFamily: item.fontFamily || 'Inter, sans-serif',
             fontWeight: (item.fontWeight || '600') as string,
@@ -298,6 +305,7 @@ export class FabricDielineCanvas {
             item.scaleY = textObj.scaleY;
             item.angle = textObj.angle;
             item.text = textObj.text;
+            item.width = textObj.width;
             if (this.onGraphicChangeCallback) {
               this.onGraphicChangeCallback([...this.graphicItems]);
             }

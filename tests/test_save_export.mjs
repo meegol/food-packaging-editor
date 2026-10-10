@@ -44,7 +44,7 @@ const fixture = {
   dimensions: { length: 120, width: 120, depth: 70, thickness: 1.2, unit: 'mm' },
   theme: 'github-dark',
   graphics: [
-    { id: 't1', panelId: 'base-bottom', type: 'text', text: 'Hello & <Burger>', fontSize: 25, fill: '#ff0000', clipToPanel: true, x: 496.25, y: 671.25 },
+    { id: 't1', panelId: 'base-bottom', type: 'text', text: 'Hello & <Burger> brand text that wraps', fontFamily: '"Playfair Display", Georgia, serif', fontWeight: '700', fontSize: 25, fill: '#7c3aed', clipToPanel: true, x: 496.25, y: 671.25 },
     { id: 'i1', panelId: 'base-bottom', type: 'icon', src: iconSvg, clipToPanel: true, x: 400, y: 600, naturalWidth: 48, naturalHeight: 48, scaleX: 2, scaleY: 2 },
     { id: 'p1', panelId: 'base-bottom', type: 'image', src: pngDataUrl, clipToPanel: true, x: 550, y: 600, naturalWidth: 40, naturalHeight: 20, scaleX: 2.5, scaleY: 2.5 },
     { id: 'j1', panelId: 'base-bottom', type: 'image', src: `data:image/jpeg;base64,${jpgB64}`, clipToPanel: false, x: 496.25, y: 760, naturalWidth: 0, naturalHeight: 0 },
@@ -109,8 +109,12 @@ if (svgPath) {
   // artwork scale: icon 48*2 canvas units -> 96/2.5 = 38.4mm
   const imgs = [...s.matchAll(/<image[^>]*width="([\d.]+)"/g)].map((m) => parseFloat(m[1]) / userUnitsPerMm);
   check('svg: icon exported at canvas size (38.4mm)', imgs.some((w) => Math.abs(w - 38.4) < 0.5), imgs.map((w) => w.toFixed(1)).join(','));
-  const fs_ = parseFloat(s.match(/<text x="0"[^>]*font-size="([\d.]+)"/)[1]) / userUnitsPerMm;
+  const fs_ = parseFloat((s.match(/<text font-family[^>]*font-size="([\d.]+)"/) || [])[1]) / userUnitsPerMm;
   check('svg: text size matches canvas (10mm)', Math.abs(fs_ - 25 / PX_PER_MM) < 0.5, `${fs_.toFixed(2)}mm`);
+  check('svg: brand text colour kept', s.includes('fill="#7c3aed"'));
+  check('svg: brand font embedded (@font-face woff2)', /@font-face\{font-family:"Playfair Display";font-weight:700/.test(s));
+  const nSpan = (s.match(/<tspan/g) || []).length;
+  check('svg: long text wrapped like canvas', nSpan >= 2, `${nSpan} lines`);
   const parseErr = await page.evaluate((x) => {
     const d = new DOMParser().parseFromString(x, 'image/svg+xml');
     return d.querySelector('parsererror')?.textContent || null;
@@ -128,6 +132,8 @@ if (pdfPath) {
   check('pdf: 1:1 page width plausible (<600mm)', pageWmm < 600, `${pageWmm.toFixed(0)}mm`);
   const nImg = (b.match(/\/Subtype \/Image/g) || []).length;
   check('pdf: all 3 raster/svg artwork embedded', nImg >= 3, `${nImg} images`);
+  check('pdf: brand font embedded (TTF)', /\/FontFile2/.test(b) && /Playfair/i.test(b));
+  check('pdf: brand text colour kept (#7c3aed)', /0\.486 0\.227 0\.929 rg/.test(b));
 }
 
 // DXF
@@ -159,9 +165,15 @@ for (const dpi of [150, 300, 600]) {
         const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
         const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
         const g = c.getContext('2d'); g.drawImage(img, 0, 0);
-        return [...g.getImageData(px[0], px[1], 1, 1).data].slice(0, 3);
+        const d = g.getImageData(0, 0, c.width, c.height).data;
+        let purple = 0; // brand text #7c3aed
+        for (let i = 0; i < d.length; i += 4) {
+          if (Math.abs(d[i] - 124) < 25 && Math.abs(d[i + 1] - 58) < 25 && Math.abs(d[i + 2] - 237) < 25) purple++;
+        }
+        return [...g.getImageData(px[0], px[1], 1, 1).data].slice(0, 3).concat(purple);
       }, { b64: buf.toString('base64'), px });
-      check('raster: clipped icon rendered (green)', rgb[1] > 100 && rgb[0] < 60 && rgb[2] < 60, `rgb(${rgb})`);
+      check('raster: clipped icon rendered (green)', rgb[1] > 100 && rgb[0] < 60 && rgb[2] < 60, `rgb(${rgb.slice(0, 3)})`);
+      check('raster: brand text rendered in its colour', rgb[3] > 300, `${rgb[3]} purple px`);
     }
   }
   await page.waitForTimeout(300);
