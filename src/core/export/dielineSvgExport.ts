@@ -73,13 +73,13 @@ export function generateDielineSvg(
       if (g.type === 'text' && g.text) {
         // Same wrapping/alignment/baselines as the canvas Textbox
         const { lines: textLines, anchor } = layoutText(g);
+        // No whitespace between tspans: under xml:space="preserve" it would render as trailing spaces and shift centred lines
+        const tspans = textLines
+          .map((l) => `<tspan x="${l.dx.toFixed(2)}" y="${l.dy.toFixed(2)}">${escapeXml(l.text)}</tspan>`)
+          .join('');
         parts.push(
-          `      <text font-family="${escapeXml(g.fontFamily || 'Inter, sans-serif')}" font-size="${(g.fontSize ?? 6).toFixed(2)}" font-weight="${escapeXml(String(g.fontWeight || '600'))}" font-style="${g.fontStyle || 'normal'}" fill="${escapeXml(g.fill || '#1e293b')}" text-anchor="${anchor}" xml:space="preserve">`
+          `      <text font-family="${escapeXml(g.fontFamily || 'Inter, sans-serif')}" font-size="${(g.fontSize ?? 6).toFixed(2)}" font-weight="${escapeXml(String(g.fontWeight || '600'))}" font-style="${g.fontStyle || 'normal'}" fill="${escapeXml(g.fill || '#1e293b')}" text-anchor="${anchor}" xml:space="preserve">${tspans}</text>`
         );
-        textLines.forEach((l) => {
-          parts.push(`        <tspan x="${l.dx.toFixed(2)}" y="${l.dy.toFixed(2)}">${escapeXml(l.text)}</tspan>`);
-        });
-        parts.push(`      </text>`);
       } else if (g.src) {
         const nw = g.naturalWidth || 100;
         const nh = g.naturalHeight || 100;

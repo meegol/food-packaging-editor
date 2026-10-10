@@ -116,6 +116,7 @@ if (svgPath) {
   check('svg: brand font embedded (@font-face woff2)', /@font-face\{font-family:"Playfair Display";font-weight:700/.test(s));
   const nSpan = (s.match(/<tspan/g) || []).length;
   check('svg: long text wrapped like canvas', nSpan >= 2, `${nSpan} lines`);
+  check('svg: no whitespace between tspans (would offset centred text)', !/<\/tspan>\s+<tspan/.test(s));
   const parseErr = await page.evaluate((x) => {
     const d = new DOMParser().parseFromString(x, 'image/svg+xml');
     return d.querySelector('parsererror')?.textContent || null;
