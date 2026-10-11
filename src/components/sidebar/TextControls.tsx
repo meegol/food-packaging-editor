@@ -10,7 +10,7 @@ interface TextControlsProps {
   onSelectPanel: (panelId: string) => void;
 }
 
-const FONT_OPTIONS = [
+export const FONT_OPTIONS = [
   { label: 'Inter (Modern Sans)', value: 'Inter, sans-serif' },
   { label: 'Roboto (Clean)', value: 'Roboto, sans-serif' },
   { label: 'Playfair Display (Gourmet Serif)', value: '"Playfair Display", Georgia, serif' },

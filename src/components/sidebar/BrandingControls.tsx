@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { PanelFace } from '../../core/dieline/types';
 import { GraphicItem } from '../../core/graphics/types';
-import { TextControls } from './TextControls';
+import { TextControls, FONT_OPTIONS } from './TextControls';
 import { ComplianceIconControls } from './ComplianceIconControls';
 import { BarcodeControls } from './BarcodeControls';
 
@@ -643,6 +643,35 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                     </button>
                   </div>
                 </div>
+
+                {item.type === 'text' && onUpdateGraphic && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}>
+                    <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>Font:</span>
+                    <select
+                      value={item.fontFamily || 'Inter, sans-serif'}
+                      onChange={(e) => onUpdateGraphic({ ...item, fontFamily: e.target.value })}
+                      aria-label={`Font for ${item.text}`}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        backgroundColor: 'var(--bg-app)',
+                        color: 'var(--text-primary)',
+                        border: '1px solid var(--border-medium)',
+                        borderRadius: '2px',
+                        fontSize: '10px',
+                        padding: '1px 3px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {!FONT_OPTIONS.some(f => f.value === (item.fontFamily || 'Inter, sans-serif')) && (
+                        <option value={item.fontFamily}>{item.fontFamily}</option>
+                      )}
+                      {FONT_OPTIONS.map(f => (
+                        <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>{f.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* Per-Side Reassignment & Rotation Row */}
                 <div style={{
