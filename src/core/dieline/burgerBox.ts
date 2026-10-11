@@ -194,12 +194,6 @@ export function generateBurgerBoxDieline(dimensions: PackagingDimensions): Dieli
   addLine(lidRect.x + lidRect.width, lidY, lidRect.x + lidRect.width, lidY + lidRect.height, 'crease'); // Lid Right flap fold
   addLine(lidRect.x, lidY + lidRect.height, lidRect.x + lidRect.width, lidY + lidRect.height, 'crease'); // Lid Front tuck fold
 
-  // Base Corner Dust Flap Creases
-  addLine(startX, startY + d, startX - flapH * 0.7, startY + d - flapH * 0.7, 'crease');
-  addLine(startX + w, startY + d, startX + w + flapH * 0.7, startY + d - flapH * 0.7, 'crease');
-  addLine(startX, startY + d + l, startX - flapH * 0.7, startY + d + l + flapH * 0.7, 'crease');
-  addLine(startX + w, startY + d + l, startX + w + flapH * 0.7, startY + d + l + flapH * 0.7, 'crease');
-
   // --- CUT LINES (Red Solid Outer Die Path) ---
   // Base Front Wall Outer Cut
   addLine(startX, startY + d, startX + taper, startY, 'cut');
@@ -215,6 +209,12 @@ export function generateBurgerBoxDieline(dimensions: PackagingDimensions): Dieli
   addLine(startX + w, startY + d, startX + w + d, startY + d + taper, 'cut');
   addLine(startX + w + d, startY + d + taper, startX + w + d, startY + d + l - taper, 'cut');
   addLine(startX + w + d, startY + d + l - taper, startX + w, startY + d + l, 'cut');
+
+  // Rear Hinge Wall side cuts, stepping out to the (thickness-wider) lid
+  addLine(startX, startY + d + l, startX, lidY, 'cut');
+  addLine(startX, lidY, lidRect.x, lidY, 'cut');
+  addLine(startX + w, startY + d + l, startX + w, lidY, 'cut');
+  addLine(startX + w, lidY, lidRect.x + lidRect.width, lidY, 'cut');
 
   // Lid Left Flap Outer Cut
   addLine(lidRect.x, lidY, lidRect.x - flapH, lidY + taper, 'cut');

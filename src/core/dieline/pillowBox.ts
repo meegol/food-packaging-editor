@@ -200,12 +200,6 @@ export function generatePillowBoxDieline(dimensions: PackagingDimensions): Dieli
   addLine(glueX + glueTabW, startY + 16 * scale, glueX + glueTabW, startY + l - 16 * scale, 'cut');
   addLine(glueX + glueTabW, startY + l - 16 * scale, glueX, startY + l, 'cut');
 
-  // Thumb notch cut on front top flap (arc cutout in center)
-  const thumbRadius = 8 * scale;
-  const thumbX = frontX + w / 2;
-  const thumbY = startY - flapHeight * 0.85;
-  addLine(thumbX - thumbRadius, thumbY, thumbX + thumbRadius, thumbY, 'crease');
-
   const allPoints: Point[] = [];
   lines.forEach(l => {
     allPoints.push({ x: l.x1, y: l.y1 });

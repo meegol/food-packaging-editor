@@ -260,6 +260,7 @@ export class FabricDielineCanvas {
           item.angle = obj.angle;
           if (item.type === 'text') {
             item.text = (obj as Textbox).text;
+            item.width = obj.width;
           } else {
             item.naturalWidth = obj.width;
             item.naturalHeight = obj.height;
@@ -607,6 +608,7 @@ export class FabricDielineCanvas {
     if (this.touchCleanup) {
       this.touchCleanup();
     }
+    this.renderToken++; // Drop any render still loading artwork
     this.canvas.dispose();
   }
 }

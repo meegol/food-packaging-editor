@@ -32,10 +32,17 @@ function clipTo(panel: PanelFace): Polygon {
 
 export async function createGraphicObject(item: GraphicItem, panel: PanelFace): Promise<FabricObject | null> {
   if (item.type === 'text') {
+    // Textbox width drives line wrapping; persist it so exports wrap identically
+    item.width = textWrapWidth(item, panel.bounds.width);
+    // Measure with the real webfont, not a fallback (Fabric caches line widths)
+    await document.fonts
+      .load(`${item.fontStyle || 'normal'} ${item.fontWeight || '600'} 16px ${item.fontFamily || 'Inter, sans-serif'}`)
+      .catch(() => undefined);
+
     const textObj = new Textbox(item.text || 'Food Packaging Label', {
       left: item.x ?? panel.center.x,
       top: item.y ?? panel.center.y,
-      width: textWrapWidth(item, panel.bounds.width),
+      width: item.width,
       fontSize: item.fontSize || 15,
       fontFamily: item.fontFamily || 'Inter, sans-serif',
       fontWeight: (item.fontWeight || '600') as string,

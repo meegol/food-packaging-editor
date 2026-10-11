@@ -181,7 +181,8 @@ export function generateFriesScoopBoxDieline(dimensions: PackagingDimensions): D
   addLine(x4, yBackTop, x4, baseY, 'cut');
 
   // Glue Tab Cuts
-  addLine(x0, yBackTop + 10 * scale, x0 - glueTabW, yBackTop + 20 * scale, 'cut');
+  addLine(x0, yBackTop, x0, yBackTop + 10 * scale, 'cut');
+  addLine(x0, yBackTop + 10 * scale,x0 - glueTabW, yBackTop + 20 * scale, 'cut');
   addLine(x0 - glueTabW, yBackTop + 20 * scale, x0 - glueTabW, baseY - 10 * scale, 'cut');
   addLine(x0 - glueTabW, baseY - 10 * scale, x0, baseY, 'cut');
 

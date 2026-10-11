@@ -1,6 +1,7 @@
 import { DielineResult } from '../dieline/types';
 import { GraphicItem } from '../graphics/types';
 import { SvgExportOptions } from './exportTypes';
+import { layoutText, svgFontFaceCss } from './exportText';
 
 /**
  * Generate standard layer-separated CAD production SVG string
@@ -29,13 +30,16 @@ export function generateDielineSvg(
 
   parts.push(`  <metadata>`);
   parts.push(`    <cad:info xmlns:cad="http://fe-packaging.org/cad">`);
-  parts.push(`      <template id="${templateId}" name="${templateName}" />`);
+  parts.push(`      <template id="${templateId}" name="${escapeXml(templateName)}" />`);
   parts.push(`      <dimensions length="${dimensions.length}" width="${dimensions.width}" depth="${dimensions.depth}" caliper="${dimensions.thickness}" unit="mm" />`);
   parts.push(`    </cad:info>`);
   parts.push(`  </metadata>`);
 
-  // Defs for panel clip paths
+  // Defs for panel clip paths (+ embedded brand fonts when provided)
   parts.push(`  <defs>`);
+  if (options.fontFaceCss) {
+    parts.push(`    <style>${options.fontFaceCss}</style>`);
+  }
   panels.forEach((p) => {
     const pointsStr = p.polygon.map(pt => `${pt.x.toFixed(2)},${pt.y.toFixed(2)}`).join(' ');
     parts.push(`    <clipPath id="svg-clip-${p.id}">`);
@@ -49,7 +53,7 @@ export function generateDielineSvg(
   parts.push(`  <g id="panel-geometry" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.15">`);
   panels.forEach((p) => {
     const pointsStr = p.polygon.map(pt => `${pt.x.toFixed(2)},${pt.y.toFixed(2)}`).join(' ');
-    parts.push(`    <polygon id="panel-${p.id}" points="${pointsStr}" data-panel-name="${p.name}" />`);
+    parts.push(`    <polygon id="panel-${p.id}" points="${pointsStr}" data-panel-name="${escapeXml(p.name)}" />`);
   });
   parts.push(`  </g>`);
 
@@ -64,29 +68,32 @@ export function generateDielineSvg(
       const angle = g.angle || 0;
       const clipAttr = g.clipToPanel ? `clip-path="url(#svg-clip-${g.panelId})"` : '';
 
-      parts.push(`    <g ${clipAttr} transform="translate(${gx.toFixed(2)}, ${gy.toFixed(2)}) rotate(${angle})">`);
+      // Clip on an outer untransformed group so the panel polygon stays in dieline space
+      parts.push(`    <g ${clipAttr}><g transform="translate(${gx.toFixed(2)}, ${gy.toFixed(2)}) rotate(${angle})">`);
       if (g.type === 'text' && g.text) {
-        const fill = g.fill || '#0f172a';
-        const fontSizeMm = ((g.fontSize || 16) * 0.264583).toFixed(2);
-        const textAnchor = g.textAlign === 'center' ? 'middle' : g.textAlign === 'right' ? 'end' : 'start';
+        // Same wrapping/alignment/baselines as the canvas Textbox
+        const { lines: textLines, anchor } = layoutText(g);
+        // No whitespace between tspans: under xml:space="preserve" it would render as trailing spaces and shift centred lines
+        const tspans = textLines
+          .map((l) => `<tspan x="${l.dx.toFixed(2)}" y="${l.dy.toFixed(2)}">${escapeXml(l.text)}</tspan>`)
+          .join('');
         parts.push(
-          `      <text x="0" y="0" font-family="${g.fontFamily || 'Inter, sans-serif'}" font-size="${fontSizeMm}" font-weight="${g.fontWeight || 'normal'}" font-style="${g.fontStyle || 'normal'}" fill="${fill}" text-anchor="${textAnchor}" dominant-baseline="middle">${escapeXml(g.text)}</text>`
+          `      <text font-family="${escapeXml(g.fontFamily || 'Inter, sans-serif')}" font-size="${(g.fontSize ?? 6).toFixed(2)}" font-weight="${escapeXml(String(g.fontWeight || '600'))}" font-style="${g.fontStyle || 'normal'}" fill="${escapeXml(g.fill || '#1e293b')}" text-anchor="${anchor}" xml:space="preserve">${tspans}</text>`
         );
       } else if (g.src) {
         const nw = g.naturalWidth || 100;
         const nh = g.naturalHeight || 100;
-        const sX = g.scaleX !== undefined ? g.scaleX : 0.5;
-        const sY = g.scaleY !== undefined ? g.scaleY : 0.5;
-        const wMm = ((nw * sX) * 0.264583).toFixed(2);
-        const hMm = ((nh * sY) * 0.264583).toFixed(2);
+        // graphics arrive in mm space (toMmSpace): naturalWidth * scaleX = mm
+        const wMm = (nw * (g.scaleX ?? 1)).toFixed(2);
+        const hMm = (nh * (g.scaleY ?? 1)).toFixed(2);
         const xOffset = (-parseFloat(wMm) / 2).toFixed(2);
         const yOffset = (-parseFloat(hMm) / 2).toFixed(2);
 
         parts.push(
-          `      <image href="${g.src}" x="${xOffset}" y="${yOffset}" width="${wMm}" height="${hMm}" preserveAspectRatio="xMidYMid meet" />`
+          `      <image href="${escapeXml(g.src)}" x="${xOffset}" y="${yOffset}" width="${wMm}" height="${hMm}" preserveAspectRatio="none" />`
         );
       }
-      parts.push(`    </g>`);
+      parts.push(`    </g></g>`);
     });
     parts.push(`  </g>`);
   }
@@ -179,13 +186,14 @@ function escapeXml(unsafe: string): string {
 /**
  * Trigger browser download for CAD SVG file
  */
-export function downloadDielineSvg(
+export async function downloadDielineSvg(
   dieline: DielineResult,
   graphics: GraphicItem[],
   options: SvgExportOptions,
   filename?: string
-): void {
-  const svgStr = generateDielineSvg(dieline, graphics, options);
+): Promise<void> {
+  const fontFaceCss = options.includeArtwork ? await svgFontFaceCss(graphics) : '';
+  const svgStr = generateDielineSvg(dieline, graphics, { ...options, fontFaceCss });
   const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
 
@@ -198,5 +206,5 @@ export function downloadDielineSvg(
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

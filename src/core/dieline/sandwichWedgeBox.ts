@@ -168,15 +168,15 @@ export function generateSandwichWedgeBoxDieline(dimensions: PackagingDimensions)
   addLine(startX + 8 * scale, flapY + flapH, startX + w - 8 * scale, flapY + flapH, 'cut');
   addLine(startX + w - 8 * scale, flapY + flapH, startX + w, flapY, 'cut');
 
-  // Optional Sandwich Clear Window Cutout Indicator (Crease / Guide)
+  // Sandwich window cutout (die-cut, film-patched)
   const winMarginX = w * 0.18;
   const winMarginY = hyp * 0.15;
   const winW = w - 2 * winMarginX;
   const winH = hyp - 2 * winMarginY;
-  addLine(startX + winMarginX, frontY + winMarginY, startX + winMarginX + winW, frontY + winMarginY, 'crease');
-  addLine(startX + winMarginX + winW, frontY + winMarginY, startX + winMarginX + winW, frontY + winMarginY + winH, 'crease');
-  addLine(startX + winMarginX + winW, frontY + winMarginY + winH, startX + winMarginX, frontY + winMarginY + winH, 'crease');
-  addLine(startX + winMarginX, frontY + winMarginY + winH, startX + winMarginX, frontY + winMarginY, 'crease');
+  addLine(startX + winMarginX, frontY + winMarginY, startX + winMarginX + winW, frontY + winMarginY, 'cut');
+  addLine(startX + winMarginX + winW, frontY + winMarginY, startX + winMarginX + winW, frontY + winMarginY + winH, 'cut');
+  addLine(startX + winMarginX + winW, frontY + winMarginY + winH, startX + winMarginX, frontY + winMarginY + winH, 'cut');
+  addLine(startX + winMarginX, frontY + winMarginY + winH, startX + winMarginX, frontY + winMarginY, 'cut');
 
   const allPoints: Point[] = [];
   lines.forEach(l => {

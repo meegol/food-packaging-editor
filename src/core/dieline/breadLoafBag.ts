@@ -185,33 +185,34 @@ export function generateBreadLoafBagDieline(dimensions: PackagingDimensions): Di
   // Left cut
   addLine(x0, startY, x0, bottomCutY, 'cut');
   // Right cut
-  addLine(x6, startY, x6, bottomCutY, 'cut');
+  addLine(x6, startY + 8 * scale, x6, bottomCutY - 8 * scale, 'cut');
   // Bottom cut
-  addLine(x0, bottomCutY, x6, bottomCutY, 'cut');
+  addLine(x0, bottomCutY, x5, bottomCutY, 'cut');
 
   // Fin seal top and bottom tapered cuts
   addLine(x5, startY, x6, startY + 8 * scale, 'cut');
   addLine(x6, bottomCutY - 8 * scale, x5, bottomCutY, 'cut');
 
-  // Wicket hanging holes (represented as crosshair cut indicators on top lip)
+  // Wicket hanging holes (punched circles on top lip)
   const holeRadius = 5 * scale;
   const holeY = startY + headerH * 0.2;
-  const hole1X = x2 + w * 0.25;
-  const hole2X = x2 + w * 0.75;
-  addLine(hole1X - holeRadius, holeY, hole1X + holeRadius, holeY, 'cut');
-  addLine(hole1X, holeY - holeRadius, hole1X, holeY + holeRadius, 'cut');
-  addLine(hole2X - holeRadius, holeY, hole2X + holeRadius, holeY, 'cut');
-  addLine(hole2X, holeY - holeRadius, hole2X, holeY + holeRadius, 'cut');
+  for (const cx of [x2 + w * 0.25, x2 + w * 0.75]) {
+    const steps = 16;
+    for (let i = 0; i < steps; i++) {
+      const a0 = (i / steps) * 2 * Math.PI, a1 = ((i + 1) / steps) * 2 * Math.PI;
+      addLine(cx + holeRadius * Math.cos(a0), holeY + holeRadius * Math.sin(a0), cx + holeRadius * Math.cos(a1), holeY + holeRadius * Math.sin(a1), 'cut');
+    }
+  }
 
-  // Front Sliced Bread Viewing Window Outline (Crease Guide)
+  // Front Sliced Bread Viewing Window Outline (die-cut, film-patched)
   const winW = w * 0.75;
   const winH = l * 0.5;
   const winX = x2 + (w - winW) / 2;
   const winY = bodyY + l * 0.25;
-  addLine(winX, winY, winX + winW, winY, 'crease');
-  addLine(winX + winW, winY, winX + winW, winY + winH, 'crease');
-  addLine(winX + winW, winY + winH, winX, winY + winH, 'crease');
-  addLine(winX, winY + winH, winX, winY, 'crease');
+  addLine(winX, winY, winX + winW, winY, 'cut');
+  addLine(winX + winW, winY, winX + winW, winY + winH, 'cut');
+  addLine(winX + winW, winY + winH, winX, winY + winH, 'cut');
+  addLine(winX, winY + winH, winX, winY, 'cut');
 
   const allPoints: Point[] = [];
   lines.forEach(l => {

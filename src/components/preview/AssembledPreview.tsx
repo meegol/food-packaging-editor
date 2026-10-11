@@ -19,6 +19,7 @@ import { GraphicItem } from '../../core/graphics/types';
 import { ViewAngle, MaterialFinish, StudioLighting } from '../../core/preview/previewTypes';
 import { textWrapWidth } from '../../core/canvas/graphicObjects';
 import { BOARD_COLORS, Package3DView, Package3DViewHandle } from './Package3DView';
+import { CANVAS_UNITS_PER_MM } from '../../core/export/exportTypes';
 
 let measureCtx: CanvasRenderingContext2D | null | undefined;
 
@@ -861,7 +862,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
                   <div className="side-card-info">
                     <span className="side-card-name" title={panel.name}>{panel.name}</span>
                     <span className="side-card-dim">
-                      {Math.round(panel.bounds.width)} × {Math.round(panel.bounds.height)} mm
+                      {Math.round(panel.bounds.width / CANVAS_UNITS_PER_MM)} × {Math.round(panel.bounds.height / CANVAS_UNITS_PER_MM)} mm
                     </span>
                   </div>
                 </div>

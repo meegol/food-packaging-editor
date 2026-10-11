@@ -186,25 +186,23 @@ export function generateSideGussetBagDieline(dimensions: PackagingDimensions): D
   addLine(x0, startY, x5, startY, 'cut');
   // Left cut
   addLine(x0, startY, x0, baseY + bottomH, 'cut');
-  // Right cut
-  addLine(x6, startY, x6, baseY + bottomH, 'cut');
   // Bottom cut
-  addLine(x0, baseY + bottomH, x6, baseY + bottomH, 'cut');
+  addLine(x0, baseY + bottomH, x5, baseY + bottomH, 'cut');
 
   // Glue Tab Outer Cuts
   addLine(x5, startY, x6, startY + 10 * scale, 'cut');
   addLine(x6, startY + 10 * scale, x6, baseY + bottomH - 10 * scale, 'cut');
   addLine(x6, baseY + bottomH - 10 * scale, x5, baseY + bottomH, 'cut');
 
-  // Front Cookie Viewing Window Cutout (Crease Guide)
+  // Front Cookie Viewing Window Cutout (die-cut, film-patched)
   const winW = w * 0.65;
   const winH = l * 0.45;
   const winX = x2 + (w - winW) / 2;
   const winY = bodyY + l * 0.28;
-  addLine(winX, winY, winX + winW, winY, 'crease');
-  addLine(winX + winW, winY, winX + winW, winY + winH, 'crease');
-  addLine(winX + winW, winY + winH, winX, winY + winH, 'crease');
-  addLine(winX, winY + winH, winX, winY, 'crease');
+  addLine(winX, winY, winX + winW, winY, 'cut');
+  addLine(winX + winW, winY, winX + winW, winY + winH, 'cut');
+  addLine(winX + winW, winY + winH, winX, winY + winH, 'cut');
+  addLine(winX, winY + winH, winX, winY, 'cut');
 
   const allPoints: Point[] = [];
   lines.forEach(l => {

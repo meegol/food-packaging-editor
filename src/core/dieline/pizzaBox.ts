@@ -236,6 +236,18 @@ export function generatePizzaBoxDieline(dimensions: PackagingDimensions): Dielin
   addLine(startX + taper, startY - d, startX + w - taper, startY - d, 'cut');
   addLine(startX + w - taper, startY - d, startX + w, startY, 'cut');
 
+  // Outer side walls: top/bottom edges stepping in to the (thickness-shorter) inner walls
+  for (const [x0, x1] of [[startX, startX - d], [startX + w, startX + w + d]]) {
+    addLine(x0, startY, x1, startY, 'cut');
+    addLine(x1, startY, x1, startY + th, 'cut');
+    addLine(x1, startY + l - th, x1, startY + l, 'cut');
+    addLine(x1, startY + l, x0, startY + l, 'cut');
+  }
+
+  // Rear hinge wall sides
+  addLine(startX, startY + l, startX, lidY, 'cut');
+  addLine(startX + w, startY + l, startX + w, lidY, 'cut');
+
   // Left inner wall & lock tabs
   addLine(startX - d, startY + th, startX - 2 * d, startY + th, 'cut');
   addLine(startX - 2 * d, startY + th, startX - 2 * d - lockTabH, startY + th + taper, 'cut');
