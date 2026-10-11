@@ -27,10 +27,10 @@ export const DimensionControls: React.FC<DimensionControlsProps> = ({
 
     if (unit === 'in') {
       onChangeDimensions({
-        length: Math.round((dimensions.length / 25.4) * 10) / 10,
-        width: Math.round((dimensions.width / 25.4) * 10) / 10,
-        depth: Math.round((dimensions.depth / 25.4) * 10) / 10,
-        thickness: Math.round((dimensions.thickness / 25.4) * 100) / 100,
+        length: Math.round((dimensions.length / 25.4) * 100) / 100,
+        width: Math.round((dimensions.width / 25.4) * 100) / 100,
+        depth: Math.round((dimensions.depth / 25.4) * 100) / 100,
+        thickness: dimensions.thickness, // caliper stays in mm
         unit: 'in',
       });
     } else {
@@ -38,7 +38,7 @@ export const DimensionControls: React.FC<DimensionControlsProps> = ({
         length: Math.round(dimensions.length * 25.4),
         width: Math.round(dimensions.width * 25.4),
         depth: Math.round(dimensions.depth * 25.4),
-        thickness: Math.round(dimensions.thickness * 25.4 * 10) / 10,
+        thickness: dimensions.thickness, // caliper stays in mm
         unit: 'mm',
       });
     }
@@ -125,8 +125,8 @@ export const DimensionControls: React.FC<DimensionControlsProps> = ({
           <input
             type="range"
             className="dim-slider"
-            min={Math.round(min.length * unitFactor)}
-            max={Math.round(max.length * unitFactor)}
+            min={Math.round(min.length * unitFactor * 100) / 100}
+            max={Math.round(max.length * unitFactor * 100) / 100}
             step={isInch ? 0.1 : 1}
             value={dimensions.length}
             onChange={(e) => handleDimChange('length', parseFloat(e.target.value))}
@@ -150,8 +150,8 @@ export const DimensionControls: React.FC<DimensionControlsProps> = ({
           <input
             type="range"
             className="dim-slider"
-            min={Math.round(min.width * unitFactor)}
-            max={Math.round(max.width * unitFactor)}
+            min={Math.round(min.width * unitFactor * 100) / 100}
+            max={Math.round(max.width * unitFactor * 100) / 100}
             step={isInch ? 0.1 : 1}
             value={dimensions.width}
             onChange={(e) => handleDimChange('width', parseFloat(e.target.value))}
@@ -175,8 +175,8 @@ export const DimensionControls: React.FC<DimensionControlsProps> = ({
           <input
             type="range"
             className="dim-slider"
-            min={Math.round(min.depth * unitFactor)}
-            max={Math.round(max.depth * unitFactor)}
+            min={Math.round(min.depth * unitFactor * 100) / 100}
+            max={Math.round(max.depth * unitFactor * 100) / 100}
             step={isInch ? 0.1 : 1}
             value={dimensions.depth}
             onChange={(e) => handleDimChange('depth', parseFloat(e.target.value))}

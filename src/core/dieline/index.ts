@@ -228,5 +228,15 @@ export function getTemplateById(id: string): TemplateDefinition {
 
 export function generateDieline(templateId: string, dimensions: PackagingDimensions): DielineResult {
   const template = getTemplateById(templateId);
-  return template.generateDieline(dimensions);
+  if (dimensions.unit !== 'in') return template.generateDieline(dimensions);
+  // Generators mix user sizes with fixed mm allowances (seals, glue tabs), so always feed them mm.
+  // Caliper is entered in mm in both modes.
+  const mm = {
+    ...dimensions,
+    length: dimensions.length * 25.4,
+    width: dimensions.width * 25.4,
+    depth: dimensions.depth * 25.4,
+    unit: 'mm' as const,
+  };
+  return { ...template.generateDieline(mm), dimensions };
 }

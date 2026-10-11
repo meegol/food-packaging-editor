@@ -2,247 +2,199 @@ import { LineSegment, PackagingDimensions, PanelFace, DielineResult, Point } fro
 
 /**
  * Generates the parametric dieline net for a Round Food Tub / Ice Cream Cup with Lid.
- * Features an unwrapped conical body sector, bottom circular base disc,
- * lid top circular disc, and outer rim skirt.
+ * Pieces: unwrapped conical wall with side-seam tab, bottom disc with glue flange,
+ * lid disc with glue flange, and lid skirt band with overlap tab.
  */
 export function generateRoundFoodTubDieline(dimensions: PackagingDimensions): DielineResult {
   const { width: W, length: L, depth: D } = dimensions;
 
   // Scale: 1mm = 2.5px
-  const scale = dimensions.unit === 'in' ? 2.5 * 25.4 : 2.5;
+  const scale = 2.5; // 1mm = 2.5px; generateDieline() converts inch input to mm first
+  const mm = (v: number) => v * scale;
 
-  const topDiam = W * scale;        // Top cup diameter
-  const botDiam = L * scale;        // Bottom cup diameter
-  const h = D * scale;              // Vertical cup height
+  const r1 = (W * scale) / 2;                  // Top (rim) radius
+  const r2 = Math.min((L * scale) / 2, r1 - mm(0.5)); // Bottom radius; a tub can't be wider at the base than the rim
+  const h = D * scale;                         // Vertical wall height
 
-  const r1 = topDiam / 2;
-  const r2 = botDiam / 2;
-
-  // Slant height of the truncated cone
-  const deltaR = Math.max(r1 - r2, 1);
+  // Truncated cone development
+  const deltaR = r1 - r2;
   const slantH = Math.sqrt(deltaR * deltaR + h * h);
+  const R1 = (r1 * slantH) / deltaR;           // Apex to rim
+  const R2 = R1 - slantH;                      // Apex to base
+  const theta = (2 * Math.PI * r1) / R1;       // Always < 2π
 
-  // Outer apex radius R1 and inner apex radius R2
-  const R1 = (r1 * slantH) / deltaR;
-  const R2 = R1 - slantH;
-
-  // Developed sector angle in radians
-  const theta = Math.min((2 * Math.PI * r1) / R1, 1.8 * Math.PI);
-
-  const glueTabW = 12 * scale;
+  const glueTabW = mm(12);
+  const flangeW = mm(8);
+  const margin = 40;
+  const gap = mm(25);
 
   const lines: LineSegment[] = [];
   const panels: PanelFace[] = [];
+  const r = (v: number) => Math.round(v * 100) / 100;
 
   let lineCounter = 0;
-  const addLine = (x1: number, y1: number, x2: number, y2: number, type: 'cut' | 'crease' | 'bleed') => {
-    lines.push({
-      id: `tub-line-${++lineCounter}`,
-      x1: Math.round(x1 * 100) / 100,
-      y1: Math.round(y1 * 100) / 100,
-      x2: Math.round(x2 * 100) / 100,
-      y2: Math.round(y2 * 100) / 100,
-      type,
-    });
+  const addLine = (x1: number, y1: number, x2: number, y2: number, type: 'cut' | 'crease') => {
+    lines.push({ id: `tub-line-${++lineCounter}`, x1: r(x1), y1: r(y1), x2: r(x2), y2: r(y2), type });
+  };
+  const addPath = (pts: Point[], type: 'cut' | 'crease', closed = false) => {
+    const n = closed ? pts.length : pts.length - 1;
+    for (let i = 0; i < n; i++) {
+      const a = pts[i];
+      const b = pts[(i + 1) % pts.length];
+      addLine(a.x, a.y, b.x, b.y, type);
+    }
+  };
+  const boundsOf = (pts: Point[]) => {
+    const xs = pts.map(p => p.x);
+    const ys = pts.map(p => p.y);
+    const x = Math.min(...xs);
+    const y = Math.min(...ys);
+    return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
   };
 
-  // Apex center coordinates
-  const apexX = 40 + R1 * 0.85;
-  const apexY = 40 + R1;
-
-  // Center angle of the sector aligned pointing downwards
+  // ==========================================
+  // PART 1: CONICAL WALL
+  // Sector fans upward from an apex below it, so the rim arc is on top and artwork stays upright.
+  // ==========================================
   const startAngle = Math.PI / 2 - theta / 2;
-  const endAngle = Math.PI / 2 + theta / 2;
-  const numSteps = 24;
+  const arcSteps = 48;
+  const polar = (radius: number, a: number): Point => ({ x: radius * Math.cos(a), y: -radius * Math.sin(a) });
 
-  const outerArcPts: Point[] = [];
-  const innerArcPts: Point[] = [];
-
-  for (let i = 0; i <= numSteps; i++) {
-    const a = startAngle + (i / numSteps) * theta;
-    const cosA = Math.cos(a);
-    const sinA = Math.sin(a);
-
-    outerArcPts.push({
-      x: Math.round((apexX + R1 * cosA) * 100) / 100,
-      y: Math.round((apexY - R1 * sinA) * 100) / 100,
-    });
-
-    innerArcPts.push({
-      x: Math.round((apexX + R2 * cosA) * 100) / 100,
-      y: Math.round((apexY - R2 * sinA) * 100) / 100,
-    });
+  const rawOuter: Point[] = [];
+  const rawInner: Point[] = [];
+  for (let i = 0; i <= arcSteps; i++) {
+    const a = startAngle + (i / arcSteps) * theta;
+    rawOuter.push(polar(R1, a));
+    rawInner.push(polar(R2, a));
   }
 
-  // 1. Tub Body Panel (Unwrapped Conical Wall)
-  const bodyPolygon: Point[] = [
-    ...outerArcPts,
-    ...[...innerArcPts].reverse(),
+  // Side-seam tab: glued under the far edge, tapered 15° at both ends.
+  const endA = startAngle + theta;
+  const tabDir = { x: -Math.sin(endA), y: -Math.cos(endA) }; // Outward, perpendicular to the end edge
+  const radial = { x: Math.cos(endA), y: -Math.sin(endA) };
+  const taper = glueTabW * Math.tan(Math.PI / 12);
+  const seamOuter = rawOuter[arcSteps];
+  const seamInner = rawInner[arcSteps];
+  const rawTab: Point[] = [
+    seamInner,
+    seamOuter,
+    { x: seamOuter.x + tabDir.x * glueTabW - radial.x * taper, y: seamOuter.y + tabDir.y * glueTabW - radial.y * taper },
+    { x: seamInner.x + tabDir.x * glueTabW + radial.x * taper, y: seamInner.y + tabDir.y * glueTabW + radial.y * taper },
   ];
 
-  const bodyMinX = Math.min(...bodyPolygon.map(p => p.x));
-  const bodyMaxX = Math.max(...bodyPolygon.map(p => p.x));
-  const bodyMinY = Math.min(...bodyPolygon.map(p => p.y));
-  const bodyMaxY = Math.max(...bodyPolygon.map(p => p.y));
+  // Translate the wall so its top-left sits at the margin
+  const rawBounds = boundsOf([...rawOuter, ...rawInner, ...rawTab]);
+  const dx = margin - rawBounds.x;
+  const dy = margin - rawBounds.y;
+  const shift = (p: Point): Point => ({ x: r(p.x + dx), y: r(p.y + dy) });
+  const outerArcPts = rawOuter.map(shift);
+  const innerArcPts = rawInner.map(shift);
+  const tabPts = rawTab.map(shift);
+  const apex = shift({ x: 0, y: 0 });
 
+  const bodyPolygon: Point[] = [...outerArcPts, ...[...innerArcPts].reverse()];
   panels.push({
     id: 'tub-body',
     name: 'Tub Body (Curved Wall)',
     polygon: bodyPolygon,
-    bounds: {
-      x: bodyMinX,
-      y: bodyMinY,
-      width: bodyMaxX - bodyMinX,
-      height: bodyMaxY - bodyMinY,
-    },
-    center: {
-      x: (bodyMinX + bodyMaxX) / 2,
-      y: (bodyMinY + bodyMaxY) / 2,
-    },
+    bounds: boundsOf(bodyPolygon),
+    // Mid-band on the sector bisector, so it stays on the wall even for wide, flat tubs
+    center: { x: apex.x, y: r(apex.y - (R1 + R2) / 2) },
   });
-
-  // 2. Side Seam Overlap Tab
-  const seamPt1 = outerArcPts[outerArcPts.length - 1];
-  const seamPt2 = innerArcPts[innerArcPts.length - 1];
-  const seamAngle = endAngle;
-  const normX = -Math.sin(seamAngle) * glueTabW;
-  const normY = -Math.cos(seamAngle) * glueTabW;
 
   panels.push({
     id: 'tub-glue-seam',
     name: 'Side Seam Overlap',
-    polygon: [
-      seamPt2,
-      seamPt1,
-      { x: seamPt1.x + normX, y: seamPt1.y + normY },
-      { x: seamPt2.x + normX, y: seamPt2.y + normY },
-    ],
-    bounds: {
-      x: Math.min(seamPt1.x, seamPt2.x) - glueTabW,
-      y: Math.min(seamPt1.y, seamPt2.y),
-      width: glueTabW * 1.5,
-      height: slantH,
-    },
+    polygon: tabPts,
+    bounds: boundsOf(tabPts),
     center: {
-      x: (seamPt1.x + seamPt2.x) / 2 + normX / 2,
-      y: (seamPt1.y + seamPt2.y) / 2 + normY / 2,
+      x: r(tabPts.reduce((s, p) => s + p.x, 0) / 4),
+      y: r(tabPts.reduce((s, p) => s + p.y, 0) / 4),
     },
     isFlap: true,
   });
 
-  // --- DRAW TUB BODY LINES ---
-  // Top outer arc (cut)
-  for (let i = 0; i < outerArcPts.length - 1; i++) {
-    addLine(outerArcPts[i].x, outerArcPts[i].y, outerArcPts[i + 1].x, outerArcPts[i + 1].y, 'cut');
-  }
-
-  // Bottom inner arc (crease to curl tab)
-  for (let i = 0; i < innerArcPts.length - 1; i++) {
-    addLine(innerArcPts[i].x, innerArcPts[i].y, innerArcPts[i + 1].x, innerArcPts[i + 1].y, 'crease');
-  }
-
-  // Left straight radial edge (cut)
+  addPath(outerArcPts, 'cut');
+  addPath(innerArcPts, 'cut');
   addLine(outerArcPts[0].x, outerArcPts[0].y, innerArcPts[0].x, innerArcPts[0].y, 'cut');
+  addLine(seamOuter.x + dx, seamOuter.y + dy, seamInner.x + dx, seamInner.y + dy, 'crease');
+  addPath(tabPts.slice(1).concat(tabPts[0]), 'cut');
 
-  // Right straight radial edge (crease to glue seam)
-  addLine(seamPt1.x, seamPt1.y, seamPt2.x, seamPt2.y, 'crease');
-
-  // Glue seam outer cut
-  addLine(seamPt1.x, seamPt1.y, seamPt1.x + normX, seamPt1.y + normY, 'cut');
-  addLine(seamPt1.x + normX, seamPt1.y + normY, seamPt2.x + normX, seamPt2.y + normY, 'cut');
-  addLine(seamPt2.x + normX, seamPt2.y + normY, seamPt2.x, seamPt2.y, 'cut');
+  const wallBounds = boundsOf([...bodyPolygon, ...tabPts]);
 
   // ==========================================
-  // PART 2: BOTTOM BASE DISC & LID DISC
-  // Displayed cleanly to the right of the unwrapped body
+  // PART 2: DISCS & SKIRT (column to the right of the wall)
+  // Each disc carries a glue flange: crease at the face edge, cut at the flange edge.
   // ==========================================
-  const discsX = bodyMaxX + 45 * scale;
-  const bottomDiscY = bodyMinY + r2 + 20 * scale;
+  const circleSteps = 72;
+  const circle = (cx: number, cy: number, radius: number): Point[] =>
+    Array.from({ length: circleSteps }, (_, i) => {
+      const a = (i / circleSteps) * 2 * Math.PI;
+      return { x: r(cx + radius * Math.cos(a)), y: r(cy + radius * Math.sin(a)) };
+    });
 
-  // Helper to generate circular polygon points
-  const generateCirclePoints = (cx: number, cy: number, radius: number, steps = 24): Point[] => {
-    const pts: Point[] = [];
-    for (let i = 0; i < steps; i++) {
-      const a = (i / steps) * 2 * Math.PI;
-      pts.push({
-        x: Math.round((cx + radius * Math.cos(a)) * 100) / 100,
-        y: Math.round((cy + radius * Math.sin(a)) * 100) / 100,
-      });
-    }
-    return pts;
+  const colX = wallBounds.x + wallBounds.width + gap;
+
+  const addDisc = (id: string, name: string, radius: number, top: number, flag: 'isBase' | 'isLid') => {
+    const cx = colX + radius + flangeW;
+    const cy = top + radius + flangeW;
+    const face = circle(cx, cy, radius);
+    panels.push({
+      id,
+      name,
+      polygon: face,
+      bounds: { x: r(cx - radius), y: r(cy - radius), width: r(radius * 2), height: r(radius * 2) },
+      center: { x: r(cx), y: r(cy) },
+      [flag]: true,
+    });
+    addPath(face, 'crease', true);
+    addPath(circle(cx, cy, radius + flangeW), 'cut', true);
+    return cy + radius + flangeW;
   };
 
-  const addCircleLines = (cx: number, cy: number, radius: number, type: 'cut' | 'crease') => {
-    const pts = generateCirclePoints(cx, cy, radius, 24);
-    for (let i = 0; i < pts.length; i++) {
-      const next = pts[(i + 1) % pts.length];
-      addLine(pts[i].x, pts[i].y, next.x, next.y, type);
-    }
-  };
+  // 3. Bottom disc (flange folds down, glued inside the wall's base)
+  const bottomEnd = addDisc('tub-bottom-disc', 'Bottom Base Disc', r2, margin, 'isBase');
 
-  // 3. Bottom Base Disc
-  const bottomCirclePts = generateCirclePoints(discsX + r2, bottomDiscY, r2);
-  panels.push({
-    id: 'tub-bottom-disc',
-    name: 'Bottom Base Disc',
-    polygon: bottomCirclePts,
-    bounds: { x: discsX, y: bottomDiscY - r2, width: botDiam, height: botDiam },
-    center: { x: discsX + r2, y: bottomDiscY },
-    isBase: true,
-  });
-  addCircleLines(discsX + r2, bottomDiscY, r2, 'cut');
+  // 4. Lid disc (sits over the rim; flange folds down, glued inside the skirt)
+  const lidRadius = r1 + mm(3);
+  const lidEnd = addDisc('tub-lid-top', 'Lid Top Face Disc', lidRadius, bottomEnd + gap, 'isLid');
 
-  // 4. Lid Top Face Disc (Positioned below bottom disc)
-  const lidRadius = r1 + 3 * scale;
-  const lidDiam = lidRadius * 2;
-  const lidY = bottomDiscY + r2 + lidRadius + 30 * scale;
-  const lidCirclePts = generateCirclePoints(discsX + lidRadius, lidY, lidRadius);
-
-  panels.push({
-    id: 'tub-lid-top',
-    name: 'Lid Top Face Disc',
-    polygon: lidCirclePts,
-    bounds: { x: discsX, y: lidY - lidRadius, width: lidDiam, height: lidDiam },
-    center: { x: discsX + lidRadius, y: lidY },
-    isLid: true,
-  });
-  addCircleLines(discsX + lidRadius, lidY, lidRadius, 'cut');
-
-  // 5. Lid Rim Outer Skirt Band (Positioned below the lid)
-  const skirtH = 16 * scale;
-  const skirtW = Math.min(2 * Math.PI * lidRadius, 400 * scale);
-  const skirtY = lidY + lidRadius + 25 * scale;
-
+  // 5. Lid skirt: full lid circumference plus overlap tab
+  const skirtH = mm(16);
+  const skirtW = 2 * Math.PI * lidRadius;
+  // Runs along the bottom of the whole sheet; it's the longest piece
+  const skirtY = Math.max(lidEnd, wallBounds.y + wallBounds.height) + gap;
+  const skirtX = margin;
+  const overlapW = mm(10);
+  const skirtPoly: Point[] = [
+    { x: skirtX, y: skirtY },
+    { x: r(skirtX + skirtW), y: skirtY },
+    { x: r(skirtX + skirtW), y: r(skirtY + skirtH) },
+    { x: skirtX, y: r(skirtY + skirtH) },
+  ];
   panels.push({
     id: 'tub-lid-skirt',
     name: 'Lid Outer Rim Skirt',
-    polygon: [
-      { x: discsX, y: skirtY },
-      { x: discsX + skirtW, y: skirtY },
-      { x: discsX + skirtW, y: skirtY + skirtH },
-      { x: discsX, y: skirtY + skirtH },
-    ],
-    bounds: { x: discsX, y: skirtY, width: skirtW, height: skirtH },
-    center: { x: discsX + skirtW / 2, y: skirtY + skirtH / 2 },
+    polygon: skirtPoly,
+    bounds: { x: skirtX, y: skirtY, width: r(skirtW), height: skirtH },
+    center: { x: r(skirtX + skirtW / 2), y: r(skirtY + skirtH / 2) },
     isFlap: true,
   });
+  const ex = skirtX + skirtW;
+  addLine(skirtX, skirtY, ex, skirtY, 'cut');
+  addLine(ex, skirtY, ex + overlapW, skirtY + mm(2), 'cut');
+  addLine(ex + overlapW, skirtY + mm(2), ex + overlapW, skirtY + skirtH - mm(2), 'cut');
+  addLine(ex + overlapW, skirtY + skirtH - mm(2), ex, skirtY + skirtH, 'cut');
+  addLine(ex, skirtY + skirtH, skirtX, skirtY + skirtH, 'cut');
+  addLine(skirtX, skirtY + skirtH, skirtX, skirtY, 'cut');
+  addLine(ex, skirtY, ex, skirtY + skirtH, 'crease');
 
-  // Skirt cuts
-  addLine(discsX, skirtY, discsX + skirtW, skirtY, 'cut');
-  addLine(discsX + skirtW, skirtY, discsX + skirtW, skirtY + skirtH, 'cut');
-  addLine(discsX + skirtW, skirtY + skirtH, discsX, skirtY + skirtH, 'cut');
-  addLine(discsX, skirtY + skirtH, discsX, skirtY, 'cut');
-
-  const allPoints: Point[] = [];
-  lines.forEach(l => {
-    allPoints.push({ x: l.x1, y: l.y1 });
-    allPoints.push({ x: l.x2, y: l.y2 });
-  });
-
-  const minX = Math.min(...allPoints.map(p => p.x));
-  const minY = Math.min(...allPoints.map(p => p.y));
-  const maxX = Math.max(...allPoints.map(p => p.x));
-  const maxY = Math.max(...allPoints.map(p => p.y));
+  const xs = lines.flatMap(l => [l.x1, l.x2]);
+  const ys = lines.flatMap(l => [l.y1, l.y2]);
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  const maxX = Math.max(...xs);
+  const maxY = Math.max(...ys);
 
   return {
     templateId: 'round-food-tub',
@@ -250,13 +202,6 @@ export function generateRoundFoodTubDieline(dimensions: PackagingDimensions): Di
     dimensions,
     lines,
     panels,
-    totalBounds: {
-      minX,
-      minY,
-      maxX,
-      maxY,
-      width: maxX - minX,
-      height: maxY - minY,
-    },
+    totalBounds: { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY },
   };
 }

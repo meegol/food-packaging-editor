@@ -19,7 +19,7 @@ export class FabricDielineCanvas {
   private activePanelId: string | null = null;
   private panelObjects: Map<string, Polygon> = new Map();
   private graphicItems: GraphicItem[] = [];
-  private graphicObjects: Map<string, FabricObject> = new Map();
+  private renderToken = 0;
   private options: CanvasOptions = {
     showCutLines: true,
     showCreaseLines: true,
@@ -238,12 +238,11 @@ export class FabricDielineCanvas {
     }
   }
 
-  private async renderGraphics() {
-    this.graphicObjects.clear();
-    if (!this.currentDieline) return;
+  private async buildGraphics(dieline: DielineResult): Promise<Map<string, FabricObject>> {
+    const objects = new Map<string, FabricObject>();
 
     for (const item of this.graphicItems) {
-      const targetPanel = this.currentDieline.panels.find(p => p.id === item.panelId);
+      const targetPanel = dieline.panels.find(p => p.id === item.panelId);
       if (!targetPanel) continue;
 
       try {
@@ -251,7 +250,7 @@ export class FabricDielineCanvas {
         if (!obj) continue;
 
         (obj as unknown as { graphicId: string }).graphicId = item.id;
-        this.graphicObjects.set(item.id, obj);
+        objects.set(item.id, obj);
 
         obj.on('modified', () => {
           item.x = obj.left;
@@ -271,16 +270,20 @@ export class FabricDielineCanvas {
             this.onGraphicChangeCallback([...this.graphicItems]);
           }
         });
-
-        this.canvas.add(obj);
       } catch (err) {
         console.error('Failed to load graphic on canvas:', err);
       }
     }
+    return objects;
   }
 
   public async renderDieline(dieline: DielineResult) {
     this.currentDieline = dieline;
+    // Load artwork before touching the canvas; a newer render that starts meanwhile wins
+    const token = ++this.renderToken;
+    const graphics = await this.buildGraphics(dieline);
+    if (token !== this.renderToken) return;
+
     this.canvas.clear();
     this.canvas.backgroundColor = 'transparent';
     const colors = this.getThemeColors();
@@ -333,7 +336,7 @@ export class FabricDielineCanvas {
       this.canvas.add(poly);
     });
 
-    await this.renderGraphics();
+    graphics.forEach(obj => this.canvas.add(obj));
 
     if (this.options.showCreaseLines) {
       lines

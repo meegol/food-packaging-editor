@@ -9,7 +9,7 @@ export function generateBurgerBoxDieline(dimensions: PackagingDimensions): Dieli
   const { width: W, length: L, depth: D, thickness: t } = dimensions;
 
   // Conversion scale to canvas pixels (1mm = 2.5px for crisp viewport rendering)
-  const scale = dimensions.unit === 'in' ? 2.5 * 25.4 : 2.5;
+  const scale = 2.5; // 1mm = 2.5px; generateDieline() converts inch input to mm first
 
   const w = W * scale;
   const l = L * scale;

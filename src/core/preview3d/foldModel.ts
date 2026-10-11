@@ -380,8 +380,12 @@ function buildTub(panels: Map<string, PanelFace>, factory: MeshFactory) {
   const rOuter = Math.hypot(p1.x - apex.x, p1.y - apex.y);
   const rInner = Math.hypot(inner[0].x - apex.x, inner[0].y - apex.y);
   const phiStart = Math.atan2(p1.y - apex.y, p1.x - apex.x);
-  let sweep = Math.atan2(p3.y - apex.y, p3.x - apex.x) - phiStart;
-  sweep = Math.atan2(Math.sin(sweep), Math.cos(sweep));
+  // Sum per-step angles so sectors wider than 180° don't wrap
+  let sweep = 0;
+  for (let i = 1; i < half; i++) {
+    const step = Math.atan2(outer[i].y - apex.y, outer[i].x - apex.x) - Math.atan2(outer[i - 1].y - apex.y, outer[i - 1].x - apex.x);
+    sweep += Math.atan2(Math.sin(step), Math.cos(step));
+  }
 
   const rTop = (rOuter * Math.abs(sweep)) / (Math.PI * 2);
   const rBot = (rInner * Math.abs(sweep)) / (Math.PI * 2);

@@ -11,7 +11,7 @@ export function generateBreadLoafBagDieline(dimensions: PackagingDimensions): Di
   const { width: W, length: L, depth: D } = dimensions;
 
   // Scale: 1mm = 2.5px
-  const scale = dimensions.unit === 'in' ? 2.5 * 25.4 : 2.5;
+  const scale = 2.5; // 1mm = 2.5px; generateDieline() converts inch input to mm first
 
   const w = W * scale;                 // Front and back face width
   const halfW = w / 2;
