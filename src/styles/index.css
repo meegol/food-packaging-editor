@@ -2139,8 +2139,16 @@ select option {
   }
 
   /* Main Workspace on Mobile */
+  /* dvh tracks the visible area on phones whose browser bars resize the viewport */
+  .app-container {
+    height: 100dvh;
+  }
+
+  /* Fill what's left above the fixed bottom nav (flex: 1 would otherwise run under it) */
   .app-workspace {
-    height: calc(100vh - 52px - 54px);
+    height: auto;
+    min-height: 0;
+    margin-bottom: 54px;
     width: 100vw;
     position: relative;
     overflow: hidden;

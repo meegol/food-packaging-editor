@@ -20,6 +20,7 @@ export class FabricDielineCanvas {
   private panelObjects: Map<string, Polygon> = new Map();
   private graphicItems: GraphicItem[] = [];
   private renderToken = 0;
+  private pendingFit = false;
   private options: CanvasOptions = {
     showCutLines: true,
     showCreaseLines: true,
@@ -100,6 +101,7 @@ export class FabricDielineCanvas {
 
   public resize(width: number, height: number) {
     this.canvas.setDimensions({ width, height });
+    if (this.pendingFit) this.fitToScreen();
     this.canvas.requestRenderAll();
   }
 
@@ -514,6 +516,9 @@ export class FabricDielineCanvas {
     const bounds = this.currentDieline.totalBounds;
     const canvasWidth = this.canvas.getWidth();
     const canvasHeight = this.canvas.getHeight();
+    // Hidden (e.g. mobile tab switched away): fit once it has a real size again
+    this.pendingFit = canvasWidth < 1 || canvasHeight < 1;
+    if (this.pendingFit) return;
 
     const padding = 80;
     const availableW = Math.max(canvasWidth - padding * 2, 100);
