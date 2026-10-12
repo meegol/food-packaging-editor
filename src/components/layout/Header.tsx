@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Box, Download, FolderOpen, Printer } from 'lucide-react';
+import { Box, Download, FolderOpen, Printer, Undo2, Redo2 } from 'lucide-react';
 import { PackagingDimensions } from '../../core/dieline/types';
 import { ThemePicker } from './ThemePicker';
 
@@ -12,6 +12,10 @@ interface HeaderProps {
   onSaveProject: () => void;
   onOpenExportModal: () => void;
   onImportProject: (fileContent: string) => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,6 +27,10 @@ export const Header: React.FC<HeaderProps> = ({
   onSaveProject,
   onOpenExportModal,
   onImportProject,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,6 +82,12 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Project JSON File I/O Actions & Production Export */}
         <div className="header-btn-group">
+          <button className="header-action-btn" title="Undo (Ctrl+Z)" aria-label="Undo" onClick={onUndo} disabled={!canUndo}>
+            <Undo2 size={14} />
+          </button>
+          <button className="header-action-btn" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" onClick={onRedo} disabled={!canRedo}>
+            <Redo2 size={14} />
+          </button>
           <input
             type="file"
             ref={fileInputRef}

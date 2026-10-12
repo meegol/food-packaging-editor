@@ -255,20 +255,18 @@ export class FabricDielineCanvas {
         objects.set(item.id, obj);
 
         obj.on('modified', () => {
-          item.x = obj.left;
-          item.y = obj.top;
-          item.scaleX = obj.scaleX;
-          item.scaleY = obj.scaleY;
-          item.angle = obj.angle;
-          if (item.type === 'text') {
-            item.text = (obj as Textbox).text;
-            item.width = obj.width;
+          // Write a copy, never mutate: React state and undo history share these objects.
+          const next: GraphicItem = { ...item, x: obj.left, y: obj.top, scaleX: obj.scaleX, scaleY: obj.scaleY, angle: obj.angle };
+          if (next.type === 'text') {
+            next.text = (obj as Textbox).text;
+            next.width = obj.width;
           } else {
-            item.naturalWidth = obj.width;
-            item.naturalHeight = obj.height;
-            item.width = (obj.width || 100) * (obj.scaleX || 1);
-            item.height = (obj.height || 100) * (obj.scaleY || 1);
+            next.naturalWidth = obj.width;
+            next.naturalHeight = obj.height;
+            next.width = (obj.width || 100) * (obj.scaleX || 1);
+            next.height = (obj.height || 100) * (obj.scaleY || 1);
           }
+          this.graphicItems = this.graphicItems.map(g => g.id === item.id ? next : g);
           if (this.onGraphicChangeCallback) {
             this.onGraphicChangeCallback([...this.graphicItems]);
           }

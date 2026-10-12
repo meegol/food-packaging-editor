@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
 import { CanvasViewport } from './components/canvas/CanvasViewport';
@@ -86,6 +86,74 @@ export const App: React.FC = () => {
       setAutosaveStatus
     );
   }, [selectedTemplateId, dimensions, graphics, themeId, hasInitializedDraftCheck, hasUserChanges]);
+
+  // Undo/redo: snapshots of the document state. Changes within 500ms coalesce
+  // into one step so slider drags and typing don't flood the stack.
+  type Snapshot = { templateId: string; dimensions: PackagingDimensions; graphics: GraphicItem[]; designId: string; isStarterPristine: boolean };
+  const past = useRef<Snapshot[]>([]);
+  const future = useRef<Snapshot[]>([]);
+  const committed = useRef<Snapshot | null>(null);
+  const lastChangeAt = useRef(0);
+  const restoring = useRef(false);
+  const [, setHistoryVersion] = useState(0);
+
+  useEffect(() => {
+    const snap = { templateId: selectedTemplateId, dimensions, graphics, designId, isStarterPristine };
+    const prev = committed.current;
+    if (prev && (Object.keys(snap) as (keyof Snapshot)[]).every(k => prev[k] === snap[k])) return;
+    if (restoring.current) {
+      restoring.current = false;
+    } else if (committed.current) {
+      const now = Date.now();
+      if (now - lastChangeAt.current > 500) {
+        past.current.push(committed.current);
+        if (past.current.length > 100) past.current.shift();
+      }
+      lastChangeAt.current = now;
+      future.current = [];
+      setHistoryVersion(v => v + 1);
+    }
+    committed.current = snap;
+  }, [selectedTemplateId, dimensions, graphics, designId, isStarterPristine]);
+
+  const restoreSnapshot = (from: Snapshot[], to: Snapshot[]) => {
+    const target = from.pop();
+    if (!target || !committed.current) return;
+    to.push(committed.current);
+    restoring.current = true;
+    lastChangeAt.current = 0;
+    if (target.templateId !== selectedTemplateId) {
+      setActivePanelId(null);
+      setFocusedPanelId(null);
+    }
+    setSelectedTemplateId(target.templateId);
+    setDimensions(target.dimensions);
+    setGraphics(target.graphics);
+    setDesignId(target.designId);
+    setIsStarterPristine(target.isStarterPristine);
+    setHasUserChanges(true);
+    setHistoryVersion(v => v + 1);
+  };
+  const handleUndo = () => restoreSnapshot(past.current, future.current);
+  const handleRedo = () => restoreSnapshot(future.current, past.current);
+
+  // Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl+Y redo; text fields keep native undo
+  const undoRedoRef = useRef({ handleUndo, handleRedo });
+  undoRedoRef.current = { handleUndo, handleRedo };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))) return;
+      const key = e.key.toLowerCase();
+      if (key === 'z' && !e.shiftKey) undoRedoRef.current.handleUndo();
+      else if (key === 'y' || (key === 'z' && e.shiftKey)) undoRedoRef.current.handleRedo();
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const handleSelectTheme = (newThemeId: string) => {
     document.documentElement.setAttribute('data-theme', newThemeId);
@@ -251,6 +319,10 @@ export const App: React.FC = () => {
         onSaveProject={handleSaveProject}
         onOpenExportModal={handleOpenExportModal}
         onImportProject={handleImportProject}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={past.current.length > 0}
+        canRedo={future.current.length > 0}
       />
       <main className={`app-workspace mobile-active-${mobileTab}`}>
         {detectedDraft && (
