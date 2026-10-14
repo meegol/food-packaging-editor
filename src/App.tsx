@@ -8,6 +8,7 @@ import { GraphicItem } from './core/graphics/types';
 import { remapGraphicsToDieline } from './core/graphics/remapGraphics';
 import { ExportModal } from './components/export/ExportModal';
 import { buildStarterDesign, DEFAULT_DESIGN_ID } from './core/designs/starterDesigns';
+import { getClientDesign, loadClientDesign } from './core/designs/clientDesigns';
 import { Sliders, Box as BoxIcon } from 'lucide-react';
 import {
   getThemePreference,
@@ -211,10 +212,13 @@ export const App: React.FC = () => {
       const ok = window.confirm('Switch package template? Your edits on this package will be lost.');
       if (!ok) return false;
     }
+    // Client designs belong to one template; other templates fall back to the default style
+    const nextDesignId = getClientDesign(designId) ? DEFAULT_DESIGN_ID : designId;
     setSelectedTemplateId(templateId);
     const next = getTemplateById(templateId);
     setDimensions(next.defaultDimensions);
-    setGraphics(buildStarterDesign(designId, generateDieline(templateId, next.defaultDimensions)));
+    setDesignId(nextDesignId);
+    setGraphics(buildStarterDesign(nextDesignId, generateDieline(templateId, next.defaultDimensions)));
     setActivePanelId(null);
     setFocusedPanelId(null);
     setIsStarterPristine(true);
@@ -222,10 +226,31 @@ export const App: React.FC = () => {
     return true;
   };
 
-  const handleSelectDesign = (nextDesignId: string) => {
+  const handleSelectDesign = async (nextDesignId: string) => {
     if (!isStarterPristine && graphics.length > 0) {
       const ok = window.confirm('Replace your current artwork with this starter design? Your edits on this package will be lost.');
       if (!ok) return;
+    }
+    const client = getClientDesign(nextDesignId);
+    if (client) {
+      let items: GraphicItem[];
+      try {
+        items = await loadClientDesign(client.id);
+      } catch (err: unknown) {
+        alert(`Could not load design: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        return;
+      }
+      if (client.templateId !== selectedTemplateId) {
+        setActivePanelId(null);
+        setFocusedPanelId(null);
+      }
+      setSelectedTemplateId(client.templateId);
+      setDimensions(client.dimensions);
+      setDesignId(client.id);
+      setGraphics(items);
+      setIsStarterPristine(true);
+      setHasUserChanges(true);
+      return;
     }
     setDesignId(nextDesignId);
     setGraphics(buildStarterDesign(nextDesignId, dieline));
@@ -240,7 +265,7 @@ export const App: React.FC = () => {
 
   const handleChangeDimensions = (dims: PackagingDimensions) => {
     const next = generateDieline(selectedTemplateId, dims);
-    if (isStarterPristine) {
+    if (isStarterPristine && !getClientDesign(designId)) {
       setGraphics(buildStarterDesign(designId, next));
     } else {
       setGraphics(prev => remapGraphicsToDieline(prev, dieline, next));

@@ -69,7 +69,7 @@ await page.locator('.starter-design-card[data-design-id="kraft"]').click();
 for (const [i, name] of TEMPLATE_NAMES.entries()) {
   await page.locator('.sidebar-tab-btn:has-text("Templates")').click();
   await page.locator('.template-card').filter({ hasText: name }).click();
-  await page.locator('.view-mode-tab:has-text("2D Assembled")').click();
+  await page.locator('.view-mode-tab:has-text("3D Assembled")').click();
   await page.waitForTimeout(900);
   const prefix = `assembled_${String(i + 1).padStart(2, '0')}_${slug(name)}`;
   await page.locator('.canvas-viewport-container').screenshot({ path: path.join(OUT_DIR, `${prefix}.png`) });

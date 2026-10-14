@@ -336,10 +336,10 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
           type="button"
           className={`view-mode-tab ${viewMode === 'assembled' ? 'active' : ''}`}
           onClick={() => setViewMode('assembled')}
-          title="Photorealistic 2D Assembled Packaging Preview"
+          title="Photorealistic 3D Assembled Packaging Preview"
         >
           <Box size={13} />
-          <span>2D Assembled</span>
+          <span>3D Assembled</span>
         </button>
         <button
           type="button"
@@ -548,7 +548,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
           </div>
         </div>
 
-        {/* 2D Assembled Packaging Preview Pane */}
+        {/* 3D Assembled Packaging Preview Pane */}
         <div
           className="assembled-preview-pane"
           style={{

@@ -56,8 +56,8 @@ async function main() {
   await canvasNavBtn.click();
   await mobilePage.waitForTimeout(400);
 
-  // Screen 4: Switch to 2D Assembled Preview on Mobile
-  const assembledTabBtn = mobilePage.locator('.view-mode-tab:has-text("2D Assembled")');
+  // Screen 4: Switch to 3D Assembled Preview on Mobile
+  const assembledTabBtn = mobilePage.locator('.view-mode-tab:has-text("3D Assembled")');
   if (await assembledTabBtn.isVisible()) {
     await assembledTabBtn.click();
     await mobilePage.waitForTimeout(600);

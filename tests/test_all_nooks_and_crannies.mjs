@@ -227,12 +227,12 @@ async function runAllTests() {
   }
 
   // Step 10: View Modes & Assembled 3D Preview
-  console.log('\n[10/14] Testing View Modes (Flat Net -> 2D Assembled -> Split View) & Turntable Angles...');
+  console.log('\n[10/14] Testing View Modes (Flat Net -> 3D Assembled -> Split View) & Turntable Angles...');
   // Switch to Assembled
-  await page.click('button:has-text("2D Assembled")');
+  await page.click('button:has-text("3D Assembled")');
   await page.waitForTimeout(500);
   await page.screenshot({ path: path.join(SCREENSHOT_DIR, '06_assembled_preview.png') });
-  console.log('   ✓ Switched to 2D Assembled Preview');
+  console.log('   ✓ Switched to 3D Assembled Preview');
 
   // Test Camera Angles
   const angles = ['front', 'top', 'side', 'back', 'bottom', 'isometric'];

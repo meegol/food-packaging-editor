@@ -104,9 +104,9 @@ async function run() {
     await page.screenshot({ path: ss1Path });
     console.log(`   ✓ Dropped Green Organic Badge onto 2D canvas, captured: ${ss1Path}`);
 
-    // TEST 2: Switch to 2D Assembled 3D Preview and verify Green Badge is projected on 3D Top Lid!
+    // TEST 2: Switch to 3D Assembled 3D Preview and verify Green Badge is projected on 3D Top Lid!
     console.log('\n3. Testing 3D Assembled Preview projection of dropped graphic:');
-    const assembledBtn = page.locator('.view-mode-tab:has-text("2D Assembled")');
+    const assembledBtn = page.locator('.view-mode-tab:has-text("3D Assembled")');
     await assembledBtn.click();
     await page.waitForTimeout(1000);
 

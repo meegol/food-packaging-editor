@@ -49,16 +49,16 @@ async function runTests() {
     await page.waitForSelector('.app-header', { timeout: 10000 });
     console.log('   ✓ App Header loaded successfully');
 
-    // Switch to 2D Assembled Preview
-    console.log('\n2. Testing 2D Assembled 360° Preview:');
-    const assembledBtn = page.locator('.view-mode-tab:has-text("2D Assembled")');
+    // Switch to 3D Assembled Preview
+    console.log('\n2. Testing 3D Assembled 360° Preview:');
+    const assembledBtn = page.locator('.view-mode-tab:has-text("3D Assembled")');
     await assembledBtn.click();
     await page.waitForTimeout(600);
 
     await page.waitForSelector('.assembled-preview-container', { state: 'visible', timeout: 5000 });
     await page.waitForSelector('.package-3d-view canvas', { state: 'visible', timeout: 5000 });
     await page.waitForSelector('.package-3d-loading', { state: 'detached', timeout: 20000 });
-    console.log('   ✓ 2D Assembled Preview container and 3D package rendered');
+    console.log('   ✓ 3D Assembled Preview container and 3D package rendered');
 
     // 2a. Screenshot Initial 3/4 Hero View
     const heroPath = path.join(SCREENSHOT_DIR, '01_assembled_burger_34_hero.png');

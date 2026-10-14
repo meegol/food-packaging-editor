@@ -131,9 +131,9 @@ const snap = async (page, name) => {
 
       await snap(page, `${prefix}_02_flat_net_with_text`);
 
-      // Switch to 2D Assembled Preview
-      console.log('   -> Switching to 2D Assembled 3D View');
-      await page.locator('.view-mode-tab:has-text("2D Assembled")').click();
+      // Switch to 3D Assembled Preview
+      console.log('   -> Switching to 3D Assembled 3D View');
+      await page.locator('.view-mode-tab:has-text("3D Assembled")').click();
       await page.waitForTimeout(600);
       // Explicitly reset angle to 3/4 Hero preset
       const heroBtn = page.locator('.preview-pill-btn:has-text("3/4 Hero")').first();

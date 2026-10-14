@@ -101,8 +101,8 @@ async function testFullClippingVerification() {
   await page.screenshot({ path: path.join(ARTIFACT_DIR, 'verify_flat_clipped_overflow.png') });
   console.log('Saved verify_flat_clipped_overflow.png');
 
-  // 4. Switch to 2D Assembled (3D) view
-  await page.locator('button:has-text("2D Assembled")').click();
+  // 4. Switch to 3D Assembled (3D) view
+  await page.locator('button:has-text("3D Assembled")').click();
   await page.waitForTimeout(800);
 
   // Take screenshot in 3D Assembled view

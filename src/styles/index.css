@@ -250,6 +250,24 @@ code, pre, .font-mono {
   margin-top: 14px;
 }
 
+.client-design-thumb {
+  background-color: var(--bg-app);
+}
+
+.client-design-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  margin-top: 0;
+}
+
+.client-design-template {
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 0 2px 2px;
+  line-height: 1.3;
+}
+
 .starter-design-thumb-blank {
   background-color: var(--bg-app);
   color: var(--text-muted);
@@ -1066,7 +1084,7 @@ select option {
 }
 
 /* ==========================================================================
-   2D Assembled Packaging Preview Studio
+   3D Assembled Packaging Preview Studio
    ========================================================================== */
 
 .assembled-preview-container {
@@ -2216,7 +2234,7 @@ select option {
     display: none !important;
   }
 
-  /* 2D Assembled Preview Controls on Mobile */
+  /* 3D Assembled Preview Controls on Mobile */
   .preview-toolbar {
     top: 46px;
     max-width: 95vw;

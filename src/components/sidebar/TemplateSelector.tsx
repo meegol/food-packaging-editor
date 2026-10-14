@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Package, Utensils, ShoppingBag, Cake, ScrollText, Square } from 'lucide-react';
-import { TEMPLATES, TemplateCategory } from '../../core/dieline';
+import { TEMPLATES, TemplateCategory, getTemplateById } from '../../core/dieline';
 import { STARTER_STYLES, BLANK_DESIGN_ID, getStarterThumbnail } from '../../core/designs/starterDesigns';
+import { CLIENT_DESIGNS, clientDesignThumbnail } from '../../core/designs/clientDesigns';
 
 interface TemplateSelectorProps {
   selectedTemplateId: string;
@@ -76,6 +77,41 @@ const StarterDesignPicker: React.FC<{
   </div>
 );
 
+const ClientDesignPicker: React.FC<{
+  designId: string;
+  onSelectDesign: (designId: string) => void;
+}> = ({ designId, onSelectDesign }) => (
+  <div className="sidebar-section">
+    <div className="sidebar-section-title">
+      <span>Client Designs</span>
+      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{CLIENT_DESIGNS.length} Designs</span>
+    </div>
+
+    <div className="starter-design-grid">
+      {CLIENT_DESIGNS.map((design) => {
+        const isActive = design.id === designId;
+        return (
+          <button
+            key={design.id}
+            type="button"
+            className={`starter-design-card ${isActive ? 'active' : ''}`}
+            onClick={() => onSelectDesign(design.id)}
+            aria-pressed={isActive}
+            data-design-id={design.id}
+            title={design.description}
+          >
+            <span className="starter-design-thumb client-design-thumb">
+              <img src={clientDesignThumbnail(design.id)} alt="" draggable={false} loading="lazy" />
+            </span>
+            <span className="starter-design-name">{design.name}</span>
+            <span className="client-design-template">{getTemplateById(design.templateId).name}</span>
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
 export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   selectedTemplateId,
   onSelectTemplate,
@@ -116,6 +152,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   return (
     <>
     <StarterDesignPicker templateId={selectedTemplateId} designId={designId} onSelectDesign={onSelectDesign} />
+    <ClientDesignPicker designId={designId} onSelectDesign={onSelectDesign} />
     <div className="sidebar-section">
       <div className="sidebar-section-title">
         <span>Packaging Model Library</span>

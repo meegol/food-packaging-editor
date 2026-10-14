@@ -147,9 +147,9 @@ const snap = async (page, name) => {
     await page.waitForTimeout(600);
     await snap(page, '06_flat_net_after_image_drop');
 
-    // ---- STEP 5: Now switch to 2D Assembled ----
-    console.log('\n[5] Switching to 2D Assembled 3D view...');
-    await page.locator('.view-mode-tab:has-text("2D Assembled")').click();
+    // ---- STEP 5: Now switch to 3D Assembled ----
+    console.log('\n[5] Switching to 3D Assembled 3D view...');
+    await page.locator('.view-mode-tab:has-text("3D Assembled")').click();
     await page.waitForTimeout(800);
 
     // Ensure 3/4 Hero angle
