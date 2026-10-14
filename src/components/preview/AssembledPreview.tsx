@@ -3,7 +3,6 @@ import {
   Eye, 
   Rotate3d, 
   Download, 
-  Sparkles, 
   Sun, 
   Moon, 
   Camera,
@@ -365,14 +364,8 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
   // Background style
   const bgStyle = useMemo(() => {
     if (lighting === 'transparent') return { background: 'transparent' };
-    if (lighting === 'light') {
-      return {
-        background: 'radial-gradient(circle at 50% 40%, #ffffff 0%, #f1f5f9 60%, #e2e8f0 100%)',
-      };
-    }
-    return {
-      background: 'radial-gradient(circle at 50% 35%, #1e293b 0%, #0f172a 70%, #020617 100%)',
-    };
+    if (lighting === 'light') return { background: 'var(--bg-app)' };
+    return { background: 'var(--mat)' };
   }, [lighting]);
 
   const downloadDataUrl = (url: string | null | undefined, name: string) => {
@@ -407,10 +400,10 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
   ].includes(dieline.templateId);
 
   const opennessLabel = dieline.templateId === 'dessert-sleeve-box' 
-    ? 'Slide Tray' 
+    ? 'Slide tray' 
     : dieline.templateId === 'round-food-tub' 
-    ? 'Lift Lid' 
-    : 'Open Lid';
+    ? 'Lift lid' 
+    : 'Open lid';
 
   return (
     <div
@@ -449,11 +442,11 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
             <UploadCloud size={32} color="var(--accent-secondary, #38bdf8)" />
             <div style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff' }}>
               {dragTargetPanelId
-                ? `Drop image onto panel: ${dieline.panels.find(p => p.id === dragTargetPanelId)?.name}`
-                : 'Drop image onto 3D packaging model'}
+                ? `Drop onto ${dieline.panels.find(p => p.id === dragTargetPanelId)?.name}`
+                : 'Drop the image onto the package'}
             </div>
             <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.7)' }}>
-              Projects seamlessly onto 3D packaging geometry & updates Proof Sheet
+              It will appear on the model and in the face list below
             </div>
           </div>
         </div>
@@ -463,7 +456,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
       <div className="preview-toolbar">
         {/* Cardinal Face Snap Presets */}
         <div className="preview-toolbar-group">
-          <span className="preview-group-label">Angle:</span>
+          <span className="preview-group-label">View</span>
           <button
             type="button"
             className={`preview-pill-btn ${viewAnglePreset === 'isometric' ? 'active' : ''}`}
@@ -527,7 +520,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
 
         {/* Material Selection */}
         <div className="preview-toolbar-group">
-          <span className="preview-group-label">Material:</span>
+          <span className="preview-group-label">Board</span>
           <button
             type="button"
             className={`preview-material-btn ${material === 'white' ? 'active' : ''}`}
@@ -574,7 +567,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
             type="button"
             className={`preview-pill-btn ${lighting === 'dark' ? 'active' : ''}`}
             onClick={() => setLighting('dark')}
-            title="Dark Studio Lighting"
+            title="Mat backdrop"
           >
             <Moon size={13} />
           </button>
@@ -582,7 +575,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
             type="button"
             className={`preview-pill-btn ${lighting === 'light' ? 'active' : ''}`}
             onClick={() => setLighting('light')}
-            title="Clean White Studio Lighting"
+            title="Light backdrop"
           >
             <Sun size={13} />
           </button>
@@ -596,16 +589,16 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
             type="button"
             className="preview-action-btn primary"
             onClick={handleExportPNG}
-            title="Export High-Resolution Mockup PNG"
+            title="Save a high-resolution image of this view"
           >
             <Camera size={13} />
-            <span>Export PNG</span>
+            <span>Save image</span>
           </button>
           <button
             type="button"
             className="preview-action-btn"
             onClick={handleExportTransparent}
-            title="Download Transparent Mockup PNG"
+            title="Save the image with a transparent background"
           >
             <Download size={13} />
           </button>
@@ -615,7 +608,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
       {/* 2. Turntable 360° Rotation Slider Bar */}
       <div className="preview-turntable-bar">
         <Rotate3d size={14} style={{ color: 'var(--accent-secondary)' }} />
-        <span className="turntable-label">Scroll to Spin:</span>
+        <span className="turntable-label">Turn</span>
         <button
           type="button"
           className="turntable-step-btn"
@@ -623,7 +616,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
             setYaw((prev) => (prev - 45 + 360) % 360);
             setViewAnglePreset('custom');
           }}
-          title="Turn Left 45°"
+          title="Turn left 45°"
         >
           -45°
         </button>
@@ -638,7 +631,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
             setViewAnglePreset('custom');
           }}
           className="turntable-slider"
-          title="360° Turntable Angle"
+          title="Turn the package"
         />
         <button
           type="button"
@@ -647,7 +640,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
             setYaw((prev) => (prev + 45) % 360);
             setViewAnglePreset('custom');
           }}
-          title="Turn Right 45°"
+          title="Turn right 45°"
         >
           +45°
         </button>
@@ -657,7 +650,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
       {/* 3. Openness / Lid Extension Slider */}
       {hasOpennessControl && (
         <div className="preview-openness-bar">
-          <span className="preview-group-label">{opennessLabel}:</span>
+          <span className="preview-group-label">{opennessLabel}</span>
           <input
             type="range"
             min="0"
@@ -691,7 +684,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
       {hoveredFaceName && (
         <div className="preview-hover-tag">
           <Eye size={12} color="var(--accent-secondary)" />
-          <span>Face: {hoveredFaceName}</span>
+          <span>{hoveredFaceName}</span>
         </div>
       )}
 
@@ -700,15 +693,15 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
         <div className="preview-sides-header">
           <div className="sides-header-title">
             <Layers size={13} style={{ color: 'var(--accent-primary)' }} />
-            <span>All-Sides Proof Sheet ({dieline.panels.length} Sides)</span>
-            <span className="sides-header-hint">• Scroll or click arrows to inspect all panels • Click to spin 3D view</span>
+            <span>All faces ({dieline.panels.length})</span>
+            <span className="sides-header-hint">Click a face to turn the model to it</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <button
               type="button"
               className="sides-toggle-btn"
               onClick={() => scrollProofStrip('left')}
-              title="Scroll Panels Left"
+              title="Scroll left"
             >
               <ChevronLeft size={14} />
             </button>
@@ -716,7 +709,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
               type="button"
               className="sides-toggle-btn"
               onClick={() => scrollProofStrip('right')}
-              title="Scroll Panels Right"
+              title="Scroll right"
             >
               <ChevronRight size={14} />
             </button>
@@ -725,7 +718,7 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
               type="button"
               className="sides-toggle-btn"
               onClick={() => setShowSidesStrip(!showSidesStrip)}
-              title={showSidesStrip ? 'Collapse Sides Strip' : 'Expand All Sides Strip'}
+              title={showSidesStrip ? 'Hide the face list' : 'Show the face list'}
             >
               {showSidesStrip ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
             </button>
@@ -872,15 +865,6 @@ export const AssembledPreview: React.FC<AssembledPreviewProps> = ({
         )}
       </div>
 
-      {/* Footer Info Badge */}
-      <div className="preview-footer-info">
-        <Sparkles size={13} color="var(--accent-primary)" />
-        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{dieline.templateName}</span>
-        <span style={{ color: 'var(--border-medium)' }}>|</span>
-        <span style={{ color: 'var(--text-secondary)' }}>
-          360° Scroll Turntable • {materialStyles.name}
-        </span>
-      </div>
     </div>
   );
 };

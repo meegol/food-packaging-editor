@@ -187,9 +187,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               <Printer size={18} />
             </div>
             <div>
-              <h2 className="export-modal-title">Production Export Suite</h2>
+              <h2 className="export-modal-title">Export</h2>
               <p className="export-modal-subtitle">
-                Print-ready 1:1 CAD PDF, layer-separated SVG, and high-DPI raster proofs
+                Files for your printer, die-cutter or design software
               </p>
             </div>
           </div>
@@ -254,10 +254,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   <ShieldCheck size={20} />
                 </div>
                 <div>
-                  <strong>Industrial Packaging Standard (FEFCO / ECMA)</strong>
+                  <strong>For printers and die-cutters</strong>
                   <p>
-                    Outputs precise millimeter vector paths for laser-cut steel rule dies and digital
-                    die-cutters (Zünd, Kongsberg, ESKO). Includes technical BOM on Page 2.
+                    Exact-size vector lines that cutting machines (Zünd, Kongsberg, Esko) can follow.
+                    Page 2 lists the measurements and materials.
                   </p>
                 </div>
               </div>
@@ -441,9 +441,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   <Layers size={20} />
                 </div>
                 <div>
-                  <strong>Direct Vector CAD / Adobe Illustrator Import</strong>
+                  <strong>For Illustrator, Inkscape or CorelDRAW</strong>
                   <p>
-                    Clean, grouped SVG with physical millimeter units (`&lt;g id="cut-lines"&gt;`, `&lt;g id="crease-lines"&gt;`, `&lt;g id="artwork"&gt;`).
+                    Opens at real size in millimetres, with cut lines, crease lines and artwork on separate layers.
                   </p>
                 </div>
               </div>
@@ -592,10 +592,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   <ShieldCheck size={20} />
                 </div>
                 <div>
-                  <strong>AutoCAD R12 ASCII DXF (CNC Knife & Laser Sample Cutters)</strong>
+                  <strong>For cutting tables and die makers</strong>
                   <p>
-                    Standard vector CAD dieline formatted for digital flatbed cutting tables (Zünd, Kongsberg)
-                    and steel-rule die tooling software (Esko ArtiosCAD, AutoCAD, Illustrator CAD tools).
+                    The cut and crease lines only, as a DXF file for flatbed cutters (Zünd, Kongsberg)
+                    and die-making software (Esko ArtiosCAD, AutoCAD).
                   </p>
                 </div>
               </div>
@@ -687,9 +687,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   <Sparkles size={20} />
                 </div>
                 <div>
-                  <strong>High-DPI Print Proof & Digital Sign-Off</strong>
+                  <strong>A picture to check before printing</strong>
                   <p>
-                    Produces a crisp raster render at true printing resolution (300 DPI or 600 DPI) for client reviews and prepress proofing.
+                    A sharp image at print resolution to send to a client or printer for approval.
                   </p>
                 </div>
               </div>
@@ -873,9 +873,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   <Settings size={20} />
                 </div>
                 <div>
-                  <strong>Zero-Registration Project Portability</strong>
+                  <strong>Keep working later</strong>
                   <p>
-                    Download complete design project state as a standalone `.json` file. You can restore your project on any computer at any time without needing an account.
+                    Save the whole project as a file. Open it again on any computer with the Open button. No account needed.
                   </p>
                 </div>
               </div>
