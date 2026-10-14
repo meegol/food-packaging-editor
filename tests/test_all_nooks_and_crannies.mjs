@@ -300,7 +300,7 @@ async function runAllTests() {
 
   // Step 12: Project JSON File Saving & Loading (SRS Section 1.3)
   console.log('\n[12/14] Testing File-Based Project Saving & Loading (Save Project / Open Project)...');
-  const saveProjectBtn = page.locator('.header-action-btn:has-text("Save Project")');
+  const saveProjectBtn = page.locator('.header-action-btn:has-text("Save")');
   if (await saveProjectBtn.count() > 0) {
     const [download] = await Promise.all([
       page.waitForEvent('download'),

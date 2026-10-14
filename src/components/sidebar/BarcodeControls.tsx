@@ -174,7 +174,7 @@ export const BarcodeControls: React.FC<BarcodeControlsProps> = ({
             borderRadius: 'var(--radius-sm)',
             border: mode === 'barcode' ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
             backgroundColor: mode === 'barcode' ? 'var(--accent-primary)' : 'var(--bg-surface)',
-            color: mode === 'barcode' ? '#ffffff' : 'var(--text-secondary)',
+            color: mode === 'barcode' ? 'var(--accent-ink)' : 'var(--text-secondary)',
             cursor: 'pointer',
           }}
         >
@@ -196,7 +196,7 @@ export const BarcodeControls: React.FC<BarcodeControlsProps> = ({
             borderRadius: 'var(--radius-sm)',
             border: mode === 'qrcode' ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
             backgroundColor: mode === 'qrcode' ? 'var(--accent-primary)' : 'var(--bg-surface)',
-            color: mode === 'qrcode' ? '#ffffff' : 'var(--text-secondary)',
+            color: mode === 'qrcode' ? 'var(--accent-ink)' : 'var(--text-secondary)',
             cursor: 'pointer',
           }}
         >
@@ -344,7 +344,7 @@ export const BarcodeControls: React.FC<BarcodeControlsProps> = ({
                     borderRadius: 'var(--radius-sm)',
                     border: qrErrorCorrection === lvl ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
                     backgroundColor: qrErrorCorrection === lvl ? 'var(--accent-primary)' : 'var(--bg-surface)',
-                    color: qrErrorCorrection === lvl ? '#ffffff' : 'var(--text-muted)',
+                    color: qrErrorCorrection === lvl ? 'var(--accent-ink)' : 'var(--text-muted)',
                     cursor: 'pointer',
                   }}
                 >
@@ -430,7 +430,7 @@ export const BarcodeControls: React.FC<BarcodeControlsProps> = ({
           gap: '6px',
           width: '100%',
           backgroundColor: !previewDataUrl || !!errorMsg ? 'var(--bg-surface)' : 'var(--accent-primary)',
-          color: !previewDataUrl || !!errorMsg ? 'var(--text-muted)' : '#ffffff',
+          color: !previewDataUrl || !!errorMsg ? 'var(--text-muted)' : 'var(--accent-ink)',
           border: 'none',
           borderRadius: 'var(--radius-sm)',
           padding: '8px',

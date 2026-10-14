@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Box, Download, FolderOpen, Printer, Undo2, Redo2 } from 'lucide-react';
+import { Download, FolderOpen, Printer, Undo2, Redo2 } from 'lucide-react';
 import { PackagingDimensions } from '../../core/dieline/types';
 import { ThemePicker } from './ThemePicker';
 
@@ -54,30 +54,24 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="app-header">
       <div className="app-brand">
-        <div className="app-brand-icon">
-          <Box size={18} />
-        </div>
         <div className="app-title-group">
           <h1>Food Packaging Editor</h1>
-          <p className="app-subtitle">2D Dieline & Layout Tool</p>
         </div>
       </div>
 
       <div className="header-actions-group">
         {/* Template & Dimensions Badge */}
         <div className="header-template-badge">
-          <span className="badge-prefix">Template:</span>
           <span className="badge-name">{templateName}</span>
-          <span className="badge-divider">|</span>
-          <span className="badge-dims">
-            {dimensions.length} × {dimensions.width} × {dimensions.depth} {dimensions.unit} (t={dimensions.thickness}mm)
+          <span className="badge-dims" title={`Board thickness ${dimensions.thickness} mm`}>
+            {dimensions.length} × {dimensions.width} × {dimensions.depth} {dimensions.unit}
           </span>
         </div>
 
         {/* Autosave Status Indicator */}
         <div className="autosave-status-pill" title="Automatic local session draft backup">
           <span className={`autosave-dot ${autosaveStatus === 'saving' ? 'saving' : ''}`} />
-          <span className="autosave-label">{autosaveStatus === 'saving' ? 'Saving...' : 'Saved'}</span>
+          <span className="autosave-label">{autosaveStatus === 'saving' ? 'Saving…' : 'Saved'}</span>
         </div>
 
         {/* Project JSON File I/O Actions & Production Export */}
@@ -97,23 +91,23 @@ export const Header: React.FC<HeaderProps> = ({
           />
           <button
             className="header-action-btn"
-            title="Open an existing packaging project JSON file"
+            title="Open a saved project file (.json)"
             onClick={() => fileInputRef.current?.click()}
           >
             <FolderOpen size={14} />
-            <span className="header-btn-label">Open Project</span>
+            <span className="header-btn-label">Open</span>
           </button>
           <button
             className="header-action-btn"
-            title="Save and download packaging project JSON file directly"
+            title="Download this project as a file you can open later"
             onClick={onSaveProject}
           >
             <Download size={14} />
-            <span className="header-btn-label">Save Project</span>
+            <span className="header-btn-label">Save</span>
           </button>
           <button
             className="header-action-btn primary"
-            title="Open Production Export Suite (1:1 CAD PDF, SVG, AutoCAD DXF, 300 DPI Proof)"
+            title="Export print files: PDF, SVG, DXF or PNG"
             onClick={onOpenExportModal}
           >
             <Printer size={14} />

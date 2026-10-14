@@ -9,6 +9,7 @@ import { remapGraphicsToDieline } from './core/graphics/remapGraphics';
 import { ExportModal } from './components/export/ExportModal';
 import { buildStarterDesign, DEFAULT_DESIGN_ID } from './core/designs/starterDesigns';
 import { getClientDesign, loadClientDesign } from './core/designs/clientDesigns';
+import { normalizeThemeId, resolveThemeMode, ThemeMode } from './styles/themeDefinitions';
 import { Sliders, Box as BoxIcon } from 'lucide-react';
 import {
   getThemePreference,
@@ -23,7 +24,9 @@ import {
 
 export const App: React.FC = () => {
   // Theme state initialized from persisted preference
-  const [themeId, setThemeId] = useState<string>(() => getThemePreference());
+  const [themeId, setThemeIdRaw] = useState<string>(() => normalizeThemeId(getThemePreference()));
+  const setThemeId = (id: string) => setThemeIdRaw(normalizeThemeId(id));
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => resolveThemeMode(themeId));
 
   // Mobile layout active tab ('tools' | 'canvas')
   const [mobileTab, setMobileTab] = useState<'tools' | 'canvas'>('canvas');
@@ -58,8 +61,17 @@ export const App: React.FC = () => {
 
   // Synchronize active theme with document element immediately
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', themeId);
+    const apply = () => {
+      const mode = resolveThemeMode(themeId);
+      document.documentElement.setAttribute('data-theme', mode);
+      setThemeMode(mode);
+    };
+    apply();
     saveThemePreference(themeId);
+    if (themeId !== 'system' || !window.matchMedia) return;
+    const query = window.matchMedia('(prefers-color-scheme: dark)');
+    query.addEventListener('change', apply);
+    return () => query.removeEventListener('change', apply);
   }, [themeId]);
 
   // Check for existing saved draft on initial application load (IndexedDB + localStorage)
@@ -157,9 +169,7 @@ export const App: React.FC = () => {
   }, []);
 
   const handleSelectTheme = (newThemeId: string) => {
-    document.documentElement.setAttribute('data-theme', newThemeId);
     setThemeId(newThemeId);
-    saveThemePreference(newThemeId);
   };
 
   const handleRestoreDraft = () => {
@@ -383,7 +393,7 @@ export const App: React.FC = () => {
           graphics={graphics}
           onGraphicChange={handleCanvasGraphicChange}
           onAddGraphic={handleAddGraphic}
-          themeId={themeId}
+          themeId={themeMode}
         />
       </main>
 

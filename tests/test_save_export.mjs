@@ -72,7 +72,7 @@ const dl = async (click, label) => {
   }
 };
 
-const savedPath = await dl(() => page.click('button:has-text("Save Project")'), 'save project');
+const savedPath = await dl(() => page.click('.header-action-btn:has-text("Save")'), 'save project');
 if (savedPath) {
   const saved = JSON.parse(fs.readFileSync(savedPath, 'utf8'));
   check('save project: graphics persisted', saved.graphics?.length === 4, `${saved.graphics?.length}`);

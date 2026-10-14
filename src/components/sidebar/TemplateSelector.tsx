@@ -179,7 +179,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               borderRadius: 'var(--radius-sm)',
               border: 'none',
               backgroundColor: selectedCategory === cat.id ? 'var(--accent-primary)' : 'var(--bg-app)',
-              color: selectedCategory === cat.id ? '#ffffff' : 'var(--text-secondary)',
+              color: selectedCategory === cat.id ? 'var(--accent-ink)' : 'var(--text-secondary)',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               transition: 'all 0.15s ease',

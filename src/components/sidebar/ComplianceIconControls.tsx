@@ -283,7 +283,7 @@ export const ComplianceIconControls: React.FC<ComplianceIconControlsProps> = ({
               borderRadius: 'var(--radius-sm)',
               border: activeCategory === cat ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
               backgroundColor: activeCategory === cat ? 'var(--accent-primary)' : 'var(--bg-surface)',
-              color: activeCategory === cat ? '#ffffff' : 'var(--text-muted)',
+              color: activeCategory === cat ? 'var(--accent-ink)' : 'var(--text-muted)',
               cursor: 'pointer',
             }}
           >

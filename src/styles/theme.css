@@ -1,48 +1,68 @@
 /* ==========================================================================
-   Software Industry Design System Palettes
-   Features: GitHub Primer, Arctic Nord, Catppuccin, and Shadcn Zinc
+   Color tokens: light and dark.
+   The workspace is a green self-healing cutting mat with a millimetre grid;
+   panels are white board stock lying on it. Cyan (process C) is the only
+   accent: it marks the primary action and whatever is selected.
    ========================================================================== */
 
-/* Theme 1: GitHub Primer Dark (Default) */
 :root,
-[data-theme="github-dark"] {
-  --bg-app: #0d1117;
-  --bg-sidebar: #161b22;
-  --bg-surface: #21262d;
-  --bg-surface-hover: #30363d;
-  --bg-surface-active: #3b434d;
-  
-  --bg-canvas: #0d1117;
-  --grid-line: #21262d;
-  --grid-subline: #161b22;
-  
-  --border-subtle: #30363d;
-  --border-medium: #484f58;
-  --border-focus: #2f81f7;
+[data-theme="light"] {
+  color-scheme: light;
 
-  --text-primary: #e6edf3;
-  --text-secondary: #8d96a0;
-  --text-muted: #6e7681;
-  --text-inverse: #0d1117;
+  --bg-app: #f1f2ef;
+  --bg-sidebar: #fafaf8;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f1f3f0;
+  --bg-surface-active: #e6e9e4;
+  --bg-primary: var(--bg-surface);
+  --bg-secondary: var(--bg-app);
+  --bg-hover: var(--bg-surface-hover);
 
-  --accent-primary: #238636;
-  --accent-primary-hover: #2ea043;
-  --accent-secondary: #2f81f7;
+  /* Cutting mat */
+  --bg-canvas: #3e6b5c;
+  --mat: #3e6b5c;
+  --mat-grid: rgba(255, 255, 255, 0.09);
+  --mat-grid-major: rgba(255, 255, 255, 0.2);
+  --board: #ffffff;
+  --board-hover: #e9f5fa;
+  --board-active: #d4edf7;
+  --board-label: #8a9096;
+  --grid-line: var(--mat-grid);
+  --grid-subline: var(--mat-grid);
 
-  --dieline-cut: #f85149;
-  --dieline-crease: #3fb950;
-  --dieline-bleed: #388bfd;
-  --dieline-panel-hover: rgba(47, 129, 247, 0.14);
-  --dieline-panel-active: rgba(47, 129, 247, 0.25);
-  --dieline-panel-active-stroke: #58a6ff;
+  --border-subtle: #e2e4df;
+  --border-medium: #c9cdc6;
+  --border-focus: #0090c8;
 
-  --status-success: #3fb950;
-  --status-warning: #d29922;
-  --status-info: #58a6ff;
-  --status-danger: #f85149;
+  --text-primary: #24282d;
+  --text-secondary: #555c63;
+  --text-muted: #7d848a;
+  --text-inverse: #ffffff;
 
-  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.4);
-  --shadow-popover: 0 10px 25px rgba(0, 0, 0, 0.5);
+  --accent: #0090c8;
+  --accent-hover: #007aab;
+  --accent-soft: #e3f3fa;
+  --accent-ink: #ffffff;
+  /* Older names, kept so every component follows the single accent */
+  --accent-primary: var(--accent);
+  --accent-primary-hover: var(--accent-hover);
+  --accent-secondary: var(--accent);
+
+  --dieline-cut: #e53935;
+  --dieline-crease: #10b981;
+  --dieline-bleed: #0090c8;
+  --dieline-panel-hover: var(--board-hover);
+  --dieline-panel-active: var(--board-active);
+  --dieline-panel-active-stroke: #0090c8;
+
+  --status-success: #2e8b57;
+  --status-warning: #b7791f;
+  --status-info: #0090c8;
+  --status-danger: #d14343;
+
+  --shadow-card: 0 1px 2px rgba(36, 40, 45, 0.06);
+  --shadow-popover: 0 8px 24px rgba(36, 40, 45, 0.14);
+  --transition-fast: 0.12s ease;
 
   --header-height: 54px;
   --sidebar-width: 320px;
@@ -52,248 +72,46 @@
   --radius-lg: 10px;
 }
 
-/* Theme 2: Nord Arctic Studio (Arctic Ice Studio) */
-[data-theme="nord-dark"] {
-  --bg-app: #242933;
-  --bg-sidebar: #2e3440;
-  --bg-surface: #3b4252;
-  --bg-surface-hover: #434c5e;
-  --bg-surface-active: #4c566a;
-  
-  --bg-canvas: #2e3440;
-  --grid-line: #3b4252;
-  --grid-subline: #2e3440;
-  
-  --border-subtle: #434c5e;
-  --border-medium: #4c566a;
-  --border-focus: #88c0d0;
+[data-theme="dark"] {
+  color-scheme: dark;
 
-  --text-primary: #eceff4;
-  --text-secondary: #e5e9f0;
-  --text-muted: #d8dee9;
-  --text-inverse: #2e3440;
+  --bg-app: #15191c;
+  --bg-sidebar: #1c2125;
+  --bg-surface: #232a2f;
+  --bg-surface-hover: #2b3338;
+  --bg-surface-active: #344047;
 
-  --accent-primary: #5e81ac;
-  --accent-primary-hover: #81a1c1;
-  --accent-secondary: #88c0d0;
+  --bg-canvas: #24433a;
+  --mat: #24433a;
+  --mat-grid: rgba(255, 255, 255, 0.06);
+  --mat-grid-major: rgba(255, 255, 255, 0.14);
+  --board: #e8eae6;
+  --board-hover: #d9ebf2;
+  --board-active: #c6e4f0;
+  --board-label: #7d848a;
 
-  --dieline-cut: #bf616a;
-  --dieline-crease: #a3be8c;
-  --dieline-bleed: #81a1c1;
-  --dieline-panel-hover: rgba(136, 192, 208, 0.14);
-  --dieline-panel-active: rgba(94, 129, 172, 0.28);
-  --dieline-panel-active-stroke: #88c0d0;
+  --border-subtle: #2e373d;
+  --border-medium: #3e4a51;
+  --border-focus: #3cb4e4;
 
-  --status-success: #a3be8c;
-  --status-warning: #ebcb8b;
-  --status-info: #88c0d0;
-  --status-danger: #bf616a;
+  --text-primary: #e7eaec;
+  --text-secondary: #aeb6bc;
+  --text-muted: #87919a;
+  --text-inverse: #15191c;
 
-  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.4);
-  --shadow-popover: 0 10px 25px rgba(0, 0, 0, 0.5);
-}
+  --accent: #3cb4e4;
+  --accent-hover: #64c5ec;
+  --accent-soft: rgba(60, 180, 228, 0.14);
+  --accent-ink: #0c2430;
 
-/* Theme 3: Catppuccin Mocha (Modern Developer Pastel Dark) */
-[data-theme="catppuccin-mocha"] {
-  --bg-app: #11111b;
-  --bg-sidebar: #181825;
-  --bg-surface: #1e1e2e;
-  --bg-surface-hover: #313244;
-  --bg-surface-active: #45475a;
-  
-  --bg-canvas: #181825;
-  --grid-line: #313244;
-  --grid-subline: #1e1e2e;
-  
-  --border-subtle: #313244;
-  --border-medium: #45475a;
-  --border-focus: #cba6f7;
+  --dieline-bleed: #3cb4e4;
+  --dieline-panel-active-stroke: #3cb4e4;
 
-  --text-primary: #cdd6f4;
-  --text-secondary: #a6adc8;
-  --text-muted: #6c7086;
-  --text-inverse: #11111b;
+  --status-success: #4cbb7f;
+  --status-warning: #d9a441;
+  --status-info: #3cb4e4;
+  --status-danger: #ef6b6b;
 
-  --accent-primary: #cba6f7;
-  --accent-primary-hover: #b4befe;
-  --accent-secondary: #89b4fa;
-
-  --dieline-cut: #f38ba8;
-  --dieline-crease: #a6e3a1;
-  --dieline-bleed: #74c7ec;
-  --dieline-panel-hover: rgba(203, 166, 247, 0.15);
-  --dieline-panel-active: rgba(203, 166, 247, 0.28);
-  --dieline-panel-active-stroke: #b4befe;
-
-  --status-success: #a6e3a1;
-  --status-warning: #f9e2af;
-  --status-info: #89dceb;
-  --status-danger: #f38ba8;
-
-  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.5);
-  --shadow-popover: 0 10px 25px rgba(0, 0, 0, 0.6);
-}
-
-/* Theme 4: Shadcn Zinc Dark (Modern Enterprise SaaS) */
-[data-theme="shadcn-zinc-dark"] {
-  --bg-app: #09090b;
-  --bg-sidebar: #121215;
-  --bg-surface: #18181b;
-  --bg-surface-hover: #27272a;
-  --bg-surface-active: #3f3f46;
-  
-  --bg-canvas: #09090b;
-  --grid-line: #18181b;
-  --grid-subline: #121215;
-  
-  --border-subtle: #27272a;
-  --border-medium: #3f3f46;
-  --border-focus: #3b82f6;
-
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
-  --text-inverse: #09090b;
-
-  --accent-primary: #2563eb;
-  --accent-primary-hover: #3b82f6;
-  --accent-secondary: #60a5fa;
-
-  --dieline-cut: #ef4444;
-  --dieline-crease: #22c55e;
-  --dieline-bleed: #3b82f6;
-  --dieline-panel-hover: rgba(59, 130, 246, 0.14);
-  --dieline-panel-active: rgba(37, 99, 235, 0.28);
-  --dieline-panel-active-stroke: #60a5fa;
-
-  --status-success: #22c55e;
-  --status-warning: #f59e0b;
-  --status-info: #3b82f6;
-  --status-danger: #ef4444;
-
-  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.5);
-  --shadow-popover: 0 10px 25px rgba(0, 0, 0, 0.6);
-}
-
-/* Theme 5: GitHub Primer Light (Official GitHub UI) */
-[data-theme="github-light"] {
-  --bg-app: #f6f8fa;
-  --bg-sidebar: #ffffff;
-  --bg-surface: #ffffff;
-  --bg-surface-hover: #f3f4f6;
-  --bg-surface-active: #e5e7eb;
-  
-  --bg-canvas: #f6f8fa;
-  --grid-line: #d0d7de;
-  --grid-subline: #e7ecf0;
-  
-  --border-subtle: #d0d7de;
-  --border-medium: #afb8c1;
-  --border-focus: #0969da;
-
-  --text-primary: #1f2328;
-  --text-secondary: #656d76;
-  --text-muted: #8c959f;
-  --text-inverse: #ffffff;
-
-  --accent-primary: #0969da;
-  --accent-primary-hover: #0860ca;
-  --accent-secondary: #1a7f37;
-
-  --dieline-cut: #cf222e;
-  --dieline-crease: #1a7f37;
-  --dieline-bleed: #0969da;
-  --dieline-panel-hover: rgba(9, 105, 218, 0.08);
-  --dieline-panel-active: rgba(9, 105, 218, 0.18);
-  --dieline-panel-active-stroke: #0969da;
-
-  --status-success: #1a7f37;
-  --status-warning: #9a6700;
-  --status-info: #0969da;
-  --status-danger: #cf222e;
-
-  --shadow-card: 0 2px 10px rgba(31, 35, 40, 0.08);
-  --shadow-popover: 0 10px 25px rgba(31, 35, 40, 0.12);
-}
-
-/* Theme 6: Catppuccin Latte (Soothing Light Pastel) */
-[data-theme="catppuccin-latte"] {
-  --bg-app: #dce0e8;
-  --bg-sidebar: #e6e9ef;
-  --bg-surface: #eff1f5;
-  --bg-surface-hover: #ccd0da;
-  --bg-surface-active: #bcc0cc;
-  
-  --bg-canvas: #eff1f5;
-  --grid-line: #ccd0da;
-  --grid-subline: #e6e9ef;
-  
-  --border-subtle: #bcc0cc;
-  --border-medium: #acb0be;
-  --border-focus: #1e66f5;
-
-  --text-primary: #4c4f69;
-  --text-secondary: #6c6f85;
-  --text-muted: #9ca0b0;
-  --text-inverse: #ffffff;
-
-  --accent-primary: #1e66f5;
-  --accent-primary-hover: #04a5e5;
-  --accent-secondary: #8839ef;
-
-  --dieline-cut: #d20f39;
-  --dieline-crease: #40a02b;
-  --dieline-bleed: #209fb5;
-  --dieline-panel-hover: rgba(30, 102, 245, 0.08);
-  --dieline-panel-active: rgba(30, 102, 245, 0.18);
-  --dieline-panel-active-stroke: #1e66f5;
-
-  --status-success: #40a02b;
-  --status-warning: #df8e1d;
-  --status-info: #209fb5;
-  --status-danger: #d20f39;
-
-  --shadow-card: 0 2px 10px rgba(76, 79, 105, 0.08);
-  --shadow-popover: 0 10px 25px rgba(76, 79, 105, 0.12);
-}
-
-/* Theme 7: Shadcn Zinc Light (Ultra-Clean Enterprise SaaS) */
-[data-theme="shadcn-zinc-light"] {
-  --bg-app: #f4f4f5;
-  --bg-sidebar: #ffffff;
-  --bg-surface: #ffffff;
-  --bg-surface-hover: #f4f4f5;
-  --bg-surface-active: #e4e4e7;
-  
-  --bg-canvas: #fafafa;
-  --grid-line: #e4e4e7;
-  --grid-subline: #f4f4f5;
-  
-  --border-subtle: #e4e4e7;
-  --border-medium: #d4d4d8;
-  --border-focus: #18181b;
-
-  --text-primary: #09090b;
-  --text-secondary: #71717a;
-  --text-muted: #a1a1aa;
-  --text-inverse: #ffffff;
-
-  --accent-primary: #18181b;
-  --accent-primary-hover: #27272a;
-  --accent-secondary: #2563eb;
-
-  --dieline-cut: #ef4444;
-  --dieline-crease: #16a34a;
-  --dieline-bleed: #2563eb;
-  --dieline-panel-hover: rgba(24, 24, 27, 0.08);
-  --dieline-panel-active: rgba(24, 24, 27, 0.16);
-  --dieline-panel-active-stroke: #18181b;
-
-  --status-success: #16a34a;
-  --status-warning: #d97706;
-  --status-info: #2563eb;
-  --status-danger: #dc2626;
-
-  --shadow-card: 0 2px 10px rgba(9, 9, 11, 0.06);
-  --shadow-popover: 0 10px 25px rgba(9, 9, 11, 0.12);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-popover: 0 10px 28px rgba(0, 0, 0, 0.45);
 }

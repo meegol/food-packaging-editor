@@ -225,7 +225,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
             borderRadius: 'var(--radius-sm)',
             border: 'none',
             backgroundColor: subTab === 'images' ? 'var(--accent-primary)' : 'transparent',
-            color: subTab === 'images' ? '#ffffff' : 'var(--text-muted)',
+            color: subTab === 'images' ? 'var(--accent-ink)' : 'var(--text-muted)',
             cursor: 'pointer',
           }}
         >
@@ -247,7 +247,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
             borderRadius: 'var(--radius-sm)',
             border: 'none',
             backgroundColor: subTab === 'text' ? 'var(--accent-primary)' : 'transparent',
-            color: subTab === 'text' ? '#ffffff' : 'var(--text-muted)',
+            color: subTab === 'text' ? 'var(--accent-ink)' : 'var(--text-muted)',
             cursor: 'pointer',
           }}
         >
@@ -269,7 +269,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
             borderRadius: 'var(--radius-sm)',
             border: 'none',
             backgroundColor: subTab === 'icons' ? 'var(--accent-primary)' : 'transparent',
-            color: subTab === 'icons' ? '#ffffff' : 'var(--text-muted)',
+            color: subTab === 'icons' ? 'var(--accent-ink)' : 'var(--text-muted)',
             cursor: 'pointer',
           }}
         >
@@ -291,7 +291,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
             borderRadius: 'var(--radius-sm)',
             border: 'none',
             backgroundColor: subTab === 'codes' ? 'var(--accent-primary)' : 'transparent',
-            color: subTab === 'codes' ? '#ffffff' : 'var(--text-muted)',
+            color: subTab === 'codes' ? 'var(--accent-ink)' : 'var(--text-muted)',
             cursor: 'pointer',
           }}
         >
@@ -458,7 +458,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                 borderRadius: '3px',
                 border: 'none',
                 backgroundColor: sideFilter === 'all' ? 'var(--accent-primary)' : 'var(--bg-surface)',
-                color: sideFilter === 'all' ? '#ffffff' : 'var(--text-muted)',
+                color: sideFilter === 'all' ? 'var(--accent-ink)' : 'var(--text-muted)',
                 cursor: 'pointer',
               }}
             >
@@ -473,7 +473,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                 borderRadius: '3px',
                 border: 'none',
                 backgroundColor: sideFilter === 'active' ? 'var(--accent-primary)' : 'var(--bg-surface)',
-                color: sideFilter === 'active' ? '#ffffff' : 'var(--text-muted)',
+                color: sideFilter === 'active' ? 'var(--accent-ink)' : 'var(--text-muted)',
                 cursor: 'pointer',
               }}
             >
@@ -718,7 +718,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                           borderRadius: '2px',
                           border: 'none',
                           backgroundColor: (item.angle ?? 0) === deg ? 'var(--accent-primary)' : 'var(--bg-app)',
-                          color: (item.angle ?? 0) === deg ? '#ffffff' : 'var(--text-muted)',
+                          color: (item.angle ?? 0) === deg ? 'var(--accent-ink)' : 'var(--text-muted)',
                           cursor: 'pointer',
                         }}
                       >

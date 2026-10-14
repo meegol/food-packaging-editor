@@ -59,6 +59,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
   const [showLabels, setShowLabels] = useState<boolean>(true);
   const [hoveredPanelName, setHoveredPanelName] = useState<string | null>(null);
   const [isDragOverCanvas, setIsDragOverCanvas] = useState<boolean>(false);
+  const flatPaneRef = useRef<HTMLDivElement>(null);
   const [dragHoverPanelName, setDragHoverPanelName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -81,6 +82,19 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
         }
       },
       onZoomChange: (z) => setZoomPercent(z),
+      onViewportChange: (vpt) => {
+        // Cutting-mat grid: 10 mm minor squares, 50 mm major, tracking zoom and pan.
+        // Written straight to CSS variables so panning never re-renders React.
+        const pane = flatPaneRef.current;
+        if (!pane) return;
+        const unitsPerMm = 2.5;
+        const major = 50 * unitsPerMm * vpt[0];
+        const minor = 10 * unitsPerMm * vpt[0];
+        pane.style.setProperty('--mat-major', `${major}px`);
+        pane.style.setProperty('--mat-minor', `${minor >= 6 ? minor : major}px`);
+        pane.style.setProperty('--mat-x', `${vpt[4]}px`);
+        pane.style.setProperty('--mat-y', `${vpt[5]}px`);
+      },
     });
 
     engine.setOnGraphicChange((items) => {
@@ -356,6 +370,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
       <div className={`viewport-panes-wrapper mode-${viewMode}`}>
         {/* Flat Dieline Net Pane */}
         <div
+          ref={flatPaneRef}
           className="flat-canvas-pane"
           style={{
             display: viewMode === 'assembled' ? 'none' : 'flex',

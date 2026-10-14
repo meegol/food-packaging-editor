@@ -32,6 +32,7 @@ export class FabricDielineCanvas {
   private onSelectPanelCallback?: (panelId: string | null) => void;
   private onHoverPanelCallback?: (panelId: string | null) => void;
   private onZoomChangeCallback?: (zoom: number) => void;
+  private onViewportChangeCallback?: (vpt: number[]) => void;
   private onGraphicChangeCallback?: (items: GraphicItem[]) => void;
 
   constructor(canvasElement: HTMLCanvasElement) {
@@ -43,6 +44,10 @@ export class FabricDielineCanvas {
     });
 
     this.setupEventListeners();
+    // Lets the viewport keep the cutting-mat grid in step with zoom and pan
+    this.canvas.on('after:render', () => {
+      this.onViewportChangeCallback?.(this.canvas.viewportTransform);
+    });
   }
 
   private getThemeColors() {
@@ -59,11 +64,13 @@ export class FabricDielineCanvas {
     const isLight = currentTheme.includes('light') || currentTheme.includes('kraft');
     const style = getComputedStyle(document.documentElement);
 
-    const labelColor = isLight ? '#475569' : '#94a3b8';
-    const activePanelFill = style.getPropertyValue('--dieline-panel-active').trim() || (isLight ? 'rgba(79, 70, 229, 0.16)' : 'rgba(99, 102, 241, 0.25)');
-    const activePanelStroke = style.getPropertyValue('--dieline-panel-active-stroke').trim() || (isLight ? '#4f46e5' : '#818cf8');
-    const panelHoverFill = style.getPropertyValue('--dieline-panel-hover').trim() || (isLight ? 'rgba(79, 70, 229, 0.08)' : 'rgba(245, 158, 11, 0.14)');
-    const panelDefaultFill = isLight ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.02)';
+    // Panels are board stock lying on the cutting mat: opaque so the mat never shows through artwork gaps
+    const token = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback;
+    const labelColor = token('--board-label', isLight ? '#475569' : '#94a3b8');
+    const activePanelFill = token('--dieline-panel-active', isLight ? 'rgba(79, 70, 229, 0.16)' : 'rgba(99, 102, 241, 0.25)');
+    const activePanelStroke = token('--dieline-panel-active-stroke', isLight ? '#4f46e5' : '#818cf8');
+    const panelHoverFill = token('--dieline-panel-hover', isLight ? 'rgba(79, 70, 229, 0.08)' : 'rgba(245, 158, 11, 0.14)');
+    const panelDefaultFill = token('--board', isLight ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.02)');
 
     return {
       labelColor,
@@ -86,10 +93,12 @@ export class FabricDielineCanvas {
     onSelectPanel?: (panelId: string | null) => void;
     onHoverPanel?: (panelId: string | null) => void;
     onZoomChange?: (zoom: number) => void;
+    onViewportChange?: (vpt: number[]) => void;
   }) {
     this.onSelectPanelCallback = callbacks.onSelectPanel;
     this.onHoverPanelCallback = callbacks.onHoverPanel;
     this.onZoomChangeCallback = callbacks.onZoomChange;
+    this.onViewportChangeCallback = callbacks.onViewportChange;
   }
 
   public setOptions(options: Partial<CanvasOptions>) {

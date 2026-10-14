@@ -251,7 +251,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
                   fontSize: '11px',
                   fontWeight: w,
                   backgroundColor: fontWeight === w ? 'var(--accent-primary)' : 'var(--bg-surface)',
-                  color: fontWeight === w ? '#ffffff' : 'var(--text-secondary)',
+                  color: fontWeight === w ? 'var(--accent-ink)' : 'var(--text-secondary)',
                   border: 'none',
                   cursor: 'pointer',
                 }}
@@ -269,7 +269,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
               borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--border-medium)',
               backgroundColor: fontStyle === 'italic' ? 'var(--accent-primary)' : 'var(--bg-surface)',
-              color: fontStyle === 'italic' ? '#ffffff' : 'var(--text-secondary)',
+              color: fontStyle === 'italic' ? 'var(--accent-ink)' : 'var(--text-secondary)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -289,7 +289,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
             style={{
               padding: '4px 7px',
               backgroundColor: textAlign === 'left' ? 'var(--accent-primary)' : 'var(--bg-surface)',
-              color: textAlign === 'left' ? '#ffffff' : 'var(--text-secondary)',
+              color: textAlign === 'left' ? 'var(--accent-ink)' : 'var(--text-secondary)',
               border: 'none',
               cursor: 'pointer',
             }}
@@ -303,7 +303,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
             style={{
               padding: '4px 7px',
               backgroundColor: textAlign === 'center' ? 'var(--accent-primary)' : 'var(--bg-surface)',
-              color: textAlign === 'center' ? '#ffffff' : 'var(--text-secondary)',
+              color: textAlign === 'center' ? 'var(--accent-ink)' : 'var(--text-secondary)',
               border: 'none',
               cursor: 'pointer',
             }}
@@ -317,7 +317,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
             style={{
               padding: '4px 7px',
               backgroundColor: textAlign === 'right' ? 'var(--accent-primary)' : 'var(--bg-surface)',
-              color: textAlign === 'right' ? '#ffffff' : 'var(--text-secondary)',
+              color: textAlign === 'right' ? 'var(--accent-ink)' : 'var(--text-secondary)',
               border: 'none',
               cursor: 'pointer',
             }}
@@ -397,7 +397,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
                 borderRadius: '3px',
                 border: '1px solid var(--border-medium)',
                 backgroundColor: angle === deg ? 'var(--accent-primary)' : 'var(--bg-surface)',
-                color: angle === deg ? '#ffffff' : 'var(--text-secondary)',
+                color: angle === deg ? 'var(--accent-ink)' : 'var(--text-secondary)',
                 cursor: 'pointer',
               }}
             >
@@ -461,7 +461,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
           gap: '6px',
           width: '100%',
           backgroundColor: 'var(--accent-primary)',
-          color: '#ffffff',
+          color: 'var(--accent-ink)',
           border: 'none',
           borderRadius: 'var(--radius-sm)',
           padding: '8px',
