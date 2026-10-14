@@ -134,7 +134,7 @@ export const BarcodeControls: React.FC<BarcodeControlsProps> = ({
         border: '1px solid var(--border-subtle)',
       }}>
         <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-          Target Packaging Face:
+          Face
         </div>
         <select
           value={effectivePanelId}
@@ -210,7 +210,7 @@ export const BarcodeControls: React.FC<BarcodeControlsProps> = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-              Standard Barcode Symbology:
+              Barcode type
             </div>
             <select
               value={barcodeFormat}
@@ -225,15 +225,15 @@ export const BarcodeControls: React.FC<BarcodeControlsProps> = ({
                 fontSize: '12px',
               }}
             >
-              <option value="EAN13">EAN-13 (International Retail Product Net)</option>
-              <option value="UPC">UPC-A (North American 12-Digit Retail)</option>
-              <option value="CODE128">Code 128 (Universal Logistics & Lot #)</option>
+              <option value="EAN13">EAN-13 (retail, most countries)</option>
+              <option value="UPC">UPC-A (retail, US and Canada)</option>
+              <option value="CODE128">Code 128 (batch and lot numbers)</option>
             </select>
           </div>
 
           <div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-              Barcode Digits / Code:
+              Number
             </div>
             <input
               type="text"
@@ -308,7 +308,7 @@ export const BarcodeControls: React.FC<BarcodeControlsProps> = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-              Target URL or Menu Link:
+              Link
             </div>
             <input
               type="text"
@@ -329,7 +329,7 @@ export const BarcodeControls: React.FC<BarcodeControlsProps> = ({
 
           <div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-              Error Correction Level:
+              Damage tolerance
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
               {(['L', 'M', 'Q', 'H'] as const).map((lvl) => (
@@ -391,7 +391,7 @@ export const BarcodeControls: React.FC<BarcodeControlsProps> = ({
             }}
           />
         ) : (
-          <span style={{ fontSize: '11px', color: '#64748b' }}>Generating preview...</span>
+          <span style={{ fontSize: '11px', color: '#64748b' }}>Making preview…</span>
         )}
       </div>
 
@@ -408,7 +408,7 @@ export const BarcodeControls: React.FC<BarcodeControlsProps> = ({
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <ShieldCheck size={13} color="var(--accent-secondary)" />
-          <span style={{ color: 'var(--text-secondary)' }}>Auto-Clip to Face Polygon</span>
+          <span style={{ color: 'var(--text-secondary)' }}>Keep inside the face edges</span>
         </div>
         <input
           type="checkbox"

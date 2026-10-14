@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sliders, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { PackagingDimensions, TemplateDefinition } from '../../core/dieline/types';
 
 interface DimensionControlsProps {
@@ -52,8 +52,7 @@ export const DimensionControls: React.FC<DimensionControlsProps> = ({
     <div className="sidebar-section">
       <div className="sidebar-section-title">
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Sliders size={13} />
-          <span>Parametric Dimensions</span>
+          <span>Size</span>
         </div>
         <button
           onClick={onResetDimensions}
@@ -67,7 +66,7 @@ export const DimensionControls: React.FC<DimensionControlsProps> = ({
             gap: '4px',
             fontSize: '11px',
           }}
-          title="Reset to default dimensions"
+          title="Go back to this shape's standard size"
         >
           <RotateCcw size={11} />
           Reset
@@ -193,7 +192,7 @@ export const DimensionControls: React.FC<DimensionControlsProps> = ({
 
       <div className="dim-input-row">
         <div className="dim-label-row">
-          <span className="dim-name">Caliper / Thickness (t)</span>
+          <span className="dim-name">Board thickness (t)</span>
           <span className="dim-val">{dimensions.thickness} mm</span>
         </div>
         <div className="dim-slider-group">

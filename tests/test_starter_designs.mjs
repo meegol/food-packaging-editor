@@ -46,17 +46,17 @@ if (layerCount <= 0) errors.push('First load shows an empty net');
 await page.screenshot({ path: path.join(OUT_DIR, '00_first_load.png') });
 
 const hideLabels = async () => {
-  const btn = page.locator('button[title="Toggle Face Labels"]');
+  const btn = page.locator('button[title="Show face names"]');
   if (await btn.evaluate((el) => el.classList.contains('active'))) await btn.click();
 };
 await hideLabels();
 
 for (const style of STYLE_IDS) {
-  await page.locator('.sidebar-tab-btn:has-text("Templates")').click();
+  await page.locator('.sidebar-tab-btn:has-text("Design")').click();
   await page.locator(`.starter-design-card[data-design-id="${style}"]`).click();
 
   for (const [i, name] of TEMPLATE_NAMES.entries()) {
-    await page.locator('.sidebar-tab-btn:has-text("Templates")').click();
+    await page.locator('.sidebar-tab-btn:has-text("Package")').click();
     await page.locator('.template-card').filter({ hasText: name }).click();
     await page.waitForTimeout(700);
     const file = `${style}_${String(i + 1).padStart(2, '0')}_${slug(name)}_flat.png`;
@@ -64,10 +64,10 @@ for (const style of STYLE_IDS) {
   }
 }
 
-await page.locator('.sidebar-tab-btn:has-text("Templates")').click();
+await page.locator('.sidebar-tab-btn:has-text("Design")').click();
 await page.locator('.starter-design-card[data-design-id="kraft"]').click();
 for (const [i, name] of TEMPLATE_NAMES.entries()) {
-  await page.locator('.sidebar-tab-btn:has-text("Templates")').click();
+  await page.locator('.sidebar-tab-btn:has-text("Package")').click();
   await page.locator('.template-card').filter({ hasText: name }).click();
   await page.locator('.view-mode-tab:has-text("3D Assembled")').click();
   await page.waitForTimeout(900);
@@ -84,7 +84,7 @@ for (const [i, name] of TEMPLATE_NAMES.entries()) {
   await page.locator('.view-mode-tab:has-text("Flat Net")').click();
 }
 
-await page.locator('.sidebar-tab-btn:has-text("Branding")').click();
+await page.locator('.sidebar-tab-btn:has-text("Artwork")').click();
 const replaceBtn = page.locator('button[aria-label="Replace Product photo"]').first();
 const pngPath = path.join(OUT_DIR, '_replacement.png');
 fs.writeFileSync(

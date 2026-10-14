@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Layers, Crosshair, Type, Image as ImageIcon, Trash2, CheckCircle2, Maximize2 } from 'lucide-react';
+import { Crosshair, Type, Image as ImageIcon, Trash2, CheckCircle2, Maximize2 } from 'lucide-react';
 import { PanelFace } from '../../core/dieline/types';
 import { GraphicItem } from '../../core/graphics/types';
 
@@ -88,10 +88,8 @@ export const PanelList: React.FC<PanelListProps> = ({
     <div className="sidebar-section">
       <div className="sidebar-section-title">
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Layers size={13} />
-          <span>Per-Side Packaging Studio ({panels.length} Faces)</span>
+          <span>Faces</span>
         </div>
-        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Click face to design</span>
       </div>
 
       {/* Hidden file input for per-panel image upload */}
@@ -149,7 +147,7 @@ export const PanelList: React.FC<PanelListProps> = ({
                 <button
                   type="button"
                   className="panel-tool-btn"
-                  title="Upload image directly to this face"
+                  title="Upload an image to this face"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleUploadForPanel(panel.id);
@@ -162,7 +160,7 @@ export const PanelList: React.FC<PanelListProps> = ({
                 <button
                   type="button"
                   className="panel-tool-btn"
-                  title="Focus view on this face"
+                  title="Zoom to this face"
                   onClick={(e) => {
                     e.stopPropagation();
                     onSelectPanel(panel.id);
@@ -200,7 +198,7 @@ export const PanelList: React.FC<PanelListProps> = ({
                           <button
                             type="button"
                             onClick={() => onRemoveGraphic(item.id)}
-                            title="Delete element"
+                            title="Delete"
                             style={{ background: 'none', border: 'none', padding: '1px', cursor: 'pointer', color: 'var(--text-muted)' }}
                           >
                             <Trash2 size={12} />

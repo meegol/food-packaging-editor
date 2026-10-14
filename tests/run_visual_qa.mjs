@@ -96,7 +96,7 @@ const snap = async (page, name) => {
       console.log(`======================================================`);
 
       // Switch to Templates tab & select template
-      await page.locator('.sidebar-tab-btn:has-text("Templates")').click();
+      await page.locator('.sidebar-tab-btn:has-text("Package")').click();
       await page.waitForTimeout(300);
 
       const card = page.locator('.template-card').filter({ hasText: tmpl.name }).first();
@@ -109,7 +109,7 @@ const snap = async (page, name) => {
       await snap(page, `${prefix}_01_clean_flat_net`);
 
       // Switch to Faces tab to inspect available panels
-      await page.locator('.sidebar-tab-btn:has-text("Faces")').click();
+      await page.locator('.sidebar-tab-btn:has-text("Artwork")').click();
       await page.waitForTimeout(400);
 
       const panelCards = await page.locator('.panel-studio-card').all();

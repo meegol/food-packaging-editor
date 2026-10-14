@@ -15,7 +15,20 @@ const ICONS: Record<ThemePreference, React.ReactNode> = {
 
 export const ThemePicker: React.FC<ThemePickerProps> = ({ activeThemeId, onSelectTheme }) => {
   const active = normalizeThemeId(activeThemeId);
+  const current = THEMES.findIndex((t) => t.id === active);
+  const next = THEMES[(current + 1) % THEMES.length];
   return (
+    <>
+    {/* Phones: one button that steps through the options */}
+    <button
+      type="button"
+      className="theme-cycle-btn"
+      title={`Appearance: ${THEMES[current].name}. Switch to ${next.name}`}
+      aria-label={`Appearance: ${THEMES[current].name}. Switch to ${next.name}`}
+      onClick={() => onSelectTheme(next.id)}
+    >
+      {ICONS[active]}
+    </button>
     <div className="theme-switch" role="radiogroup" aria-label="Appearance">
       {THEMES.map((theme) => (
         <button
@@ -32,5 +45,6 @@ export const ThemePicker: React.FC<ThemePickerProps> = ({ activeThemeId, onSelec
         </button>
       ))}
     </div>
+    </>
   );
 };

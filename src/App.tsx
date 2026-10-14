@@ -405,7 +405,7 @@ export const App: React.FC = () => {
           onClick={() => setMobileTab('tools')}
         >
           <Sliders size={18} />
-          <span>Studio Tools</span>
+          <span>Tools</span>
         </button>
         <button
           type="button"
@@ -413,7 +413,7 @@ export const App: React.FC = () => {
           onClick={() => setMobileTab('canvas')}
         >
           <BoxIcon size={18} />
-          <span>Canvas & 3D</span>
+          <span>Canvas</span>
         </button>
       </nav>
 

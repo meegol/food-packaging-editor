@@ -154,7 +154,7 @@ async function runTests() {
 
     const selectTemplate = async (templateName: string) => {
       console.log(`   Selecting "${templateName}"...`);
-      await page.locator('.sidebar-tab-btn:has-text("Templates")').click();
+      await page.locator('.sidebar-tab-btn:has-text("Package")').click();
       await page.waitForTimeout(300);
       await page.locator(`.template-card:has-text("${templateName}")`).click();
       await page.waitForTimeout(600);

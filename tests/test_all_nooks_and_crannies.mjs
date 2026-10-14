@@ -67,7 +67,7 @@ async function runAllTests() {
   ];
 
   for (const t of templatesToTest) {
-    await page.click('.sidebar-tab-btn:has-text("Templates")');
+    await page.click('.sidebar-tab-btn:has-text("Package")');
     await page.waitForTimeout(200);
     await page.locator(`.template-card:has-text("${t.name}")`).click();
     await page.waitForTimeout(300);
@@ -99,6 +99,8 @@ async function runAllTests() {
 
   // Step 5: Face Selection & Focus
   console.log('\n[5/14] Testing Per-Side Face Studio Selection & Focus Action...');
+  await page.click('.sidebar-tab-btn:has-text("Artwork")');
+  await page.waitForTimeout(200);
   const faceCards = page.locator('.panel-studio-card');
   const count = await faceCards.count();
   console.log(`   ✓ Found ${count} packaging faces in studio list`);
@@ -119,7 +121,7 @@ async function runAllTests() {
 
   // Step 6: Typography Engine with Extended Controls
   console.log('\n[6/14] Testing Typography Engine (Brand Title, Nutrition, Expiration, Italic, Arc Text)...');
-  await page.click('.sidebar-tab-btn:has-text("Branding")');
+  await page.click('.sidebar-tab-btn:has-text("Artwork")');
   await page.waitForTimeout(200);
   const textSubTab = page.locator('button:text-is("Text")');
   await textSubTab.click();
@@ -131,7 +133,7 @@ async function runAllTests() {
   await page.waitForTimeout(200);
 
   // Add text to face
-  const addTextBtn = page.locator('button:has-text("Add Text to Packaging Face")');
+  const addTextBtn = page.locator('button:has-text("Add text to face")');
   await addTextBtn.click();
   await page.waitForTimeout(300);
   console.log('   ✓ Placed Brand Title text on face');
@@ -140,7 +142,7 @@ async function runAllTests() {
   const expTmpl = page.locator('button:has-text("Expiration Date")');
   await expTmpl.click();
   await page.waitForTimeout(200);
-  const italicBtn = page.locator('button[title="Toggle Italic"]');
+  const italicBtn = page.locator('button[title="Italic"]');
   if (await italicBtn.count() > 0) {
     await italicBtn.click();
     console.log('   ✓ Toggled Italic formatting');

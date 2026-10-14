@@ -8,18 +8,16 @@ interface TemplateSelectorProps {
   selectedTemplateId: string;
   onSelectTemplate: (templateId: string) => void;
   designId: string;
-  onSelectDesign: (designId: string) => void;
 }
 
-const StarterDesignPicker: React.FC<{
+export const StarterDesignPicker: React.FC<{
   templateId: string;
   designId: string;
   onSelectDesign: (designId: string) => void;
 }> = ({ templateId, designId, onSelectDesign }) => (
   <div className="sidebar-section">
     <div className="sidebar-section-title">
-      <span>Starter Brand Designs</span>
-      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{STARTER_STYLES.length} Styles</span>
+      <span>Starter designs</span>
     </div>
 
     <div className="starter-design-grid">
@@ -70,21 +68,20 @@ const StarterDesignPicker: React.FC<{
         <span className="starter-design-thumb starter-design-thumb-blank">
           <Square size={28} />
         </span>
-        <span className="starter-design-name">Blank Net</span>
+        <span className="starter-design-name">Blank</span>
         <span className="starter-design-swatches" />
       </button>
     </div>
   </div>
 );
 
-const ClientDesignPicker: React.FC<{
+export const ClientDesignPicker: React.FC<{
   designId: string;
   onSelectDesign: (designId: string) => void;
 }> = ({ designId, onSelectDesign }) => (
   <div className="sidebar-section">
     <div className="sidebar-section-title">
-      <span>Client Designs</span>
-      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{CLIENT_DESIGNS.length} Designs</span>
+      <span>Client designs</span>
     </div>
 
     <div className="starter-design-grid">
@@ -116,7 +113,6 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   selectedTemplateId,
   onSelectTemplate,
   designId,
-  onSelectDesign,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
@@ -150,13 +146,9 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   ];
 
   return (
-    <>
-    <StarterDesignPicker templateId={selectedTemplateId} designId={designId} onSelectDesign={onSelectDesign} />
-    <ClientDesignPicker designId={designId} onSelectDesign={onSelectDesign} />
     <div className="sidebar-section">
       <div className="sidebar-section-title">
-        <span>Packaging Model Library</span>
-        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{TEMPLATES.length} Structural Templates</span>
+        <span>Shape</span>
       </div>
 
       {/* Category Filter Pills */}
@@ -213,6 +205,5 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         })}
       </div>
     </div>
-    </>
   );
 };

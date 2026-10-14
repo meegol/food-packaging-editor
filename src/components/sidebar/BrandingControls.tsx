@@ -195,8 +195,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
       />
       <div className="sidebar-section-title">
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <ImageIcon size={13} />
-          <span>Branding & Graphic Suite</span>
+          <span>Add to the package</span>
         </div>
       </div>
 
@@ -312,7 +311,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
             marginBottom: '10px'
           }}>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-              Target Packaging Face:
+              Face
             </div>
             <select
               value={effectivePanelId}
@@ -358,7 +357,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
               Drop image or click to upload
             </div>
             <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              PNG, JPG, WebP, or SVG logo
+              PNG, JPG, WebP or SVG
             </div>
             <input
               ref={fileInputRef}
@@ -388,7 +387,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <ShieldCheck size={13} color="var(--accent-secondary)" />
-              <span style={{ color: 'var(--text-secondary)' }}>Auto-Clip to Face Polygon</span>
+              <span style={{ color: 'var(--text-secondary)' }}>Keep inside the face edges</span>
             </div>
             <input
               type="checkbox"
@@ -446,7 +445,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
           marginBottom: '2px',
         }}>
           <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
-            Placed Elements Layer Stack ({graphics.length})
+            Layers ({graphics.length})
           </div>
           <div style={{ display: 'flex', gap: '3px' }}>
             <button
@@ -462,7 +461,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                 cursor: 'pointer',
               }}
             >
-              All ({graphics.length})
+              All
             </button>
             <button
               type="button"
@@ -477,7 +476,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                 cursor: 'pointer',
               }}
             >
-              This Side ({activeFaceCount})
+              This face ({activeFaceCount})
             </button>
           </div>
         </div>
@@ -492,8 +491,8 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
             borderRadius: 'var(--radius-sm)',
           }}>
             {sideFilter === 'active'
-              ? 'No elements on active face yet.'
-              : 'No graphic or text elements placed on net.'}
+              ? 'Nothing on this face yet.'
+              : 'Nothing on the package yet. Add an image or text above.'}
           </div>
         ) : (
           displayedGraphics.map((item, index) => {
@@ -561,7 +560,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                           replaceTargetRef.current = item;
                           replaceInputRef.current?.click();
                         }}
-                        title="Replace Image"
+                        title="Replace image"
                         aria-label={`Replace ${item.fileName || 'image'}`}
                         style={{
                           background: 'none',
@@ -581,7 +580,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                           type="button"
                           onClick={() => onReorderGraphic(item.id, 'up')}
                           disabled={index === displayedGraphics.length - 1}
-                          title="Bring Forward"
+                          title="Bring forward"
                           style={{
                             background: 'none',
                             border: 'none',
@@ -596,7 +595,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                           type="button"
                           onClick={() => onReorderGraphic(item.id, 'down')}
                           disabled={index === 0}
-                          title="Send Backward"
+                          title="Send backward"
                           style={{
                             background: 'none',
                             border: 'none',
@@ -646,7 +645,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
 
                 {item.type === 'text' && onUpdateGraphic && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}>
-                    <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>Font:</span>
+                    <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>Font</span>
                     <select
                       value={item.fontFamily || 'Inter, sans-serif'}
                       onChange={(e) => onUpdateGraphic({ ...item, fontFamily: e.target.value })}
@@ -684,7 +683,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                   gap: '4px',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, overflow: 'hidden' }}>
-                    <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>Side:</span>
+                    <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>Face</span>
                     <select
                       value={item.panelId}
                       onChange={(e) => handleReassignPanel(item, e.target.value)}
@@ -706,7 +705,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
-                    <span style={{ color: 'var(--text-muted)', marginRight: '2px' }}>Rot:</span>
+                    <span style={{ color: 'var(--text-muted)', marginRight: '2px' }}>Rotate</span>
                     {[0, 90, 180, 270].map((deg) => (
                       <button
                         key={deg}
@@ -736,12 +735,12 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                   paddingTop: '3px',
                   fontSize: '10px',
                 }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Align:</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Align</span>
                   <div style={{ display: 'flex', gap: '2px' }}>
                     <button
                       type="button"
                       onClick={() => handleAlignItem(item, 'left')}
-                      title="Align Left within panel face"
+                      title="Align to the left of the face"
                       style={{
                         padding: '1px 5px',
                         fontSize: '9px',
@@ -757,7 +756,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                     <button
                       type="button"
                       onClick={() => handleAlignItem(item, 'center')}
-                      title="Align Center within panel face"
+                      title="Center on the face"
                       style={{
                         padding: '1px 5px',
                         fontSize: '9px',
@@ -773,7 +772,7 @@ export const BrandingControls: React.FC<BrandingControlsProps> = ({
                     <button
                       type="button"
                       onClick={() => handleAlignItem(item, 'right')}
-                      title="Align Right within panel face"
+                      title="Align to the right of the face"
                       style={{
                         padding: '1px 5px',
                         fontSize: '9px',

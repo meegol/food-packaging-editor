@@ -49,7 +49,7 @@ async function run() {
 
     // 2. Open Branding / Text Tab
     console.log('📝 Testing Extended Typography & Quick Templates...');
-    const brandingTab = page.locator('button.sidebar-tab-btn:has-text("Branding")');
+    const brandingTab = page.locator('button.sidebar-tab-btn:has-text("Artwork")');
     await brandingTab.click();
     await page.waitForTimeout(400);
 
@@ -65,7 +65,7 @@ async function run() {
     }
 
     // Toggle Italic button
-    const italicBtn = page.locator('button[title="Toggle Italic"]');
+    const italicBtn = page.locator('button[title="Italic"]');
     if (await italicBtn.count() > 0) {
       await italicBtn.click();
       console.log('✅ Toggled Italic style');
@@ -77,7 +77,7 @@ async function run() {
     console.log('✅ Checked Curved Arc Text option');
 
     // Click "Add Text to Packaging Face"
-    const addTextBtn = page.locator('button:has-text("Add Text to Packaging Face")');
+    const addTextBtn = page.locator('button:has-text("Add text to face")');
     await addTextBtn.click();
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(screenshotsDir, 'srs_02_text_added.png') });
@@ -109,21 +109,21 @@ async function run() {
 
     // 4. Testing Layer Horizontal Alignment Buttons
     console.log('📐 Testing Layer Alignment Controls...');
-    const alignLeftBtns = page.locator('button[title="Align Left within panel face"]');
+    const alignLeftBtns = page.locator('button[title="Align to the left of the face"]');
     if (await alignLeftBtns.count() > 0) {
       await alignLeftBtns.first().click();
       console.log('✅ Clicked Align Left button');
       await page.waitForTimeout(200);
     }
 
-    const alignCenterBtns = page.locator('button[title="Align Center within panel face"]');
+    const alignCenterBtns = page.locator('button[title="Center on the face"]');
     if (await alignCenterBtns.count() > 0) {
       await alignCenterBtns.first().click();
       console.log('✅ Clicked Align Center button');
       await page.waitForTimeout(200);
     }
 
-    const alignRightBtns = page.locator('button[title="Align Right within panel face"]');
+    const alignRightBtns = page.locator('button[title="Align to the right of the face"]');
     if (await alignRightBtns.count() > 0) {
       await alignRightBtns.first().click();
       console.log('✅ Clicked Align Right button');

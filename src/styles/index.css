@@ -97,40 +97,40 @@ code, pre, .font-mono {
 
 .sidebar-tabs {
   display: flex;
-  background-color: var(--bg-app);
+  background-color: var(--bg-sidebar);
   border-bottom: 1px solid var(--border-subtle);
-  padding: 4px;
+  padding: 0 8px;
   gap: 4px;
 }
 
 .sidebar-tab-btn {
   flex: 1 1 0;
   min-width: 0;
-  padding: 6px 2px;
-  font-size: 11px;
+  padding: 13px 4px 11px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-secondary);
   background: transparent;
   border: none;
-  border-radius: var(--radius-sm);
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   cursor: pointer;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 6px;
   white-space: nowrap;
   transition: all 0.15s ease;
 }
 
 .sidebar-tab-btn:hover {
   color: var(--text-primary);
-  background-color: var(--bg-surface-hover);
 }
 
 .sidebar-tab-btn.active {
   color: var(--text-primary);
-  background-color: var(--bg-surface);
+  border-bottom-color: var(--accent);
   font-weight: 600;
 }
 
@@ -425,6 +425,19 @@ code, pre, .font-mono {
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-muted);
+  cursor: pointer;
+}
+
+.theme-cycle-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 30px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
   cursor: pointer;
 }
 
@@ -2156,7 +2169,15 @@ select option {
     gap: 4px;
   }
 
-  /* Compact Theme Picker on Mobile */
+  /* Compact appearance control on mobile */
+  .theme-switch {
+    display: none;
+  }
+
+  .theme-cycle-btn {
+    display: flex;
+  }
+
   .theme-picker-name {
     display: none;
   }

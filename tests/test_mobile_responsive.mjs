@@ -38,7 +38,7 @@ async function main() {
   await mobilePage.screenshot({ path: path.join(ARTIFACT_DIR, '02_mobile_canvas_tab.png') });
 
   // Screen 2: Switch to Studio Tools View
-  const toolsNavBtn = mobilePage.locator('.mobile-nav-item:has-text("Studio Tools")');
+  const toolsNavBtn = mobilePage.locator('.mobile-nav-item:has-text("Tools")');
   await toolsNavBtn.click();
   await mobilePage.waitForTimeout(400);
   await mobilePage.screenshot({ path: path.join(ARTIFACT_DIR, '03_mobile_tools_tab.png') });
@@ -52,7 +52,7 @@ async function main() {
   }
 
   // Ensure we are on Canvas tab for view mode tests
-  const canvasNavBtn = mobilePage.locator('.mobile-nav-item:has-text("Canvas & 3D")');
+  const canvasNavBtn = mobilePage.locator('.mobile-nav-item:has-text("Canvas")');
   await canvasNavBtn.click();
   await mobilePage.waitForTimeout(400);
 

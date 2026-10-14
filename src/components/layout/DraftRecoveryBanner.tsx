@@ -37,7 +37,7 @@ export const DraftRecoveryBanner: React.FC<DraftRecoveryBannerProps> = ({
         </div>
         <div>
           <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
-            Unsaved draft detected
+            You have unsaved work
           </div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
             {template.name} ({draft.dimensions.length}×{draft.dimensions.width}×{draft.dimensions.depth}mm) • Saved {timeStr}
@@ -52,13 +52,13 @@ export const DraftRecoveryBanner: React.FC<DraftRecoveryBannerProps> = ({
           onClick={onRestore}
         >
           <Check size={13} />
-          Restore Draft
+          Restore it
         </button>
         <button
           className="header-action-btn"
           style={{ padding: '5px 8px', fontSize: '11px' }}
           onClick={onDismiss}
-          title="Dismiss and discard draft"
+          title="Discard the unsaved work"
         >
           <X size={13} />
           Dismiss

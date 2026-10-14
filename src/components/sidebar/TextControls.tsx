@@ -100,7 +100,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
         border: '1px solid var(--border-subtle)',
       }}>
         <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-          Target Packaging Face:
+          Face
         </div>
         <select
           value={effectivePanelId}
@@ -136,7 +136,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
           marginBottom: '6px'
         }}>
           <Sparkles size={12} color="var(--accent-secondary)" />
-          Quick Food Label Templates:
+          Quick labels
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
           {QUICK_TEMPLATES.map((tmpl) => (
@@ -173,7 +173,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
       {/* Text Area Content */}
       <div>
         <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-          Label Content:
+          Text
         </div>
         <textarea
           value={text}
@@ -198,7 +198,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '8px' }}>
         <div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-            Typography:
+            Style
           </div>
           <select
             value={fontFamily}
@@ -275,7 +275,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
             }}
-            title="Toggle Italic"
+            title="Italic"
           >
             <Italic size={12} />
           </button>
@@ -293,7 +293,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
               border: 'none',
               cursor: 'pointer',
             }}
-            title="Align Left"
+            title="Align left"
           >
             <AlignLeft size={12} />
           </button>
@@ -307,7 +307,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
               border: 'none',
               cursor: 'pointer',
             }}
-            title="Align Center"
+            title="Center"
           >
             <AlignCenter size={12} />
           </button>
@@ -321,7 +321,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
               border: 'none',
               cursor: 'pointer',
             }}
-            title="Align Right"
+            title="Align right"
           >
             <AlignRight size={12} />
           </button>
@@ -383,7 +383,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
         border: '1px solid var(--border-subtle)',
         fontSize: '11px',
       }}>
-        <span style={{ color: 'var(--text-secondary)' }}>Orientation (Flap Fold Angle):</span>
+        <span style={{ color: 'var(--text-secondary)' }}>Rotate</span>
         <div style={{ display: 'flex', gap: '4px' }}>
           {[0, 90, 180, 270].map((deg) => (
             <button
@@ -419,8 +419,8 @@ export const TextControls: React.FC<TextControlsProps> = ({
         fontSize: '11px',
       }}>
         <div>
-          <div style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Curved Arc Text</div>
-          <div style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>Option for round food tubs, bowls & lids</div>
+          <div style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Curved arc text</div>
+          <div style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>For round tubs, bowls and lids</div>
         </div>
         <input
           type="checkbox"
@@ -441,7 +441,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
         border: '1px solid var(--border-subtle)',
         fontSize: '11px',
       }}>
-        <span style={{ color: 'var(--text-secondary)' }}>Auto-Clip to Face Polygon</span>
+        <span style={{ color: 'var(--text-secondary)' }}>Keep inside the face edges</span>
         <input
           type="checkbox"
           checked={clipToPanel}
@@ -474,7 +474,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--accent-primary)')}
       >
         <PlusCircle size={14} />
-        Add Text to Packaging Face
+        Add text to face
       </button>
     </div>
   );

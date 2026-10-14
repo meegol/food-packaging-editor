@@ -341,28 +341,28 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
           type="button"
           className={`view-mode-tab ${viewMode === 'flat' ? 'active' : ''}`}
           onClick={() => setViewMode('flat')}
-          title="2D Flat Dieline Net (with Crease/Cut Lines and Face Studio)"
+          title="The flat, unfolded net with cut and crease lines"
         >
           <Grid size={13} />
-          <span>Flat Net</span>
+          <span>Flat net</span>
         </button>
         <button
           type="button"
           className={`view-mode-tab ${viewMode === 'assembled' ? 'active' : ''}`}
           onClick={() => setViewMode('assembled')}
-          title="Photorealistic 3D Assembled Packaging Preview"
+          title="The package folded up, in 3D"
         >
           <Box size={13} />
-          <span>3D Assembled</span>
+          <span>3D assembled</span>
         </button>
         <button
           type="button"
           className={`view-mode-tab split-view-tab ${viewMode === 'split' ? 'active' : ''}`}
           onClick={() => setViewMode('split')}
-          title="Side-by-Side Split View (Flat Net + Live Assembled Mockup)"
+          title="Flat net and 3D side by side"
         >
           <Columns size={13} />
-          <span>Split View</span>
+          <span>Split view</span>
         </button>
       </div>
 
@@ -399,7 +399,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
           <div className="canvas-floating-toolbar">
             <button
               className="toolbar-btn"
-              title="Zoom Out"
+              title="Zoom out"
               onClick={() => engineRef.current?.zoomOut()}
             >
               <ZoomOut size={16} />
@@ -418,7 +418,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
 
             <button
               className="toolbar-btn"
-              title="Zoom In"
+              title="Zoom in"
               onClick={() => engineRef.current?.zoomIn()}
             >
               <ZoomIn size={16} />
@@ -426,7 +426,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
 
             <button
               className="toolbar-btn"
-              title="Fit to Screen"
+              title="Fit to screen"
               onClick={() => engineRef.current?.fitToScreen()}
             >
               <Maximize2 size={16} />
@@ -436,7 +436,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
 
             <button
               className={`toolbar-btn ${showCutLines ? 'active' : ''}`}
-              title="Toggle Cut Lines (Red)"
+              title="Show cut lines"
               onClick={() => setShowCutLines(!showCutLines)}
             >
               <Scissors size={16} />
@@ -444,7 +444,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
 
             <button
               className={`toolbar-btn ${showCreaseLines ? 'active' : ''}`}
-              title="Toggle Crease / Fold Lines (Green)"
+              title="Show crease lines"
               onClick={() => setShowCreaseLines(!showCreaseLines)}
             >
               <SplitSquareVertical size={16} />
@@ -452,7 +452,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
 
             <button
               className={`toolbar-btn ${showLabels ? 'active' : ''}`}
-              title="Toggle Face Labels"
+              title="Show face names"
               onClick={() => setShowLabels(!showLabels)}
             >
               <Tag size={16} />
@@ -484,7 +484,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
                 <button
                   type="button"
                   className="active-face-btn"
-                  title="Upload image onto this face"
+                  title="Upload an image to this face"
                   onClick={() => canvasFileInputRef.current?.click()}
                 >
                   <ImageIcon size={13} color="#0ea5e9" />
@@ -494,7 +494,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
                 <button
                   type="button"
                   className="active-face-btn"
-                  title="Zoom focus directly to this face"
+                  title="Zoom to this face"
                   onClick={() => engineRef.current?.focusPanel(activePanel.id)}
                 >
                   <Maximize2 size={13} color="var(--accent-primary)" />
@@ -521,7 +521,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
                 {dragHoverPanelName ? `Drop to place on: ${dragHoverPanelName}` : 'Drop image onto packaging face'}
               </div>
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>
-                Automatically clips to target face polygon
+                It will be kept inside the face edges
               </div>
             </div>
           )}
@@ -550,7 +550,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
           <div className="dieline-legend">
             <div className="legend-item">
               <div className="legend-line cut" />
-              <span style={{ color: 'var(--text-secondary)' }}>Cut Line</span>
+              <span style={{ color: 'var(--text-secondary)' }}>Cut</span>
             </div>
             <div className="legend-item">
               <div className="legend-line crease" />
@@ -558,7 +558,7 @@ export const CanvasViewport: React.FC<CanvasViewportProps> = ({
             </div>
             <div className="legend-item" style={{ color: 'var(--text-muted)' }}>
               <Grid size={12} style={{ display: 'inline', marginRight: '4px' }} />
-              <span>Pan: Drag | Zoom: Scroll</span>
+              <span>Drag to move, scroll to zoom</span>
             </div>
           </div>
         </div>

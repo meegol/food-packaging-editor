@@ -89,7 +89,7 @@ const snap = async (page, name) => {
 
     // ---- STEP 1: Select burger-box ----
     console.log('\n[1] Selecting Burger Clamshell Box template...');
-    await page.locator('.sidebar-tab-btn:has-text("Templates")').click();
+    await page.locator('.sidebar-tab-btn:has-text("Package")').click();
     await page.waitForTimeout(400);
     await page.locator('.template-card').filter({ hasText: 'Burger Clamshell Box' }).first().click();
     await page.waitForTimeout(800);
@@ -97,7 +97,7 @@ const snap = async (page, name) => {
 
     // ---- STEP 2: Go to Faces, click first panel (Base Front Wall / lid-top) ----
     console.log('\n[2] Going to Faces tab, selecting front panel...');
-    await page.locator('.sidebar-tab-btn:has-text("Faces")').click();
+    await page.locator('.sidebar-tab-btn:has-text("Artwork")').click();
     await page.waitForTimeout(500);
 
     // Click the top lid card to make it active

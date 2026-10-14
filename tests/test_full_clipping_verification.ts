@@ -28,8 +28,8 @@ async function testFullClippingVerification() {
   await page.waitForTimeout(500);
 
   // 1. Add Text to Top Lid
-  await page.locator('.sidebar-tab-btn:has-text("Branding")').click();
-  await page.locator('button:has-text("Text")').click();
+  await page.locator('.sidebar-tab-btn:has-text("Artwork")').click();
+  await page.locator('button:text-is("Text")').click();
 
   // Select Top Lid
   await page.locator('select').first().selectOption('lid-top');
@@ -38,7 +38,7 @@ async function testFullClippingVerification() {
   // Fill text with high visibility
   await page.locator('textarea').first().fill('CONFIDENTIAL PREMIUM RECIPE');
   await page.locator('input[type="range"]').first().fill('32');
-  await page.locator('button:has-text("Add Text to Packaging Face")').click();
+  await page.locator('button:has-text("Add text to face")').click();
   await page.waitForTimeout(400);
 
   // 2. Add an Icon to Base Front Wall

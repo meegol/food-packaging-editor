@@ -244,7 +244,7 @@ export const ComplianceIconControls: React.FC<ComplianceIconControlsProps> = ({
         border: '1px solid var(--border-subtle)',
       }}>
         <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-          Target Packaging Face:
+          Face
         </div>
         <select
           value={effectivePanelId}
@@ -378,7 +378,7 @@ export const ComplianceIconControls: React.FC<ComplianceIconControlsProps> = ({
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <ShieldCheck size={13} color="var(--accent-secondary)" />
-          <span style={{ color: 'var(--text-secondary)' }}>Auto-Clip to Face Polygon</span>
+          <span style={{ color: 'var(--text-secondary)' }}>Keep inside the face edges</span>
         </div>
         <input
           type="checkbox"

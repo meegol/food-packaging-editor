@@ -32,7 +32,7 @@ await page.waitForTimeout(1000);
 
 for (const id of DESIGNS) {
   const expected = JSON.parse(fs.readFileSync(`public/client-designs/${id}/design.json`, 'utf8'));
-  await page.locator('.sidebar-tab-btn:has-text("Templates")').click();
+  await page.locator('.sidebar-tab-btn:has-text("Design")').click();
   await page.locator(`.starter-design-card[data-design-id="${id}"]`).click();
   await page.waitForFunction(
     (n) => window.__DIELINE_ENGINE__?.graphicItems.length === n,
